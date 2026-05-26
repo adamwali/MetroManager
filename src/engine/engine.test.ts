@@ -14,7 +14,7 @@ import { generateFinancingOffers, rateForTrust } from './financing';
 describe('createInitialGameState', () => {
   it('matches design doc §5 starting numbers', () => {
     const s = createInitialGameState(1);
-    expect(s.cash.balance as unknown as number).toBe(5_000);
+    expect(s.cash.balance as unknown as number).toBe(1_000);
     expect(s.operatingAllowance.annualAmount as unknown as number).toBe(2_400);
     expect(s.operatingAllowance.renegotiatesAt as unknown as number).toBe(16);
 

@@ -5,6 +5,48 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 1.3: seeded RNG depth + $1B starting cash
+
+**Done:**
+- Dropped starting cash from $5B to $1B per repo-owner call. Cash now
+  goes negative at Q8 (less than 2 years in) — player can't coast.
+- Built out `src/engine/rng.ts` with full helper suite:
+  - Sequenced (stateful): `nextFloat`, `nextInt`, `pickWeighted`,
+    `gaussian` (Box-Muller), `shuffle` (Fisher-Yates).
+  - Keyed (stateless): `keyedFloat`, `keyedInt`, `keyedPickWeighted`.
+- 17 RNG tests in `src/engine/rng.test.ts`:
+  - Determinism (same seed → same values)
+  - Subsystem isolation (12 subsystems mutually independent)
+  - Distribution properties (gaussian mean/stddev, pickWeighted ratio)
+  - Keyed pattern's resistance to catalog expansion (adding EV004 doesn't
+    shift EV001/EV002/EV003 outcomes for the same campaign)
+- Total tests: 43 passing (1 smoke + 25 engine + 17 RNG).
+- Exports added to `src/engine/index.ts` for engine consumers.
+
+**Phase 1.3 DoD met:**
+- ✓ Same seed produces identical 60-quarter campaign
+- ✓ Sub-RNGs isolated from each other
+- ✓ Save/load round-trip preserves RNG state (pure functions + JSON-safe
+  state objects)
+- ✓ Unit tests pass
+
+**Left for later phases:**
+- Action log entries from endTurn — Phase 1.4.
+- Event firing using keyed RNG — Phase 3.1.
+- Project cost realization using gaussian — Phase 4.
+- Election flip probability draws — Phase 6.1.
+
+**Surprises:**
+- Box-Muller gaussian advances callCount by 2 per draw (consumes 2
+  uniforms, discards the 2nd value). Worth noting if downstream code
+  ever counts on tight callCount packing.
+- The "keyed RNG" pattern is a really clean answer to the catalog-
+  expansion problem. Worth highlighting to anyone designing event
+  systems: don't tie randomness to draw order if you'll ever add
+  content; tie it to a stable key per decision.
+
+---
+
 ## 2026-05-26 — Baseline tuning + cannibalization
 
 **Done:**

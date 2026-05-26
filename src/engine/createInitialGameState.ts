@@ -26,7 +26,9 @@ export function createInitialGameState(seed: number): GameState {
     schemaVersion: 1,
     ceo: { archetype: 'steadyOperator', name: 'CEO' },
     quarter: quarter(0),
-    cash: { balance: cash(5_000), lastQuarterDelta: cash(0) },
+    // $1B starting cash — realistic working capital for a transit agency.
+    // Not enough to coast on; player has to make decisions from Q1.
+    cash: { balance: cash(1_000), lastQuarterDelta: cash(0) },
     debt: {
       tranches: [
         {

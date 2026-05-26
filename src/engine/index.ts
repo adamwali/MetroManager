@@ -21,4 +21,14 @@ export {
 export { generateFinancingOffers, rateForTrust } from './financing';
 export { tickProject, tickConstructingProject, tickOperatingProject } from './projects';
 export { ridershipModelFor, PROJECT_RIDERSHIP } from './data';
-export { createRngSeeds, nextFloat } from './rng';
+export {
+  createRngSeeds,
+  nextFloat,
+  nextInt,
+  pickWeighted,
+  gaussian,
+  shuffle,
+  keyedFloat,
+  keyedInt,
+  keyedPickWeighted,
+} from './rng';

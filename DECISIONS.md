@@ -5,6 +5,56 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 1.3: seeded RNG depth + starting cash to $1B
+
+**Starting cash dropped from $5B to $1B** (per repo owner). The $5B figure
+came from the spec's design doc §5 starting position but was unrealistic
+for opex cushion — real transit agencies operate with working capital in
+the hundreds of millions, not billions. At -$134M/Q baseline deficit,
+$1B lasts ~7 quarters before going negative. Cash crosses zero at Q8
+(Q1 2028 — less than 2 years in). Player has to act before the first
+allowance renegotiation at Q16; cannot wait for the political cycle.
+
+Game-design implication: from Quarter 1 the player faces a real choice —
+fare hike, maintenance cut, ad-hoc funding request, or operating bond
+issuance. The agency's $5B residual was masking that pressure.
+
+**Seeded RNG architecture finalized** (Phase 1.3 DoD). Two patterns
+implemented side by side:
+
+1. **Sequenced RNG per subsystem.** State = `{ seed, callCount }`. Each
+   draw advances callCount. `nextFloat`, `nextInt`, `pickWeighted`,
+   `gaussian` (Box-Muller), `shuffle` (Fisher-Yates). All pure. State
+   round-trips through JSON for save/load. Use for batched draws
+   (shuffle, pick N items) within a single decision.
+
+2. **Keyed RNG (stateless).** Functions of `(masterSeed, stringKey)` →
+   value. `keyedFloat`, `keyedInt`, `keyedPickWeighted`. Use for per-
+   decision independence: e.g., "did EV031 fire in Q12?" uses key
+   `"event:EV031:q12"`. Adding new event templates does not shift the
+   sequence for existing events.
+
+The hybrid resolves the Phase 1.3 prompt's question ("what if I add a
+new event type later — does that shift the sequence for existing
+events?"). For events specifically, use keyed. For shuffles or
+"pick 3 of N" within a subsystem, use sequenced.
+
+**Algorithm:** mulberry32. Fast, deterministic, JSON-safe, not crypto.
+Seed derivation uses FNV-1a hash of subsystem name + master seed (for
+sequenced) or key + master seed (for keyed).
+
+**Gaussian via Box-Muller**, discarding the second value (advances by 2
+calls per draw). Tested: 500 samples have mean within ±4% and stddev
+within ±20% of target. Good enough for game-sim noise (cost overruns,
+ridership variance, etc.).
+
+**RNG tests:** 17 tests covering determinism, subsystem isolation,
+distribution properties (mean/stddev for gaussian, ratio for pickWeighted),
+and the keyed approach's resistance to catalog expansion. All passing
+alongside the 26 engine tests = 43 total.
+
+---
+
 ## 2026-05-26 — Baseline tuned to deficit + cannibalization model
 
 Repo owner reviewed v3.3 output and flagged two issues:
