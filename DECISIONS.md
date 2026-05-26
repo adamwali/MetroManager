@@ -5,6 +5,66 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 1.2: cash flow engine
+
+**Debt maturity = auto-refi at current market rate** (per repo owner). When
+a tranche matures, replace it with a new fixed-rate tranche at
+`bocPolicyRate + ratingSpread`, with the same approximate duration (8.4yr ≈
+34Q). Charges a 1.5% midpoint refi fee from cash. Avoids surprise balloon
+shocks during heartbeat testing; Phase 7's refi mechanic will let players
+proactively roll debt before maturity.
+
+**Government inflow indexed at 5%/yr** (per repo owner). Annual step
+function — Q0-Q3 at 1x base, Q4-Q7 at 1.05x, Q8-Q11 at 1.10x, etc. Step
+rather than continuous because real budgets renegotiate annually, not
+quarterly. Matches the "indexed to construction inflation" spec wording at
+the median of the 3-7%/yr range.
+
+**Ontario Line opens and ramps within the 60Q run** (per repo owner).
+Construction projects transition to operating at `forecastOpenAt`.
+Ridership ramps linearly from 0 to full over 8 quarters per design doc §5
+("new lines ramp over 8Q"). Player budget-pacing controls (advance / delay)
+land in Phase 4.
+
+**Subsystem decay on for Phase 1.2; no replacement events** (per repo
+owner). Per-subsystem decay rates per §8 (rolling stock -1.5%/Q, signals
+-1.2%/Q, track -0.8%/Q, stations -1.0%/Q, catenary -0.9%/Q for GO).
+Maintenance offsets via spending tiers: <50% required → accelerated decay,
+50-100% → partial decay, at-required → stable, 1.5x → preventive +0.5%/Q,
+2x+ → catch-up +1.0%/Q. Replacement events (condition < 25) defer to
+Phase 5.3.
+
+**BOC policy rate held static for Phase 1.2.** Set to 350bp at start. The
+cyclic 3-7% rate path lands in Phase 7.1 alongside the rate-spike event
+(EV079 moved there from Phase 3.2). Floating-rate tranches reset quarterly
+at (current BOC + tranche spread).
+
+**Engine order of operations in `endTurn`:** advance quarter → apply
+maturities → cash in (inflow + fare) → cash out (opex + maintenance + debt
+service + refi fee + project burn) → subsystems decay → ridership drift
+from reliability → project ticks → update cash. Single pass, no mutation.
+
+**RNG architecture set up but unused in Phase 1.2.** `createRngSeeds(seed)`
+derives 12 isolated subsystem seeds via FNV-1a hash of subsystem name +
+master seed. Subsystem sequences won't shift when new event types land
+later (Phase 1.3 DoD). Algorithm: mulberry32, JSON-safe state, opaque to
+consumers via `nextFloat(state) → { state, value }`.
+
+**Determinism property holds.** Same seed → identical 60-quarter trajectory.
+Verified by test (`is pure: same input produces same output`).
+
+**Engine never imports React, Zustand, or any UI dependency.** The ESLint
+`boundaries/external` rule blocks this at lint time. Engine is Node-runnable
+via `npm run engine:harness`.
+
+**Test harness writes both human-readable table and machine-readable
+artifacts.** Terminal table for eyeball review, `dist-harness/run.csv` for
+spreadsheet analysis, `dist-harness/run.svg` for two-panel visualization
+(cash + ridership). Zero chart-library dependencies — SVG is hand-rolled
+in the harness. `dist-harness/` is gitignored (regenerable from seed).
+
+---
+
 ## 2026-05-26 — Phase 1.1: GameState type definitions
 
 **Project lifecycle simplified to 3 states** (per repo owner): `proposed` →

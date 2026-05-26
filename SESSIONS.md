@@ -5,6 +5,61 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 1.2: cash flow engine
+
+**Done:**
+- Asked 4 Phase 1.2 questions (debt maturity, inflation, OL opening,
+  subsystem decay). All locked in DECISIONS.md.
+- 8 engine modules in `src/engine/`:
+  - `rng.ts` — mulberry32 + 12-subsystem seed derivation
+  - `finance.ts` — debt service per tranche, rating→spread table,
+    auto-refi at maturity
+  - `cashflow.ts` — government inflow (5%/yr indexed), opex, fare revenue,
+    maintenance expense
+  - `agencies.ts` — subsystem decay with spending-tier offsets,
+    reliability composite, ridership drift from reliability
+  - `projects.ts` — construction tick (spend + transition at
+    forecastOpenAt), ridership ramp over 8Q after open
+  - `data.ts` — full-ramp ridership lookup (Ontario Line for now)
+  - `createInitialGameState.ts` — Q1 2026 starting state matching §5
+  - `endTurn.ts` — pure single-quarter advance
+  - `index.ts` — barrel exports
+  - `test-harness.ts` — CLI runner; emits table + CSV + SVG
+- 15 engine tests in `src/engine/engine.test.ts`. All passing.
+- Harness runs 60 quarters in 2.8ms (vs 2000ms DoD ceiling).
+
+**Heartbeat trajectory observations (sanity check):**
+- Cash $5B → $119B over 60Q. Realistic-ish given that the simulation
+  currently has only one capital project in flight (Ontario Line).
+  Phase 4 adds 6+ more buildable projects which will absorb most of the
+  cash. Without them, the agency just accumulates inflow.
+- Ontario Line opens at Q20 as designed, ramps 380k riders over Q20-Q28.
+- TTC reliability stays flat at 68 (default maintenance = required level).
+  Underfunding triggers decay (verified by test).
+- Total daily riders 4.75M → 4.74M: Ontario Line ramp (+380k) roughly
+  offset by 15-year reliability drag at moderate condition (68).
+- BOC rate held static at 350bp; cycling lands Phase 7.
+
+**Left for later phases:**
+- Player controls over project pacing (advance/delay budget) — Phase 4.
+- Real capital allocation across multiple projects — Phase 4.
+- Events firing → Phase 3.
+- Standing orders execution — Phase 5.1.
+- Action log entries from endTurn → Phase 1.4.
+- BOC rate cycling + rate spike event → Phase 7.1.
+- Replacement events when subsystem < 25 → Phase 5.3.
+
+**Surprises:**
+- tsx required explicit `--tsconfig ./tsconfig.app.json` to pick up the
+  path aliases. Without it, `@/types` import fails to resolve. Fixed in
+  the `engine:harness` npm script.
+- The branded scalar types create heavy `as unknown as number` noise in
+  engine math. Phase 1.3 may introduce a small helper or two to keep this
+  ergonomic; for now the casts are isolated to engine internals and
+  callers see clean branded types at the boundary.
+
+---
+
 ## 2026-05-26 — Phase 1.1: GameState type definitions
 
 **Done:**

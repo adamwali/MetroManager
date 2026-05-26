@@ -32,3 +32,6 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+
+# Engine harness output (regenerable)
+dist-harness
