@@ -5,6 +5,113 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 4: project initiation + financing flow
+
+The proactive/reactive loop is complete. Player can now propose new
+projects from a catalog, configure alignment + station quality, get
+4 financing offers tied to current trust scores, and accept one to
+break ground.
+
+**Project catalog** (`src/engine/projectCatalog.ts`) — 6 representative
+projects spanning tiers and modes:
+- P01 Yonge North extension (large subway, 2 alignments — direct vs
+  Bayview, 8-9.5 km, ~$7B base)
+- P02 Bloor-Danforth West (medium subway, full vs partially-elevated
+  alignments, 5.5 km, ~$3.2B)
+- P06 Don Mills subway (mega subway, 18 km, ~$14B, consortium-style
+  build)
+- P11 Eglinton East LRT (medium LRT, surface vs partial grade-separated,
+  ~$1.8B)
+- P13 Waterfront LRT (small LRT, 4.5 km, ~$0.85B, high LVC potential)
+- P21 Steeles BRT (small BRT, 26 km cross-city, ~$0.6B, fast delivery)
+
+Each catalog entry carries: tier, mode, base cost, build duration,
+starting political support per gov, list of alignments (with km,
+stations, ridership at full + opening, cost multiplier, NIMBY impact,
+LVC potential), and a flavor blurb. Phase 4.2 can add more projects.
+
+**Station quality tiers** modify cost + ridership:
+- basic: ×0.85 cost, ×0.95 ridership
+- standard: baseline
+- premium: ×1.25 cost, ×1.05 ridership
+
+**Player flow (3 steps):**
+1. /capital → "Propose new project" button → catalog list
+2. Pick a project → configure modal: alignment + station quality (with
+   live cost estimate)
+3. Confirm → project enters `proposed` state → financing modal opens
+4. 4 offers shown: Federal / Provincial / Municipal / Consortium
+   - Each has amount cap (varies by tier + funder), rate (computed from
+     trust scores via existing `rateForTrust`), and any conditions
+5. Accept one → project transitions to `under_construction`, new debt
+   tranche created, starting political-support deltas applied to trust
+
+**Engine actions** (`src/engine/projectActions.ts`):
+- `proposeProject(state, catalogId, alignmentId, quality)` → proposed state
+- `getFinancingOffersForProject(state, catalogId)` → 4 offers
+- `acceptFinancing(state, catalogId, approach)` → creates tranche,
+  transitions to under_construction
+- `rejectProject(state, catalogId)` → removes proposed project (only;
+  can't cancel under_construction)
+- `availableProjectCatalog(state)` → catalog minus already-active projects
+
+**Financing offer math reused from Phase 1.2:**
+- Base rate 5%, ±0.06%/trust-point per gov (clamped 1-12%)
+- Per-gov funding appetite scales by tier (small/medium/large/mega)
+- Consortium = sum of three appetites, weighted-average rate
+
+**Engine wiring:**
+- Existing `tickConstructingProject` automatically applies engineer-count
+  scaling to burn rate (Phase 3.2 polish) — Technocrat projects build
+  1.22× faster
+- Existing project burn drains from `remainingFunding` pool, not cash
+  (Phase 1.2 design)
+- 2Q minimum study buffer between proposed and break-ground (constant
+  `PROPOSED_STUDY_BUFFER_QUARTERS`)
+- Accepting financing immediately transitions to under_construction
+  (skips the 2Q wait — Phase 4.2 can reintroduce the wait as actual
+  study mechanic)
+
+**UI (`src/ui/dashboards/CapitalProjects.tsx`):**
+- Project cards color-coded by state (amber=proposed, blue=under
+  construction, emerald=operating)
+- Per-state stats panel:
+  - Proposed: initiated quarter + alignment + quality + earliest
+    break-ground; "Choose financing" + "Cancel" buttons
+  - Under construction: total budget, spent, remaining funding,
+    forecast open quarter
+  - Operating: opened quarter, current daily riders, final cost
+- Initiate modal: 2-step (catalog list → configure modal with alignment
+  selector + station quality buttons + live cost estimate)
+- Financing modal: 4 offer cards side-by-side, each showing amount cap,
+  rate %, conditions, with "Accept this offer" CTA. Trust scores +
+  formula shown in footer for transparency.
+
+**Tests** (`src/engine/projectActions.test.ts`, 15 cases):
+- Catalog ≥ 6 projects, all have ≥1 alignment
+- availableProjectCatalog excludes Ontario Line at start
+- proposeProject adds to state, locks config, ignores unknown ids
+- acceptFinancing transitions state, creates tranche, sets funding pool
+  to financed amount, applies political support
+- consortium gives strictly larger funding than single-gov
+- rejectProject removes proposed, can't remove under_construction
+- catalogEntry lookup
+
+**175 tests total passing.** Bundle 421KB JS / 129KB gzip (was 401/124).
+
+**What's still deferred to later phases:**
+- Studies during proposed state (narrow cost/demand uncertainty bands)
+  → Phase 4.2
+- LVC slider during proposed (revenue stream after opening) → Phase 4.2
+- Project events that interact with active projects (cost overruns,
+  schedule slips, NIMBY lawsuits with proper alignment-based triggers)
+  → Phase 4.2 + 3.3
+- Cancellation cost (currently zero) → Phase 4.2
+- Larger catalog (full ~30 projects from docs/02-) → Phase 4.2
+- `templates` engineVar → project cost reduction → Phase 4.2
+
+---
+
 ## 2026-05-26 — Phase 3.2 polish (round 2): kill empty-calorie features
 
 Repo-owner asked for an honest audit of empty-calorie features —

@@ -7,7 +7,14 @@ import {
   setFrequencyPolicy,
   setMaintenanceBudget,
 } from '@engine/agencyActions';
+import {
+  acceptFinancing,
+  proposeProject,
+  rejectProject,
+} from '@engine/projectActions';
+import type { StationQualityTier } from '@engine/projectCatalog';
 import type { FrequencyPolicy } from '@engine/policies';
+import type { FinancingApproach } from '@/types/projects';
 import type { GameState } from '@/types/gameState';
 import type { AgencyId, FarePolicyTier, SubsystemId } from '@/types/agency';
 import type { CeoArchetype } from '@/types/ceo';
@@ -66,6 +73,14 @@ export interface GameStore {
   setMaintenanceBudget: (agencyId: AgencyId, subsystemId: SubsystemId, amountM: number) => void;
   setFarePolicy: (agencyId: AgencyId, policy: FarePolicyTier) => void;
   setFrequencyPolicy: (agencyId: AgencyId, policy: FrequencyPolicy) => void;
+  /** Project initiation flow (Phase 4). */
+  proposeProject: (
+    catalogProjectId: string,
+    alignmentId: string,
+    stationQuality: StationQualityTier,
+  ) => void;
+  acceptFinancing: (catalogProjectId: string, approach: FinancingApproach) => void;
+  rejectProject: (catalogProjectId: string) => void;
 }
 
 const DEFAULT_SEED = 1;
@@ -214,6 +229,28 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     setFrequencyPolicy: (agencyId, policy) => {
       const next = setFrequencyPolicy(get().state, agencyId, policy);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
+    proposeProject: (catalogProjectId, alignmentId, stationQuality) => {
+      const next = proposeProject(get().state, catalogProjectId, alignmentId, stationQuality);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    acceptFinancing: (catalogProjectId, approach) => {
+      const next = acceptFinancing(get().state, catalogProjectId, approach);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    rejectProject: (catalogProjectId) => {
+      const next = rejectProject(get().state, catalogProjectId);
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))

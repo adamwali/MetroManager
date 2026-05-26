@@ -5,6 +5,80 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 4: project initiation + financing flow
+
+**Pre-execute:** Repo owner picked Phase 4 over 3.3 / 6.1 / 7. The
+proactive/reactive gameplay loop becomes complete when projects can be
+initiated — until now, the OL was the only project and players couldn't
+build anything new.
+
+**Done:**
+- `src/engine/projectCatalog.ts` with 6 representative projects (P01
+  Yonge North, P02 Bloor-Danforth West, P06 Don Mills, P11 Eglinton
+  East LRT, P13 Waterfront LRT, P21 Steeles BRT). Each with multiple
+  alignments, station options, NIMBY/LVC ratings, flavor blurbs.
+- Station quality tiers (basic/standard/premium) with cost + ridership
+  multipliers
+- `src/engine/projectActions.ts` with proposeProject, acceptFinancing,
+  rejectProject, availableProjectCatalog
+- Zustand store wired with the 3 new actions; all autosave
+- `pct()` constructor added to scalars (existed in type, no constructor)
+- `src/ui/dashboards/CapitalProjects.tsx` full implementation:
+  - Project cards color-coded by state
+  - Per-state stats (proposed/under construction/operating)
+  - 2-step initiate modal (catalog list → configure with alignment +
+    quality)
+  - Financing modal with 4 offer cards (Fed/Prov/City/Consortium)
+- 15 new tests covering catalog, propose, accept, reject, financing
+  math, consortium-vs-single-gov amounts
+- 175 tests total passing
+
+**Phase 4 DoD met:**
+- ✓ Project catalog with multiple projects
+- ✓ Initiation flow with alignment + quality config
+- ✓ Financing approach picker (4 options) with rate/amount/conditions
+  per offer
+- ✓ Accept → transition to under_construction with debt tranche +
+  funding pool
+- ✓ Engineer count affects burn (already wired in Phase 3.2 polish)
+- ✓ /capital dashboard fully implemented
+
+**Heartbeat:** Pick Technocrat → /capital → "Propose new project" → pick
+P11 Eglinton East LRT → pick "partial grade-separation" alignment +
+premium quality → estimated $3.15B → "Propose & go to financing" →
+4 offers appear (e.g., Federal $5B at 5% with no conditions because
+Ottawa trust 55, Consortium $11.5B at 4.5% blended) → accept federal
+→ project enters under_construction → debt tranche $3.15B at 5%
+created → Ottawa trust +6 → /capital shows project burning at 1.22×
+speed (220 engineers / 180 baseline).
+
+**Left for later phases:**
+- Studies during proposed (uncertainty narrowing) → Phase 4.2
+- LVC slider (revenue after opening) → Phase 4.2
+- Cost-overrun events tied to specific projects → Phase 4.2 + 3.3
+- Cancellation penalty (currently free) → Phase 4.2
+- Full ~30 project catalog → Phase 4.2
+- Templates → project cost reduction → Phase 4.2
+
+**Surprises:**
+- The financing modal feels great. Seeing all 4 offers side-by-side
+  with explicit rate/amount/conditions makes the strategic choice
+  immediate. The footer showing trust scores + formula keeps the
+  player aware of WHY rates differ.
+- Tier sizing actually matters now. P06 Don Mills (mega) at $14B base
+  basically requires consortium financing — Federal-only caps at $12B
+  for mega tier. Player can't always get all four options.
+- The Insider archetype gets the best provincial offers (QP trust 65)
+  but Technocrat's engineer count compensates via faster build → real
+  archetype divergence on project-building strategy.
+
+**Next steps:** With Phase 4 done, the playable loop is complete (events
++ ops + projects). Remaining: Phase 3.3 (character actors), Phase 6
+(political layer + characters), Phase 7 (bond/treasury), Phase 8
+(standing orders + polish), Phase 9 (charts), Phase 10 (onboarding).
+
+---
+
 ## 2026-05-26 — Phase 3.2 polish (round 2): empty-calorie audit + 6 fixes
 
 **Pre-execute:** Repo owner asked for an empty-calorie audit. Walked
