@@ -1,6 +1,8 @@
 import type { Agency, SubsystemId } from '@/types/agency';
+import type { CeoArchetype } from '@/types/ceo';
 import type { CashMillions } from '@/types/scalars';
 import { score } from '@/types/scalars';
+import { ARCHETYPE_MAINTENANCE_EFFICIENCY } from './policies';
 
 /**
  * Subsystem decay per design doc §8.
@@ -43,15 +45,21 @@ function requiredFor(agencyId: 'ttc' | 'go' | 'up'): number {
  * - At required: stable (decay roughly fully offset)
  * - Preventive (1.5x required): +0.5%/Q improvement
  * - Catch-up (2x+): +1.0%/Q improvement, premium pricing (no direct $ penalty here)
+ *
+ * Archetype maintenance efficiency multiplier (Phase 5.1): Technocrat 1.10×,
+ * Insider 0.90×, etc. Each $1M of maintenance buys more or less effective
+ * condition than baseline. Applied by scaling the ratio before tier lookup.
  */
 function deltaForSubsystem(
   subsystemId: SubsystemId,
   budget: CashMillions,
   agencyId: 'ttc' | 'go' | 'up',
+  archetype: CeoArchetype = 'steadyOperator',
 ): number {
   const required = requiredFor(agencyId);
   const budgetN = budget as unknown as number;
-  const ratio = required > 0 ? budgetN / required : 0;
+  const efficiency = ARCHETYPE_MAINTENANCE_EFFICIENCY[archetype];
+  const ratio = required > 0 ? (budgetN * efficiency) / required : 0;
   const baseDecay = -(DECAY_RATE[subsystemId] ?? 1.0);
   if (ratio < 0.5) {
     return baseDecay * 1.5; // accelerated decay if severely underfunded
@@ -68,13 +76,35 @@ function deltaForSubsystem(
   return 1.0; // catch-up
 }
 
-export function decaySubsystems(agency: Agency): Agency {
+export function decaySubsystems(
+  agency: Agency,
+  archetype: CeoArchetype = 'steadyOperator',
+): Agency {
   const updated = agency.subsystems.map((sub) => {
-    const delta = deltaForSubsystem(sub.id, sub.maintenanceBudget, agency.id);
+    const delta = deltaForSubsystem(sub.id, sub.maintenanceBudget, agency.id, archetype);
     const next = Math.max(0, Math.min(100, (sub.condition as unknown as number) + delta));
     return { ...sub, condition: score(next) };
   });
   return { ...agency, subsystems: updated };
+}
+
+/** Compute the spending tier label for UI display. */
+export function maintenanceTier(
+  budgetM: number,
+  agencyId: 'ttc' | 'go' | 'up',
+  archetype: CeoArchetype = 'steadyOperator',
+): 'underspend' | 'required' | 'preventive' | 'catchUp' {
+  const required = requiredFor(agencyId);
+  const efficiency = ARCHETYPE_MAINTENANCE_EFFICIENCY[archetype];
+  const ratio = required > 0 ? (budgetM * efficiency) / required : 0;
+  if (ratio < 1.0) return 'underspend';
+  if (ratio < 1.5) return 'required';
+  if (ratio < 2.0) return 'preventive';
+  return 'catchUp';
+}
+
+export function requiredMaintenanceFor(agencyId: 'ttc' | 'go' | 'up'): number {
+  return requiredFor(agencyId);
 }
 
 /**

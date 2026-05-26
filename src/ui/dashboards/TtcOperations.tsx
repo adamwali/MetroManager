@@ -1,5 +1,11 @@
-import { StubDashboard } from '@ui/components/StubDashboard';
+import { AgencyDashboard } from './AgencyDashboard';
 
 export function TtcOperations() {
-  return <StubDashboard title="TTC Operations" phase="Phase 5" />;
+  return (
+    <AgencyDashboard
+      agencyId="ttc"
+      title="TTC Operations"
+      blurb="Subway, streetcar, and bus. The political weight of the system runs through here."
+    />
+  );
 }

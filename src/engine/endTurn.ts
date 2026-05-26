@@ -70,8 +70,10 @@ export function endTurn(state: GameState): GameState {
   const debtServiceN = quarterlyDebtService(debtAfterMaturity) as unknown as number;
   const netCashDelta = allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN;
 
-  // 4. Decay subsystems
-  const agenciesDecayed = applyToAgencies(state.agencies, decaySubsystems);
+  // 4. Decay subsystems (archetype maintenance efficiency applied inside)
+  const agenciesDecayed = applyToAgencies(state.agencies, (a) =>
+    decaySubsystems(a, state.ceo.archetype),
+  );
 
   // 5. Per-agency ridership: growth + reliability drag, separately tracked
   type AgencyTracking = {

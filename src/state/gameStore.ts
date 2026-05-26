@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { createInitialGameState } from '@engine/createInitialGameState';
 import { endTurn } from '@engine/endTurn';
 import { resolveEventChoice } from '@engine/events/firing';
+import {
+  setFarePolicy,
+  setFrequencyPolicy,
+  setMaintenanceBudget,
+} from '@engine/agencyActions';
+import type { FrequencyPolicy } from '@engine/policies';
 import type { GameState } from '@/types/gameState';
+import type { AgencyId, FarePolicyTier, SubsystemId } from '@/types/agency';
 import type { CeoArchetype } from '@/types/ceo';
 import type { HistoryPoint } from '@/utils/kpis';
 import { buildHistory } from '@/utils/kpis';
@@ -34,6 +41,10 @@ export interface GameStore {
   forecast: (quartersAhead: number) => GameState[];
   /** Resolve an inbox event by selecting one of its branches. */
   applyEventChoice: (templateId: string, choiceId: string) => void;
+  /** Operations levers (Phase 5.1). */
+  setMaintenanceBudget: (agencyId: AgencyId, subsystemId: SubsystemId, amountM: number) => void;
+  setFarePolicy: (agencyId: AgencyId, policy: FarePolicyTier) => void;
+  setFrequencyPolicy: (agencyId: AgencyId, policy: FrequencyPolicy) => void;
 }
 
 const DEFAULT_SEED = 1;
@@ -105,6 +116,30 @@ export const useGameStore = create<GameStore>((set, get) => {
       const result = resolveEventChoice(get().state, templateId, choiceId);
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
+    setMaintenanceBudget: (agencyId, subsystemId, amountM) => {
+      const next = setMaintenanceBudget(get().state, agencyId, subsystemId, amountM);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
+    setFarePolicy: (agencyId, policy) => {
+      const next = setFarePolicy(get().state, agencyId, policy);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
+    setFrequencyPolicy: (agencyId, policy) => {
+      const next = setFrequencyPolicy(get().state, agencyId, policy);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))
         .catch(() => set({ autosaveStatus: 'error' }));
     },

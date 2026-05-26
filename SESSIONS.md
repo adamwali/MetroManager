@@ -5,6 +5,76 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 5.1 (detour): operations dashboards + proactive levers
+
+**Pre-execute:** Reviewed Phase 3.1 honestly — player still 100% reactive.
+Recommended detouring from playbook order (3.2 next) to Phase 5.1 so
+events feel like responses to operational decisions rather than
+background noise. Repo owner agreed. Full ops scope picked + opex
+divergence + informational events for 3.2 later.
+
+**Done:**
+- New `src/engine/policies.ts` with constants: fare price multipliers,
+  per-agency elasticity, frequency multipliers (opex + ridership),
+  archetype opex multipliers, archetype maintenance efficiency.
+- New `src/engine/agencyActions.ts` with pure functions:
+  `setMaintenanceBudget`, `setFarePolicy`, `setFrequencyPolicy` plus
+  `forecastFarePolicy` / `forecastFrequencyPolicy` for UI previews.
+- `createInitialGameState` applies archetype opex multiplier to
+  per-agency starting opex.
+- `decaySubsystems` takes archetype, applies maintenance efficiency
+  via scaled ratio in tier lookup. `maintenanceTier` helper exported.
+- `endTurn` passes archetype through to decay call.
+- Zustand store: 3 new actions (setMaintenanceBudget, setFarePolicy,
+  setFrequencyPolicy), each autosaves on apply.
+- New `AgencyDashboard` component — used by TTC / GO / UP routes
+  (replacing the stubs). Shows summary + subsystem table with sliders
+  + fare + frequency policy cards with inline forecasts.
+- 20 new tests in `src/engine/agencyActions.test.ts`.
+- 131 tests total passing.
+
+**Heartbeat — archetype divergence over 12 quarters:**
+- Steady: $1000M → $-605M, reliability 68 (flat)
+- Technocrat: $1100M → $-157M (best), reliability 72 (rising)
+- Insider: $1200M → $-753M (worst despite +$200M start), reliability 58
+- Coalition: $1000M → $-821M, reliability 60.6
+
+Insider's apparent +$200M starting advantage is wiped out by Q12 due to
+higher opex + lower maintenance efficiency. The archetype is now
+operationally fragile in a real, measurable way.
+
+**Phase 5.1 DoD met:**
+- ✓ Per-subsystem maintenance sliders (11 across 3 agencies)
+- ✓ Fare policy per agency with elasticity-driven ridership response
+- ✓ Frequency policy per agency with opex + ridership effects
+- ✓ Archetype opex divergence wired
+- ✓ Archetype maintenance efficiency wired
+- ✓ Inline forecasts on policy cards
+
+**Left for later phases:**
+- Catchment growth reactive to maintenance/security investment → 5.2+
+- Per-agency security / cleanliness / accessibility sliders → 5.2
+- Events that respond to operational decisions ("Star: frequency cut
+  triggers commuter backlash") → 3.2
+- Permanent opex changes triggered by events compound on top of
+  archetype baseline (current behavior, but Phase 3.2 needs to verify
+  cleanly)
+- Time-jump preview should account for current policy (it does via
+  pure `endTurn`, so this works)
+
+**Surprises:**
+- The Insider trajectory is a stark cautionary tale once divergence
+  is wired. Starting at $1.2B feels like a luxury but the operational
+  drag eats it in 12 quarters. Real strategy emerges.
+- Tier system works cleanly even with the efficiency multiplier — the
+  player can SEE that they're underspending without needing the engine
+  to alert them.
+- Inline forecasts on the policy cards make the tradeoff vivid. "+10%
+  fare = -3.5% riders, +6.15% revenue" lets the player make the call
+  with full information.
+
+---
+
 ## 2026-05-26 — Phase 3.1: event system foundation
 
 **Pre-execute audit:** Reviewed Phase 2.2 archetypes honestly. Found that

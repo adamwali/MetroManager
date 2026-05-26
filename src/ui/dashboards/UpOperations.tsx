@@ -1,5 +1,11 @@
-import { StubDashboard } from '@ui/components/StubDashboard';
+import { AgencyDashboard } from './AgencyDashboard';
 
 export function UpOperations() {
-  return <StubDashboard title="UP Express Operations" phase="Phase 5" />;
+  return (
+    <AgencyDashboard
+      agencyId="up"
+      title="UP Express"
+      blurb="Premium airport service. Low elasticity, slow catchment growth, small but steady."
+    />
+  );
 }

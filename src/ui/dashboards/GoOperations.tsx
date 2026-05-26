@@ -1,5 +1,11 @@
-import { StubDashboard } from '@ui/components/StubDashboard';
+import { AgencyDashboard } from './AgencyDashboard';
 
 export function GoOperations() {
-  return <StubDashboard title="GO Transit Operations" phase="Phase 5" />;
+  return (
+    <AgencyDashboard
+      agencyId="go"
+      title="GO Operations"
+      blurb="Regional rail across the GTA. Suburban catchment growing 1.5%/yr — your highest-growth asset."
+    />
+  );
 }

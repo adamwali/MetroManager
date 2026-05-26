@@ -5,6 +5,119 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 5.1 (detour): operations dashboards + proactive levers
+
+First proactive layer. Player now has ~17 sliders/policies across three
+agency dashboards (TTC / GO / UP) — maintenance budget per subsystem
+plus fare and frequency policy per agency.
+
+**Why we detoured here before Phase 3.2:**
+Phase 3.1 left the player 100% reactive (only End Turn + event responses).
+The marginal gameplay return from "30 more events" was lower than the
+return from "first proactive controls." Coming back to Phase 3.2 now
+that ops sliders exist; events will feel like responses to *the player's
+operational decisions* rather than just background noise.
+
+**Per-subsystem maintenance:**
+- Range slider 0 → 3× required per subsystem
+- 4 tiers: underspend / required / preventive / catch-up
+- TTC required = $100M/sub, GO = $40M/sub, UP = $3M/sub
+- Total starting maintenance ≈ $543M/Q across all agencies
+- Tier label colored chip (red / neutral / emerald / blue)
+
+**Fare policy** per agency, with elasticity baked in:
+| Tier | Price mul | TTC riders | TTC revenue (vs current) |
+|---|---|---|---|
+| Reduced | 0.85 | +5.25% | -10.5% |
+| Current | 1.00 | baseline | baseline |
+| Modest +10% | 1.10 | -3.5% | +6.15% |
+| Aggressive +25% | 1.25 | -8.75% | +14.1% |
+
+Per-agency elasticity: TTC -0.35, GO -0.30, UP -0.15. (UP riders are
+much less price-sensitive — premium service.)
+
+**Frequency policy** per agency:
+| Tier | Opex mul | Ridership mul |
+|---|---|---|
+| Reduced | ×0.88 | ×0.955 |
+| Current | ×1.00 | ×1.00 |
+| Enhanced | ×1.15 | ×1.06 |
+
+Frequency elasticity ~+0.3 (more service → more riders).
+
+**Archetype OPEX divergence** (per repo owner):
+- Steady Operator: 1.00× baseline
+- International Technocrat: 0.95× (standardized)
+- The Insider: 1.05× (less internal efficiency)
+- Coalition Builder: 1.03× (consultation overhead)
+- Disruptor: 1.10× (high-speed, high-cost)
+
+Applied at `createInitialGameState` to per-agency starting opex.
+Persists for the campaign; frequency policy stacks on top.
+
+**Archetype maintenance efficiency**:
+- Steady: 1.00× (each $1M = $1M of effective condition)
+- Technocrat: 1.10× (standardized procurement)
+- Insider: 0.90× (less rigorous oversight)
+- Coalition: 0.95×
+- Disruptor: 0.85×
+
+Applied inside `decaySubsystems` via a scaled ratio. Tier boundary at
+"required" is reached at lower spend for Technocrat ($91M ≈ required)
+and higher for Insider ($112M).
+
+**12-quarter divergence verified:**
+- Steady: $-605M cash, reliability flat 68
+- Technocrat: $-157M cash (best), reliability rises to 72
+- Insider: $-753M cash (worst despite +$200M start), reliability falls to 58
+- Coalition: $-821M cash, reliability 60.6
+
+Each archetype now feels distinctly different over time, not just at Q1.
+The "Technocrat is the safe play" framing is true; the "Insider has
+political ceiling but operational fragility" framing now bites
+mechanically.
+
+**UI:**
+- New `AgencyDashboard` component used by TTC / GO / UP routes
+- Subsystem table with sliders, tier chips, and total maintenance summary
+- Fare + frequency policy cards with per-option forecast (ridership %
+  change, revenue % change, opex $ change displayed inline)
+- Policy changes apply instantly; autosave fires in background
+- Mercury/light theme consistent with rest of app
+
+**End-turn flow now meaningful:** player tunes per-agency sliders → end
+turn → engine reads policy and applies effects → quarter summary
+breakdown reflects player decisions. The trace-back chain (Phase 1.4)
+now has actual player-decision-driven mutations to trace.
+
+**Forecast helpers added** (`forecastFarePolicy`, `forecastFrequencyPolicy`)
+so the UI can show what WILL happen before the player commits. Used inline
+on the policy cards.
+
+**20 new tests:**
+- Archetype starting-opex multiplier (4 archetypes)
+- Maintenance efficiency tier shifts (Technocrat reaches required sooner,
+  Insider later)
+- 8Q divergence test: Technocrat preserves condition better than Insider
+  at identical budget
+- `setMaintenanceBudget` updates correctly, clamps to non-negative
+- `setFarePolicy` elasticity math (TTC +10% fare = -3.5% riders, +6.15% rev)
+- `setFrequencyPolicy` opex + ridership shifts
+- `forecastFarePolicy` matches `setFarePolicy` deterministically
+- End-to-end: player tuning ops closes deficit vs baseline (4Q comparison)
+
+**131 tests total** passing. Bundle 365KB JS / 114KB gzip.
+
+**What still doesn't fire:**
+- Catchment growth still static (will become reactive when Phase 5.2 or
+  6 adds the right inputs)
+- Engineers count still consumed only by event predicates (Phase 4 will
+  affect project burn)
+- Frequency policy doesn't trigger any events yet (Phase 3.2 telegraph)
+- No "what's broken right now" alert in Mission Control (Phase 8.6 trace)
+
+---
+
 ## 2026-05-26 — Phase 3.1: event system foundation
 
 The agency starts demanding things from the player. Quarter ticks produce

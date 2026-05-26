@@ -4,6 +4,7 @@ import { INITIAL_GAME_OVER_COUNTERS } from '@/types/gameOver';
 import { bp, cash, quarter, riders, score, signed } from '@/types/scalars';
 import { createRngSeeds } from './rng';
 import { ARCHETYPE_CONFIGS } from './archetypes';
+import { ARCHETYPE_OPEX_MULTIPLIER } from './policies';
 
 /**
  * Produce Q1 2026 starting state per design doc §5 v3.3, modulated by
@@ -26,6 +27,10 @@ export function createInitialGameState(
   ceoName: string = 'CEO',
 ): GameState {
   const mods = ARCHETYPE_CONFIGS[archetype];
+  // Archetype opex multiplier — applied to baseline per-agency opex.
+  // Persists for the campaign; frequency policy stacks on top.
+  const opexMul = ARCHETYPE_OPEX_MULTIPLIER[archetype];
+  const opex = (baseM: number): number => Math.round(baseM * opexMul);
   return {
     schemaVersion: 1,
     ceo: { archetype, name: ceoName },
@@ -126,7 +131,7 @@ export function createInitialGameState(
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.008,
         directorCharacterId: 'c_ttc_director',
-        lastQuarterOpex: cash(340), // was 275; bumped for unmodeled cost categories
+        lastQuarterOpex: cash(opex(340)),
         lastQuarterFareRevenue: cash(295), // was 350; aligned to spec's $1.18B/yr
       },
       go: {
@@ -141,7 +146,7 @@ export function createInitialGameState(
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.015,
         directorCharacterId: 'c_go_director',
-        lastQuarterOpex: cash(225), // was 190
+        lastQuarterOpex: cash(opex(225)),
         lastQuarterFareRevenue: cash(200), // was 230
       },
       up: {
@@ -155,7 +160,7 @@ export function createInitialGameState(
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.003,
         directorCharacterId: 'c_up_director',
-        lastQuarterOpex: cash(20), // was 15
+        lastQuarterOpex: cash(opex(20)),
         lastQuarterFareRevenue: cash(12), // was 14
       },
     },
