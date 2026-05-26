@@ -27,6 +27,8 @@ import {
   quarterlyOperatingExpense,
 } from './cashflow';
 import { loadGameFromJson, saveGameToJson } from './saveLoad';
+import { resolveEventChoice, visibleChoices } from './events/firing';
+import { eventTemplateById } from './events/templates';
 
 interface QuarterSnapshot {
   q: number;
@@ -350,11 +352,29 @@ function writeSvg(snapshots: QuarterSnapshot[], path: string): void {
  * Run the campaign, keeping the final GameState around (not just snapshots)
  * so we can dump action log and serialize state at the end.
  */
+/**
+ * Auto-resolve every pending event by picking the first available choice.
+ * Lets the harness measure realistic event density (otherwise the inbox
+ * fills and re-fires get blocked by the in-inbox eligibility check).
+ */
+function autoResolveInbox(state: GameState): GameState {
+  let s = state;
+  for (const active of state.inbox) {
+    const tmpl = eventTemplateById(active.templateId);
+    if (!tmpl) continue;
+    const choices = visibleChoices(s, tmpl);
+    if (choices.length === 0) continue;
+    s = resolveEventChoice(s, active.templateId, choices[0]!.id).state;
+  }
+  return s;
+}
+
 function runCampaignFull(seed: number, quarters: number): { snapshots: QuarterSnapshot[]; finalState: GameState } {
   let state = createInitialGameState(seed);
   const snapshots: QuarterSnapshot[] = [snapshot(state)];
   for (let i = 0; i < quarters; i++) {
     state = endTurn(state);
+    state = autoResolveInbox(state);
     snapshots.push(snapshot(state));
   }
   return { snapshots, finalState: state };
@@ -471,6 +491,7 @@ function main() {
     snapshots = [snapshot(state)];
     for (let i = 0; i < args.quarters; i++) {
       state = endTurn(state);
+      state = autoResolveInbox(state);
       snapshots.push(snapshot(state));
     }
     finalState = state;

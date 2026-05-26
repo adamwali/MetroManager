@@ -5,6 +5,77 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 3.1: event system foundation
+
+**Pre-execute audit:** Reviewed Phase 2.2 archetypes honestly. Found that
+8 modifiers diverge per archetype but only 3 (cash, board, subsystem)
+mechanically affect gameplay yet — trust scores, public approval,
+engineers, templates, openBooks are dead until events consume them.
+Phase 3.1 deliberately wires events to gate on these "dead" variables so
+the archetype choice matters mid-campaign, not just at Q1.
+
+**Done:**
+- Asked 4 questions (frequency, branch depth, voice, archetype branches).
+  Repo owner picked ~1/Q steady, hard tradeoffs, newsroom voice,
+  archetype-flavored options.
+- Extended `src/types/events.ts` with EventPredicate (14 kinds incl.
+  and/or/not composition), 12-variant EventEffect, EventTrigger union,
+  EventChoice.requires gating, DelayedConsequence payload union.
+- New `src/engine/events/`:
+  - `predicates.ts` — pure evaluator for all 14 predicate kinds
+  - `effects.ts` — pure applier with clamping + delayed-queue handling
+  - `templates.ts` — 10-event registry (newsroom voice, multi-axis
+    tradeoffs, archetype-flavored branches on EV001/EV002/EV003/EV009)
+  - `firing.ts` — engine: drain queue, eligible-by-trigger, cap at 2/Q,
+    sort scheduled-first, keyed RNG for random rolls
+- Wired into `endTurn`: events process AFTER quarter summary, before
+  game-over check (skipped if campaign ended)
+- New UI:
+  - `EventModal` — outlet badge, headline, body, choices with effect
+    chips colored by sign/axis, "Decide later" allowed
+  - Updated `Inbox` — sorted by urgency, red tint on ≥70, click → modal
+- `applyEventChoice` action added to Zustand store; autosaves on apply
+- Harness `autoResolveInbox` added so density measurement is meaningful
+- 26 new tests in `src/engine/events/events.test.ts`
+- 111 tests passing total
+
+**Phase 3.1 DoD met:**
+- ✓ Event template registry (10 templates, lookup by id)
+- ✓ Firing engine handles scheduled / conditional / random
+- ✓ Event inbox UI with response handler modal
+- ✓ Delayed consequences queue with drain + queueDelayedEffect/Event
+- ✓ First 10 events implemented as working test cases
+
+**Heartbeat observation:** with seed 1, 60-quarter auto-resolve harness
+runs produce ~31 events. Emergent storytelling works — Ontario Line
+opening at Q20 causes TTC ridership to cross 4.6M which triggers
+EV003 (mayor crowding) at Q21. Cash bleed triggers EV004 (fare evasion
+crackdown) around Q5 when cash drops below $500M. The engine reads
+state and the world reacts.
+
+**Left for later phases:**
+- 30 more event templates → Phase 3.2 (telegraph signals + delayed
+  consequences narrative)
+- Real character voices on events (currently events have outlets, not
+  actors) → Phase 6 (characters + relationships)
+- Standing orders auto-handle routine events → Phase 8 (decision
+  density management)
+- Onboarding briefing showing player which archetype affects what →
+  Phase 10 polish
+
+**Surprises:**
+- The keyed-RNG pattern paid off immediately. Adding new event
+  templates doesn't shift the random rolls of existing ones, so the
+  catalog can grow without breaking save/load determinism.
+- "Decide later" is the right default. Forcing a choice would have been
+  hostile; letting events accumulate creates natural pressure to clear
+  the inbox without the engine policing the player.
+- Mayor crowding event tripping right after Ontario Line opens was an
+  unplanned cause-effect. The system is starting to author its own
+  stories.
+
+---
+
 ## 2026-05-26 — Phase 2.2: campaign lifecycle complete
 
 **Done:**

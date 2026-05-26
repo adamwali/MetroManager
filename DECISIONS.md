@@ -5,6 +5,96 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 3.1: event system foundation
+
+The agency starts demanding things from the player. Quarter ticks produce
+events from a 10-template registry; player resolves each via the inbox
+modal; effects feed back into state.
+
+**Settings locked by repo owner:**
+- Frequency: ~1/quarter steady pressure (with MAX_FIRES_PER_QUARTER = 2 cap)
+- Branch depth: hard tradeoffs across axes (cash vs trust vs board vs approval)
+- Voice: newsroom briefs ("Star: Bloor-Yonge signal failure strands 40k…")
+- Archetype-flavored options: ✓ (Insider gets call-Hartwell, Technocrat
+  gets data-pitch, Coalition Builder gets consortium pitch, etc.)
+
+**Type system:**
+- `EventPredicate` discriminated union over 14 kinds (archetype, trust,
+  cash, board, public approval, engineers, templates, openBooks,
+  reliability, riders, quarter + and/or/not composition) — used for
+  both conditional firing AND branch gating
+- `EventEffect` extended to 12 variants (cash, trust, board, approval,
+  engineers, templates, opex, fare, reliability, ridership, plus
+  delayed-effects and delayed-events for follow-up chains)
+- `EventTrigger` is a union: scheduled | conditional | random (with
+  optional cooldown for the latter two)
+- `DelayedConsequence` payload is now `event | effects` for both event
+  queueing and raw-effect timing
+
+**Firing engine (`src/engine/events/firing.ts`):**
+1. Drain delayed queue (anything `firesAt <= currentQ`)
+2. For each template: cooldown check (derived from action log) +
+   not-already-in-inbox check + trigger eligibility
+3. Sort eligible: scheduled/conditional first (mandatory), then random
+   by urgency desc
+4. Fire up to MAX_FIRES_PER_QUARTER (2) per quarter
+5. Random fires use `keyedFloat(masterSeed, "event:<id>:q<n>")` so adding
+   new event templates later does not shift outcomes for existing events
+   (Phase 1.3 keyed RNG pattern)
+
+**First 10 templates** (mix of scheduled / conditional / random):
+| ID | Kind | Trigger |
+|---|---|---|
+| EV001 Signal failure | conditional | TTC reliability ≤65, cd 6 |
+| EV002 Federal infra call | scheduled | Q3, Q14, Q28, Q42 |
+| EV003 Mayor Eglinton crowding | conditional | TTC riders ≥4.6M, cd 8 |
+| EV004 Fare evasion crackdown | conditional | cash ≤$500M, cd 12 |
+| EV005 Heat dome | random | 0.14, after Q2, cd 8 |
+| EV006 Provincial windfall | random | 0.10, cd 16 |
+| EV007 Allowance renegotiation prompt | scheduled | Q14, Q30, Q46 |
+| EV008 Cyberattack | random | 0.07, after Q6, cd 20 |
+| EV009 Construction inflation | random | 0.12, cd 10 |
+| EV010 Maintenance breakthrough | random | 0.10, reliability ≥75 + templates ≥40, cd 12 |
+
+Three (EV001, EV002, EV003) have archetype-flavored options. EV005 and
+EV007 have openBooks-gated branches. EV009 has a templates ≥50 branch.
+
+**Emergent storytelling working:** Ontario Line opening at Q20 pushes
+TTC ridership above 4.6M, which conditionally triggers EV003 (mayor's
+crowding complaint) at Q21. Cash bleed pushes cash below $500M around
+Q5, triggering EV004 (fare evasion crackdown). Engine + content produce
+real cause-effect chains the player can read in the action log.
+
+**Auto-resolve harness** added — every event is dispatched with the
+first-available choice. Lets us measure density: 31 events over 60Q
+(~0.52/Q). Below the 1/Q target but reasonable; Phase 3.2 will add more
+templates which raises density naturally.
+
+**UI:**
+- `EventModal` — newsroom-header (outlet badge, headline, body), choice
+  buttons with tradeoff line + effect chips (cash chips red/green, trust
+  chips colored by sign, etc.), "Decide later" footer
+- `Inbox` — sorted by urgency desc, urgent items (≥70) get red tint,
+  outlet badge on each item, click opens modal
+- Pending count badge in inbox header
+
+**Decide-later allowed.** Per design doc §0 P8 ("end turn must be
+shame-free"), the player can end the turn with events unresolved.
+Unresolved events stay in inbox; same template can't re-fire while
+present. Decision density management is by the player, not the engine.
+
+**26 new tests** covering predicates (all kinds + composition), effects
+(all 12 variants), firing engine (scheduled, conditional, random,
+cooldowns, cap, queue drain), archetype-flavored visibility, resolution
+applying effects + logging + rejecting gated choices that aren't visible.
+**111 tests total**, all passing.
+
+**Bundle:** 356KB JS / 112KB gzip (was 331/105 — added ~25KB for
+template registry, predicates, effects, firing engine, EventModal, plus
+the inbox rework).
+
+---
+
 ## 2026-05-26 — Phase 2.2: campaign lifecycle (new game, save/load, game over, time-jump)
 
 Completes Phase 2. The browser app now has a full campaign loop: pick an

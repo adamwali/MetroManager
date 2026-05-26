@@ -25,6 +25,7 @@ import {
 } from './agencies';
 import { tickProject } from './projects';
 import { ridershipModelFor } from './data';
+import { processEventsForQuarter } from './events/firing';
 
 /**
  * Advance one quarter. Pure function — does not mutate input.
@@ -203,7 +204,8 @@ export function endTurn(state: GameState): GameState {
     nextQuarterN,
   );
 
-  return {
+  // Compose the post-tick state before event processing
+  const postTick: GameState = {
     ...state,
     quarter: nextQuarter,
     debt: debtAfterMaturity,
@@ -214,6 +216,14 @@ export function endTurn(state: GameState): GameState {
     nextLogId: state.nextLogId + 1,
     gameOverCounters: nextCounters,
     ...(gameOver ? { gameOver } : {}),
+  };
+
+  // Process events AFTER tick (so triggers see new state). Skip if game ended.
+  if (gameOver) return postTick;
+  const eventsResult = processEventsForQuarter(postTick);
+  return {
+    ...eventsResult.state,
+    actionLog: [...eventsResult.state.actionLog, ...eventsResult.newLogEntries],
   };
 }
 

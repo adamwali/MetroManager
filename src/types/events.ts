@@ -1,3 +1,6 @@
+import type { AgencyId } from './agency';
+import type { CeoArchetype } from './ceo';
+import type { GovernmentId } from './politics';
 import type { QuarterIndex } from './scalars';
 
 /**
@@ -32,18 +35,43 @@ export type EventCategory =
   | 'endgame'
   | 'disruptor_gaffe';
 
+/**
+ * State predicate. Used for two things:
+ *   1. Conditional event firing (when is this event eligible to fire?)
+ *   2. Branch gating (which choice options are visible to this player?)
+ *
+ * Discriminated union over kinds, with `and`/`or` for composition.
+ */
+export type EventPredicate =
+  | { kind: 'ceoArchetype'; archetype: CeoArchetype }
+  | { kind: 'trust'; gov: GovernmentId; gte?: number; lte?: number }
+  | { kind: 'cash'; gte?: number; lte?: number }
+  | { kind: 'board'; gte?: number; lte?: number }
+  | { kind: 'publicApproval'; gte?: number; lte?: number }
+  | { kind: 'engineers'; gte?: number; lte?: number }
+  | { kind: 'templates'; gte?: number; lte?: number }
+  | { kind: 'openBooks'; equals: boolean }
+  | { kind: 'reliability'; agency: AgencyId; gte?: number; lte?: number }
+  | { kind: 'riders'; agency: AgencyId; gte?: number; lte?: number }
+  | { kind: 'quarter'; gte?: number; lte?: number }
+  | { kind: 'and'; predicates: EventPredicate[] }
+  | { kind: 'or'; predicates: EventPredicate[] }
+  | { kind: 'not'; predicate: EventPredicate };
+
 /** A side-effect spec attached to a choice. Engine interprets these into state mutations. */
 export type EventEffect =
-  | { kind: 'cash'; delta: number }
-  | { kind: 'governmentTrust'; governmentId: 'ottawa' | 'queensPark' | 'cityHall'; delta: number }
-  | { kind: 'characterRelationship'; characterId: string; delta: number }
-  | { kind: 'characterTolerance'; characterId: string; delta: number }
-  | { kind: 'engineVar'; name: string; delta: number }
+  | { kind: 'cash'; deltaM: number }
+  | { kind: 'governmentTrust'; gov: GovernmentId; delta: number }
   | { kind: 'boardConfidence'; delta: number; reason: string }
   | { kind: 'publicApproval'; delta: number }
-  | { kind: 'projectAdvance'; projectId: string; quartersDelta: number }
-  | { kind: 'projectCostDelta'; projectId: string; cashDelta: number }
-  | { kind: 'queueDelayedEvent'; eventId: EventId; firesAt: QuarterIndex };
+  | { kind: 'engineers'; delta: number }
+  | { kind: 'templates'; delta: number }
+  | { kind: 'opex'; agency: AgencyId; deltaM: number }
+  | { kind: 'fareRevenue'; agency: AgencyId; deltaM: number }
+  | { kind: 'reliability'; agency: AgencyId; delta: number }
+  | { kind: 'ridership'; agency: AgencyId; delta: number }
+  | { kind: 'queueDelayedEffect'; quartersOut: number; effects: EventEffect[]; cause: string }
+  | { kind: 'queueDelayedEvent'; eventId: EventId; quartersOut: number; cause: string };
 
 export interface EventChoice {
   id: string;
@@ -51,18 +79,31 @@ export interface EventChoice {
   label: string;
   /** One-line tradeoff summary in plain English. UI displays under the label. */
   tradeoff: string;
+  /** If set, choice is only shown when predicate matches state (archetype-flavored options). */
+  requires?: EventPredicate;
   effects: EventEffect[];
 }
+
+/** How does this event get into the inbox? */
+export type EventTrigger =
+  | { kind: 'scheduled'; quarters: number[] }
+  | { kind: 'conditional'; predicate: EventPredicate; cooldownQuarters?: number }
+  | { kind: 'random'; baseWeight: number; predicate?: EventPredicate; cooldownQuarters?: number };
 
 /** Static template — lives in the event catalogue, not in GameState. */
 export interface EventTemplate {
   id: EventId;
   category: EventCategory;
-  /** Character id of the actor delivering this event. */
+  trigger: EventTrigger;
+  /** Headline outlet/voice prefix for newsroom-style display ("Star:", "CBC:", "Internal memo:"). */
+  outlet?: string;
+  /** Character id of the actor delivering this event (optional). */
   actorCharacterId?: string;
   headline: string;
   body: string;
   choices: EventChoice[];
+  /** Urgency 0-100 when fired — controls inbox sort order. */
+  urgency: number;
   /** Telegraph signal — surfaces as news 2-4 quarters before the event fires. */
   telegraph?: {
     headline: string;
@@ -82,9 +123,12 @@ export interface ActiveEvent {
 }
 
 export interface DelayedConsequence {
-  /** Template id of the event to fire. */
-  templateId: EventId;
+  /** Quarter the consequence resolves at. */
   firesAt: QuarterIndex;
   /** Why this is queued — for action-log trace-back. */
   cause: string;
+  /** Either fire a follow-up event template, or apply raw effects. */
+  payload:
+    | { kind: 'event'; templateId: EventId }
+    | { kind: 'effects'; effects: EventEffect[] };
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createInitialGameState } from '@engine/createInitialGameState';
 import { endTurn } from '@engine/endTurn';
+import { resolveEventChoice } from '@engine/events/firing';
 import type { GameState } from '@/types/gameState';
 import type { CeoArchetype } from '@/types/ceo';
 import type { HistoryPoint } from '@/utils/kpis';
@@ -31,6 +32,8 @@ export interface GameStore {
   loadFromSlot: (slotId: SlotId) => Promise<void>;
   /** Forecast next N quarters without committing to state. */
   forecast: (quartersAhead: number) => GameState[];
+  /** Resolve an inbox event by selecting one of its branches. */
+  applyEventChoice: (templateId: string, choiceId: string) => void;
 }
 
 const DEFAULT_SEED = 1;
@@ -96,6 +99,14 @@ export const useGameStore = create<GameStore>((set, get) => {
         if (cursor.gameOver) break; // Stop at end
       }
       return trajectory;
+    },
+
+    applyEventChoice: (templateId, choiceId) => {
+      const result = resolveEventChoice(get().state, templateId, choiceId);
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
     },
   };
 });
