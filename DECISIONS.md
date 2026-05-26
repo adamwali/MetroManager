@@ -5,6 +5,70 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 1.4: action log + save/load + harness polish
+
+**Action log architecture:** one `quarter_summary` entry per `endTurn`,
+with a rich `breakdown` payload that attributes each delta to its cause.
+Specifically:
+
+- `cashFlow`: each line item separately (operatingAllowance, fareRevenue,
+  operatingExpense, maintenance, debtService, refiFee, netDelta). UI can
+  show "you went -$134M this quarter because opex was $585M against
+  $1.1B of inflows."
+- `ridership.perAgency`: for each agency, `{ before, after, fromGrowth,
+  fromReliabilityDrag, fromProjectPrimary, fromCannibalization }`. UI can
+  click GO's ridership drop in Q21 and see "−30k from Ontario Line
+  cannibalization" without needing a separate log entry per mechanic.
+- `projects.transitions`: state changes (e.g. P00 under_construction →
+  operating). Used for "this happened this quarter" filters.
+- `projects.constructionDraws`: per-project funding pool draws (amount
+  and remaining balance). For tracking when projects will run out.
+- `debt`: refi events that quarter.
+
+This was the granularity decision flagged in the original Phase 1.4
+prompt ("too coarse = can't trace causes, too fine = log explodes").
+Rich-payload-per-summary keeps the log small (60 entries for a campaign
+without events; <300 with full event firings later) while still
+supporting the full trace-back.
+
+**ID format:** `q<quarter>-<nextLogId>`. Sequential within state, prefixed
+by quarter for human readability. State carries a monotonic `nextLogId`
+counter that bumps with each append.
+
+**Save/load via JSON:** pure functions in `src/engine/saveLoad.ts`.
+`saveGameToJson(state, now)` returns a `SaveBundle` JSON string with
+`{ schemaVersion, savedAt, state }`. `loadGameFromJson(json)` parses,
+validates schema version, returns GameState. Branded scalar types are
+erased at runtime, so no reconstruction needed. Round-trip is byte-
+identical (verified by test). Resuming from a save and continuing
+matches in-memory play to JSON-equality.
+
+**No migration logic yet.** Schema version is literal `1`. When we bump
+it, a `migrate(bundle): SaveBundle` function lands here.
+
+**Phase 1.4 is engine-level only.** IndexedDB + multi-slot UI is Phase
+2.2's scope. For now the harness writes a single `dist-harness/state.json`
+and can resume from it with `--load <path>`.
+
+**CLI harness new flags:**
+- `--seed N` (default 1)
+- `--quarters N` (default 60)
+- `--log N` (or `--log all`) — print action log entries
+- `--load <path>` — resume from saved state
+- `--save <path>` — write final state to specific path (defaults to
+  `dist-harness/state.json`)
+
+Default behavior: after each run, print the most recent quarter's log
+entry inline so the user can eyeball that the breakdown is sane.
+
+**Phase 1 kill criterion (per playbook):** "Run the CLI harness. Does
+the simulation produce sensible numbers?" Yes — the per-quarter
+breakdown for Q21 (Ontario Line opening) cleanly shows TTC +145k from
+growth + project − cannibalization, and GO -29k mostly from
+cannibalization. Both match the design model.
+
+---
+
 ## 2026-05-26 — Phase 1.3: seeded RNG depth + starting cash to $1B
 
 **Starting cash dropped from $5B to $1B** (per repo owner). The $5B figure

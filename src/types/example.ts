@@ -200,4 +200,5 @@ export const exampleGameState: GameState = {
     },
   },
   actionLog: [],
+  nextLogId: 1,
 };

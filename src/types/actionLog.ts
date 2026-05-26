@@ -1,11 +1,13 @@
+import type { AgencyId } from './agency';
 import type { QuarterIndex } from './scalars';
 
 /**
  * Action log. Per design doc §0 (P2 — traceable consequences) and
- * DECISIONS.md (granularity decision: log player decisions + actions +
- * event firings + quarter summaries; not per-tick decay).
+ * DECISIONS.md (granularity: log player decisions, player actions, event
+ * firings, and one quarter_summary per endTurn; rich breakdown lives on
+ * the quarter_summary).
  *
- * The UI's "why did this happen?" affordance walks back through this log
+ * The "why did this happen?" UI (Phase 8.6) walks back through this log
  * via `causedById` to render the chain of causes.
  */
 
@@ -15,6 +17,55 @@ export type ActionCause =
   | { kind: 'player' }
   | { kind: 'event'; eventTemplateId: string; eventActiveId: ActionLogId }
   | { kind: 'system'; system: 'endTurn' | 'standingOrder' | 'macro' | 'demographic' | 'climate' };
+
+/**
+ * Rich breakdown attached to a quarter_summary entry. Captures the
+ * per-mechanic contribution to that quarter's deltas so the UI can
+ * explain *why* a number moved (e.g., "GO ridership dropped because
+ * Ontario Line opened with -38k cannibalization").
+ */
+export interface QuarterSummaryBreakdown {
+  cashFlow: {
+    operatingAllowance: number;
+    fareRevenue: number;
+    operatingExpense: number;
+    maintenance: number;
+    debtService: number;
+    refiFee: number;
+    netDelta: number;
+  };
+  ridership: {
+    perAgency: Record<
+      AgencyId,
+      {
+        before: number;
+        after: number;
+        fromGrowth: number;
+        fromReliabilityDrag: number;
+        fromProjectPrimary: number; // e.g. OL ramping into TTC
+        fromCannibalization: number; // riders the new line pulled away
+      }
+    >;
+    systemBefore: number;
+    systemAfter: number;
+  };
+  projects: {
+    transitions: Array<{
+      templateId: string;
+      from: 'proposed' | 'under_construction';
+      to: 'under_construction' | 'operating';
+    }>;
+    constructionDraws: Array<{
+      templateId: string;
+      drawn: number;
+      remainingFunding: number;
+    }>;
+  };
+  debt: {
+    tranchesRefinanced: number;
+    refiFee: number;
+  };
+}
 
 export type ActionLogEntry =
   | {
@@ -52,11 +103,10 @@ export type ActionLogEntry =
       quarter: QuarterIndex;
       cause: ActionCause;
       causedById?: ActionLogId;
-      /** Net cash delta this quarter, $M. */
       cashDelta: number;
-      /** Daily-rider delta this quarter. */
       ridersDelta: number;
       summary: string;
+      breakdown: QuarterSummaryBreakdown;
     };
 
 export type ActionLog = ActionLogEntry[];

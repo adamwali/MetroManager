@@ -14,7 +14,7 @@
  *   dist-harness/run.svg
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { GameState } from '@/types/gameState';
 import { createInitialGameState } from './createInitialGameState';
@@ -26,6 +26,7 @@ import {
   quarterlyOperatingAllowance,
   quarterlyOperatingExpense,
 } from './cashflow';
+import { loadGameFromJson, saveGameToJson } from './saveLoad';
 
 interface QuarterSnapshot {
   q: number;
@@ -92,15 +93,6 @@ function snapshot(state: GameState): QuarterSnapshot {
   };
 }
 
-function runCampaign(seed: number, quarters: number): QuarterSnapshot[] {
-  let state = createInitialGameState(seed);
-  const snapshots: QuarterSnapshot[] = [snapshot(state)];
-  for (let i = 0; i < quarters; i++) {
-    state = endTurn(state);
-    snapshots.push(snapshot(state));
-  }
-  return snapshots;
-}
 
 function fmtMoney(m: number): string {
   if (Math.abs(m) >= 1_000) return `$${(m / 1_000).toFixed(2)}B`;
@@ -354,13 +346,139 @@ function writeSvg(snapshots: QuarterSnapshot[], path: string): void {
   writeFileSync(path, svg);
 }
 
+/**
+ * Run the campaign, keeping the final GameState around (not just snapshots)
+ * so we can dump action log and serialize state at the end.
+ */
+function runCampaignFull(seed: number, quarters: number): { snapshots: QuarterSnapshot[]; finalState: GameState } {
+  let state = createInitialGameState(seed);
+  const snapshots: QuarterSnapshot[] = [snapshot(state)];
+  for (let i = 0; i < quarters; i++) {
+    state = endTurn(state);
+    snapshots.push(snapshot(state));
+  }
+  return { snapshots, finalState: state };
+}
+
+function printActionLog(state: GameState, forQuarter: number | undefined): void {
+  const entries = state.actionLog.filter(
+    (e) => forQuarter === undefined || (e.quarter as unknown as number) === forQuarter,
+  );
+  if (entries.length === 0) {
+    console.log(
+      forQuarter === undefined
+        ? 'Action log empty.'
+        : `No log entries for Q${forQuarter}.`,
+    );
+    return;
+  }
+  console.log('');
+  console.log(`=== Action log${forQuarter !== undefined ? ` for Q${forQuarter}` : ''} ===`);
+  for (const e of entries) {
+    const q = e.quarter as unknown as number;
+    console.log(`[${e.id}] Q${q} ${e.kind} — ${e.summary}`);
+    if (e.kind === 'quarter_summary') {
+      const b = e.breakdown;
+      console.log(
+        `    cash:  alw +${b.cashFlow.operatingAllowance.toFixed(0)} · fare +${b.cashFlow.fareRevenue.toFixed(0)} · opex -${b.cashFlow.operatingExpense.toFixed(0)} · maint -${b.cashFlow.maintenance.toFixed(0)} · debt -${b.cashFlow.debtService.toFixed(0)} · refi -${b.cashFlow.refiFee.toFixed(0)} = ${b.cashFlow.netDelta >= 0 ? '+' : ''}${b.cashFlow.netDelta.toFixed(0)}M`,
+      );
+      for (const aid of ['ttc', 'go', 'up'] as const) {
+        const a = b.ridership.perAgency[aid];
+        const net = a.after - a.before;
+        const detail = [
+          `growth ${a.fromGrowth >= 0 ? '+' : ''}${a.fromGrowth}`,
+          `drag ${a.fromReliabilityDrag}`,
+        ];
+        if (a.fromProjectPrimary) detail.push(`project +${a.fromProjectPrimary}`);
+        if (a.fromCannibalization) detail.push(`cannibal ${a.fromCannibalization}`);
+        console.log(
+          `    ${aid}: ${a.before.toLocaleString()} → ${a.after.toLocaleString()} (${net >= 0 ? '+' : ''}${net.toLocaleString()}) [${detail.join(', ')}]`,
+        );
+      }
+      if (b.projects.transitions.length > 0) {
+        for (const t of b.projects.transitions) {
+          console.log(`    transition: ${t.templateId} ${t.from} → ${t.to}`);
+        }
+      }
+      if (b.projects.constructionDraws.length > 0) {
+        for (const d of b.projects.constructionDraws) {
+          console.log(
+            `    construction: ${d.templateId} drew $${d.drawn.toFixed(0)}M, remaining $${d.remainingFunding.toFixed(0)}M`,
+          );
+        }
+      }
+    }
+  }
+}
+
+interface CliArgs {
+  seed: number;
+  quarters: number;
+  /** If set, print the action log for this quarter. */
+  logQuarter?: number | 'all';
+  /** Path to load an existing save and continue from there. */
+  load?: string;
+  /** Write the final state to this path. Defaults to dist-harness/state.json. */
+  save?: string;
+}
+
+function parseArgs(argv: string[]): CliArgs {
+  const args: CliArgs = { seed: 1, quarters: 60 };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    if (a === '--seed') {
+      args.seed = Number(argv[++i]);
+    } else if (a === '--quarters') {
+      args.quarters = Number(argv[++i]);
+    } else if (a === '--log') {
+      const next = argv[i + 1];
+      if (next === 'all') {
+        args.logQuarter = 'all';
+        i++;
+      } else if (next && /^\d+$/.test(next)) {
+        args.logQuarter = Number(next);
+        i++;
+      } else {
+        args.logQuarter = 'all';
+      }
+    } else if (a === '--load') {
+      const next = argv[++i];
+      if (next) args.load = next;
+    } else if (a === '--save') {
+      const next = argv[++i];
+      if (next) args.save = next;
+    } else if (!a.startsWith('--') && i === 0) {
+      // Backwards compat: `npm run engine:harness <seed>`
+      args.seed = Number(a);
+    }
+  }
+  return args;
+}
+
 function main() {
-  const seed = Number(process.argv[2] ?? 1);
-  console.log(`METRO engine test harness — seed ${seed}, 60 quarters`);
+  const args = parseArgs(process.argv.slice(2));
+  console.log(
+    `METRO engine test harness — seed ${args.seed}, ${args.quarters} quarters${args.load ? ` (resumed from ${args.load})` : ''}`,
+  );
   console.log('');
 
   const start = performance.now();
-  const snapshots = runCampaign(seed, 60);
+  let snapshots: QuarterSnapshot[];
+  let finalState: GameState;
+  if (args.load) {
+    const json = readFileSync(args.load, 'utf8');
+    let state = loadGameFromJson(json);
+    snapshots = [snapshot(state)];
+    for (let i = 0; i < args.quarters; i++) {
+      state = endTurn(state);
+      snapshots.push(snapshot(state));
+    }
+    finalState = state;
+  } else {
+    const result = runCampaignFull(args.seed, args.quarters);
+    snapshots = result.snapshots;
+    finalState = result.finalState;
+  }
   const elapsedMs = performance.now() - start;
 
   printTable(snapshots);
@@ -370,10 +488,26 @@ function main() {
   mkdirSync(OUTPUT_DIR, { recursive: true });
   const csvPath = resolve(OUTPUT_DIR, 'run.csv');
   const svgPath = resolve(OUTPUT_DIR, 'run.svg');
+  const statePath = args.save ?? resolve(OUTPUT_DIR, 'state.json');
   writeCsv(snapshots, csvPath);
   writeSvg(snapshots, svgPath);
+  writeFileSync(statePath, saveGameToJson(finalState));
   console.log(`Wrote ${csvPath}`);
   console.log(`Wrote ${svgPath}`);
+  console.log(`Wrote ${statePath}`);
+
+  if (args.logQuarter !== undefined) {
+    printActionLog(finalState, args.logQuarter === 'all' ? undefined : args.logQuarter);
+  } else {
+    // Default: show the most recent quarter's log entry inline so the user
+    // can eyeball that the breakdown looks sane.
+    const lastQuarter = finalState.quarter as unknown as number;
+    printActionLog(finalState, lastQuarter);
+    console.log('');
+    console.log(
+      `(${finalState.actionLog.length} log entries total. Re-run with --log <quarter> or --log all to see more.)`,
+    );
+  }
 }
 
 main();

@@ -192,5 +192,6 @@ export function createInitialGameState(seed: number): GameState {
     },
     rng: createRngSeeds(seed),
     actionLog: [],
+    nextLogId: 1,
   };
 }

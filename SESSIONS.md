@@ -5,6 +5,64 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 1.4: action log + save/load + harness polish
+
+**Done:**
+- Extended `ActionLogEntry` `quarter_summary` kind with `breakdown`
+  payload (cash flow components, per-agency ridership attribution,
+  project transitions, construction draws, refi events).
+- Added `nextLogId: number` field to `GameState`. Each log entry gets
+  an ID `q<quarter>-<id>` for human-readable references.
+- Rewrote `endTurn` to track per-mechanic contributions (growth, drag,
+  project primary, cannibalization) and emit a `quarter_summary` entry
+  on each call.
+- New `src/engine/saveLoad.ts` with `saveGameToJson` / `loadGameFromJson`
+  / `SaveLoadError`. Schema-version checked. Branded types erased at
+  runtime so round-trip is clean JSON.
+- Harness extended:
+  - `--log <quarter>` or `--log all` prints log entries with full
+    breakdown ("ttc: 4,454,776 → 4,600,229 (+145,453) [growth +8882,
+    drag -6126, project +301250, cannibal -158553]")
+  - `--load <path>` resumes a saved campaign
+  - `--save <path>` writes to specific path (default
+    `dist-harness/state.json`)
+  - After each run, prints the most recent quarter's log entry by
+    default so it's always visible.
+- 11 new tests in `src/engine/saveLoad.test.ts`:
+  - Round-trip identity at game start and mid-campaign
+  - Resume-from-save matches in-memory continuation
+  - Malformed JSON rejected
+  - Wrong schema version rejected
+  - Log entry IDs unique, nextLogId increments
+  - Breakdown sums match recorded netDelta
+- 54 tests passing total (1 smoke + 25 engine + 17 rng + 11 saveLoad).
+
+**Phase 1 complete.** Per the playbook's kill criterion: the harness
+runs, the numbers make sense, the trace-back is faithful (Q21 OL
+opening cleanly shows TTC +145k breakdown across mechanics, GO -29k
+attributed to OL cannibalization). Foundation ready for Phase 2 (UI
++ end-turn button in browser).
+
+**Left for later phases:**
+- Player decision / action log entries (currently only system
+  `quarter_summary` is emitted) — Phase 3.1+ as events and player
+  actions land.
+- Trace-back graph traversal via `causedById` — Phase 8.6 builds the
+  "why did this happen?" UI on top of the action log.
+- IndexedDB multi-slot saves — Phase 2.2.
+- Schema migration logic — when we bump the literal version.
+
+**Surprises:**
+- The rich `breakdown` payload was the right granularity. Once it
+  landed, the harness output became actually useful for sanity-
+  checking — every per-quarter mutation has a clear cause and you can
+  read the trade attribution at a glance.
+- Resume-from-save matching in-memory continuation byte-for-byte
+  validated the purity discipline. If endTurn had hidden side effects
+  or non-deterministic ordering, this test would have caught it.
+
+---
+
 ## 2026-05-26 — Phase 1.3: seeded RNG depth + $1B starting cash
 
 **Done:**

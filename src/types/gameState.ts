@@ -46,4 +46,6 @@ export interface GameState {
   rng: RngSeeds;
 
   actionLog: ActionLog;
+  /** Monotonic counter for action log IDs. Bumped on every log append. */
+  nextLogId: number;
 }

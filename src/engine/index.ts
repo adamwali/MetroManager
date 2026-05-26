@@ -19,6 +19,8 @@ export {
   catchmentGrowthPerQuarter,
 } from './agencies';
 export { generateFinancingOffers, rateForTrust } from './financing';
+export { saveGameToJson, loadGameFromJson, SaveLoadError } from './saveLoad';
+export type { SaveBundle } from './saveLoad';
 export { tickProject, tickConstructingProject, tickOperatingProject } from './projects';
 export { ridershipModelFor, PROJECT_RIDERSHIP } from './data';
 export {
