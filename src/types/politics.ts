@@ -12,6 +12,23 @@ export type GovernmentId = 'ottawa' | 'queensPark' | 'cityHall';
 
 export type CanadianParty = 'liberal' | 'conservative' | 'ndp' | 'green' | 'other';
 
+/**
+ * Per-action cooldowns. Each action has a quarter at which it becomes
+ * available again. If absent, the action is currently available.
+ *
+ * - `publicLobby`: 4Q cooldown, +5 to +10 trust, -5 public approval
+ * - `quietPitch`: 3Q cooldown, +3 to +5 trust, no public optics cost
+ * - `adHocFunding`: 8Q cooldown, cash injection $50M-$300M, -5 to -10 trust
+ * - `callInFavor`: 16Q cooldown, Insider-only, big payoff
+ */
+export type PoliticalActionKind =
+  | 'publicLobby'
+  | 'quietPitch'
+  | 'adHocFunding'
+  | 'callInFavor';
+
+export type PoliticalActionCooldowns = Partial<Record<PoliticalActionKind, QuarterIndex>>;
+
 export interface Government {
   id: GovernmentId;
   partyInPower: CanadianParty;
@@ -27,6 +44,8 @@ export interface Government {
   cabinetCharacterIds: string[];
   /** Named opposition critic IDs. */
   oppositionCharacterIds: string[];
+  /** Per-action cooldowns. Empty if all actions available. */
+  actionCooldowns: PoliticalActionCooldowns;
 }
 
 export type Politics = Record<GovernmentId, Government>;

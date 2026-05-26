@@ -117,12 +117,14 @@ export function generateFinancingOffers(politics: Politics, tier: SizeTier): Fin
     conditions,
   };
 
-  // Private offers — independent of trust, market-driven.
+  // Private offers — independent of trust, market-driven. Caps tightened
+  // (Phase 4 polish) so private alone can't fund large/mega projects —
+  // pushes players toward consortium for big work.
   const pensionAppetite: Record<SizeTier, number> = {
-    small: 1_000,
-    medium: 3_000,
-    large: 7_000,
-    mega: 15_000,
+    small: 700,
+    medium: 2_000,
+    large: 5_000,
+    mega: 10_000,
   };
   const pension: FinancingOffer = {
     approach: 'pensionConsortium',
@@ -132,10 +134,10 @@ export function generateFinancingOffers(politics: Politics, tier: SizeTier): Fin
   };
 
   const bondMarketAppetite: Record<SizeTier, number> = {
-    small: 500,
-    medium: 1_500,
-    large: 4_000,
-    mega: 8_000,
+    small: 400,
+    medium: 1_000,
+    large: 2_500,
+    mega: 5_000,
   };
   const bondMarket: FinancingOffer = {
     approach: 'bondMarket',
@@ -145,10 +147,10 @@ export function generateFinancingOffers(politics: Politics, tier: SizeTier): Fin
   };
 
   const sovereignAppetite: Record<SizeTier, number> = {
-    small: 1_500,
-    medium: 4_000,
-    large: 10_000,
-    mega: 20_000,
+    small: 1_000,
+    medium: 3_000,
+    large: 8_000,
+    mega: 15_000,
   };
   const sovereign: FinancingOffer = {
     approach: 'sovereignWealth',

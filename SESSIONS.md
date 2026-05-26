@@ -5,6 +5,74 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 6.1: political layer + private cap tightening
+
+**Pre-execute:** Repo owner flagged: (1) private financing caps too
+generous → sovereign always wins; (2) ready for next phase. Decided
+Phase 6.1 next (gives Insider archetype an active political toolset).
+
+**Done:**
+- Tightened all 3 private financing caps across all 4 tiers. Sovereign
+  $20B mega → $15B. Pension $15B mega → $10B. Bond market $8B mega →
+  $5B. Now only government consortium can fully fund mega projects.
+- Added "Insufficient — project needs $XB" warning on offer cards when
+  offer.maxAmount < projectCost. Accept button disabled in that case.
+- Updated FinancingModal description to show project cost prominently.
+- New `Government.actionCooldowns: PoliticalActionCooldowns` field on
+  Politics type. Initialized to `{}` in createInitialGameState +
+  example.
+- New `src/engine/politicalActions.ts` with publicLobby, quietPitch,
+  adHocFunding, callInFavor pure functions + executePoliticalAction
+  dispatcher + isActionEligible + cooldownQuartersLeft helpers
+- Zustand store: `executePoliticalAction(gov, kind)` action with
+  autosave
+- /political dashboard fully implemented:
+  - 3 gov cards (Ottawa red, QP blue, City Hall emerald)
+  - Per-action buttons with effect summary + cooldown badge + greyed-out
+    state when ineligible
+  - Help section explaining each action type
+- 18 new tests cover all four actions, cooldowns, eligibility,
+  archetype gating, scaling
+
+**Heartbeat:**
+- Insider opens campaign with QP trust 65 → callInFavor available from
+  Q1 → +$400M cash injection
+- Steady Operator at default trust 50 → publicLobby & quietPitch all
+  available, adHocFunding requires trust ≥45 (so available with all 3
+  govs at start), callInFavor not available
+- Lobbying Ottawa puts JUST Ottawa.publicLobby on 4Q cooldown — QP and
+  City Hall remain available. Per-gov isolation works.
+
+**Phase 6.1 DoD met:**
+- ✓ Lobby actions with per-gov cooldowns
+- ✓ Ad-hoc funding requests
+- ✓ Insider-only favor mechanic
+- ✓ Public approval cost on visible actions
+- ✓ /political dashboard rendering all three govs
+
+**Surprises:**
+- Cooldown decay required ZERO endTurn changes. Storing absolute
+  `expiresAt: QuarterIndex` means the natural quarter advance shifts
+  the comparison. Clean.
+- The "Insufficient" guard on private financing immediately made the
+  Don Mills mega project unbuildable without consortium support.
+  Player who can't earn political trust can't build mega. Real strategic
+  consequence.
+- The Insider archetype's strategic identity finally clicks: massive
+  $400M favor at Q1 + ad-hoc funding cycles + private fallback when
+  needed. Higher opex/lower engineers feels survivable because of
+  the political ATM.
+
+**Left for later phases:**
+- Character relationships per gov (cabinet character IDs exist as
+  data, no engine logic) → Phase 6.2
+- Election campaigns + trust deltas during campaign window → Phase 6.2
+- Allowance renegotiation events (Y4/Y8/Y12) → Phase 6.3
+- Lobby outcome variance (deterministic +6, +3, etc. now; should roll
+  in a range) → Phase 6.2
+
+---
+
 ## 2026-05-26 — Phase 4: project initiation + financing flow
 
 **Pre-execute:** Repo owner picked Phase 4 over 3.3 / 6.1 / 7. The

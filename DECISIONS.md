@@ -5,6 +5,103 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 6.1: political layer (lobby + ad-hoc + favor) + private cap tightening
+
+Repo owner flagged that private financing caps were too generous —
+sovereign at $20B mega meant private alone could fund nearly anything,
+removing the strategic pressure to build government consortium support.
+Also: time to ship Phase 6.1 (political layer) so the Insider archetype's
+trust advantage becomes an active lever rather than passive starting bonus.
+
+**Private financing caps tightened:**
+| Tier | Pension was→now | Bond market was→now | Sovereign was→now |
+|---|---|---|---|
+| Small | 1.0→0.7B | 0.5→0.4B | 1.5→1.0B |
+| Medium | 3.0→2.0B | 1.5→1.0B | 4.0→3.0B |
+| Large | 7.0→5.0B | 4.0→2.5B | 10.0→8.0B |
+| Mega | 15.0→10.0B | 8.0→5.0B | 20.0→15.0B |
+
+Government consortium (sum of three) still maxes ~$29B at mega, so big
+projects genuinely require political support to fully fund. Sovereign
+wealth's $15B mega cap is now below most mega-project costs — useful
+fallback, not always-win.
+
+**"Insufficient" UI guard** on offer cards: when offer.maxAmount <
+projectCost, the card greys out, shows "Insufficient — project needs $XB.
+Pick a larger source or consortium." Accept button disabled. Player
+can't accidentally underfund a project.
+
+**Phase 6.1: political actions** — four kinds, per-government cooldowns:
+
+| Action | Effect | Cooldown | Eligibility |
+|---|---|---|---|
+| Public lobby | +6 trust · -5 public approval | 4Q | Always |
+| Quiet pitch | +3 trust · no public optics | 3Q | trust ≥40 or Insider |
+| Ad-hoc funding | +$100-250M cash (scales w/ trust) · -8 trust | 8Q | trust ≥45 |
+| Call in favor | +$400M cash · +5 trust | 16Q | Insider + trust ≥60 |
+
+**Type additions:**
+- `PoliticalActionKind` discriminated union
+- `PoliticalActionCooldowns: Partial<Record<PoliticalActionKind, QuarterIndex>>`
+- `Government.actionCooldowns` field
+
+**Engine (`src/engine/politicalActions.ts`):**
+- Pure action functions: `publicLobby`, `quietPitch`, `adHocFunding`,
+  `callInFavor`
+- `executePoliticalAction(state, gov, kind)` dispatcher
+- `isActionEligible(state, gov, kind)` — checks cooldown + predicate
+- `cooldownQuartersLeft(state, gov, kind)` — returns 0 if available
+
+**Cooldown decay**: automatic, no endTurn change needed. Stored as
+absolute `expiresAt: QuarterIndex`; as `state.quarter` advances, the
+comparison naturally shows shorter remaining cooldown.
+
+**UI (`/political` route):**
+- Three government cards (Ottawa / Queen's Park / City Hall), each
+  showing trust + party + next election + 4 action buttons
+- Per-action cards: label, description, effect summary, cooldown badge
+  when on cooldown ("3Q cooldown"), grey + cursor-not-allowed when
+  ineligible
+- Help section at bottom explaining each action type
+- Color-coded by gov (red Ottawa, blue QP, emerald City Hall)
+
+**Strategic implications:**
+- **Insider** plays this dashboard. Call-in-favor at QP (trust 65) is
+  available from Q1. $400M cash injection lets Insider survive their
+  higher opex.
+- **Coalition Builder** cycles publicLobby across all three govs every
+  ~12Q to keep all three at 60+.
+- **Technocrat** has low City Hall trust (40) — quietPitch unavailable
+  on cityHall (trust threshold 40 met) but adHocFunding blocked
+  (needs 45). Has to publicLobby cityHall first to access better
+  actions, eating public approval.
+- **Steady Operator** runs balanced playbook, no signature move.
+
+**Public approval as gating: low approval can't lobby aggressively
+without further losses.** With approval < 30 already dragging
+ridership (-0.3%/Q from Phase 3.2), back-to-back public lobbies could
+push approval into spiral territory.
+
+**18 new tests:**
+- All four actions: effects, cooldowns, eligibility predicates
+- Cooldown decay across turns (4 endTurns → publicLobby available again)
+- Per-gov cooldown isolation (lobbying Ottawa doesn't affect QP)
+- Archetype gating (Insider-only favor, Steady can't)
+- adHocFunding cash scales with trust
+- Dispatcher correctness
+
+**200 tests passing total.** Bundle 433KB JS / 132KB gzip (was 424/130;
+added ~9KB for political actions + dashboard).
+
+**Still deferred to later phases:**
+- Character relationships per Government (cabinet/opposition IDs exist,
+  no engine logic) → Phase 6.2
+- Election campaigns + party trust effects → Phase 6.2
+- Operating-allowance renegotiation events → Phase 6.3
+- Lobby outcome variance (not always +6, sometimes +3 or +9) → Phase 6.2
+
+---
+
 ## 2026-05-26 — Phase 4 polish: private financing (pension / bond market / sovereign)
 
 Repo owner flagged that the design doc §5 promises private financing as a

@@ -12,9 +12,11 @@ import {
   proposeProject,
   rejectProject,
 } from '@engine/projectActions';
+import { executePoliticalAction } from '@engine/politicalActions';
 import type { StationQualityTier } from '@engine/projectCatalog';
 import type { FrequencyPolicy } from '@engine/policies';
 import type { FinancingApproach } from '@/types/projects';
+import type { GovernmentId, PoliticalActionKind } from '@/types/politics';
 import type { GameState } from '@/types/gameState';
 import type { AgencyId, FarePolicyTier, SubsystemId } from '@/types/agency';
 import type { CeoArchetype } from '@/types/ceo';
@@ -81,6 +83,8 @@ export interface GameStore {
   ) => void;
   acceptFinancing: (catalogProjectId: string, approach: FinancingApproach) => void;
   rejectProject: (catalogProjectId: string) => void;
+  /** Political actions (Phase 6.1). */
+  executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
 }
 
 const DEFAULT_SEED = 1;
@@ -253,6 +257,14 @@ export const useGameStore = create<GameStore>((set, get) => {
       const next = rejectProject(get().state, catalogProjectId);
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    executePoliticalAction: (gov, kind) => {
+      const result = executePoliticalAction(get().state, gov, kind);
+      if (result.state === get().state) return; // No-op (ineligible)
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
         .then(() => set({ autosaveStatus: 'saved' }))
         .catch(() => set({ autosaveStatus: 'error' }));
     },

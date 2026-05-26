@@ -84,6 +84,7 @@ export function createInitialGameState(
         approval: score(48),
         cabinetCharacterIds: ['c_tremblay'],
         oppositionCharacterIds: [],
+        actionCooldowns: {},
       },
       queensPark: {
         id: 'queensPark',
@@ -94,6 +95,7 @@ export function createInitialGameState(
         approval: score(46),
         cabinetCharacterIds: ['c_hartwell'],
         oppositionCharacterIds: [],
+        actionCooldowns: {},
       },
       cityHall: {
         id: 'cityHall',
@@ -104,6 +106,7 @@ export function createInitialGameState(
         approval: score(54),
         cabinetCharacterIds: ['c_liang'],
         oppositionCharacterIds: [],
+        actionCooldowns: {},
       },
     },
     boardConfidence: {

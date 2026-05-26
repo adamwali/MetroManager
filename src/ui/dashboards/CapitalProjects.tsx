@@ -386,17 +386,25 @@ const APPROACH_SUBTITLE: Record<FinancingApproach, string> = {
 
 function OfferCard({
   offer,
+  projectCost,
   onAccept,
 }: {
   offer: FinancingOffer;
+  projectCost: number;
   onAccept: () => void;
 }) {
   const ratePct = offer.rateBp / 100;
   const isSovereign = offer.approach === 'sovereignWealth';
+  const offerAmount = offer.maxAmount as unknown as number;
+  const insufficient = offerAmount < projectCost;
   return (
     <div
       className={`rounded-md border p-4 flex flex-col ${
-        isSovereign ? 'border-amber-300' : 'border-neutral-200'
+        insufficient
+          ? 'border-neutral-200 bg-neutral-50/50 opacity-60'
+          : isSovereign
+            ? 'border-amber-300'
+            : 'border-neutral-200'
       }`}
     >
       <div className="flex items-baseline justify-between">
@@ -405,9 +413,15 @@ function OfferCard({
       </div>
       <p className="mt-0.5 text-[10px] text-neutral-500">{APPROACH_SUBTITLE[offer.approach]}</p>
       <div className="mt-2 num text-xl font-semibold">
-        up to {formatMoney(offer.maxAmount as unknown as number)}
+        up to {formatMoney(offerAmount)}
       </div>
-      {offer.opticsLabel && (
+      {insufficient && (
+        <div className="mt-2 rounded border border-neutral-300 bg-white px-2 py-1.5 text-[11px] text-neutral-700">
+          Insufficient — project needs {formatMoney(projectCost)}. Pick a larger source or
+          consortium.
+        </div>
+      )}
+      {!insufficient && offer.opticsLabel && (
         <div className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] text-red-800">
           ⚠ {offer.opticsLabel}
         </div>
@@ -420,20 +434,23 @@ function OfferCard({
             </li>
           ))}
         </ul>
-      ) : !offer.opticsLabel ? (
+      ) : !offer.opticsLabel && !insufficient ? (
         <p className="mt-3 text-xs text-neutral-500">No conditions attached.</p>
       ) : null}
       <div className="mt-auto pt-3">
         <button
           type="button"
           onClick={onAccept}
-          className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white ${
-            isSovereign
-              ? 'bg-red-700 hover:bg-red-800'
-              : 'bg-blue-600 hover:bg-blue-700'
+          disabled={insufficient}
+          className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white transition-colors ${
+            insufficient
+              ? 'bg-neutral-300 cursor-not-allowed'
+              : isSovereign
+                ? 'bg-red-700 hover:bg-red-800'
+                : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          Accept this offer
+          {insufficient ? 'Insufficient amount' : 'Accept this offer'}
         </button>
       </div>
     </div>
@@ -445,6 +462,14 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
   const accept = useGameStore((s) => s.acceptFinancing);
   const entry = catalogEntry(projectId);
   if (!entry) return null;
+  // Find the proposed project to get its actual cost (alignment + quality applied)
+  const proposed = state.projects.find(
+    (p) => p.state === 'proposed' && p.templateId === projectId,
+  );
+  const projectCost =
+    proposed && proposed.state === 'proposed' && proposed.chosenAlignment
+      ? realizedProjectCost(entry, proposed.chosenAlignment, proposed.stationQuality)
+      : entry.baseCostM;
   const offers = generateFinancingOffers(state.politics, entry.tier);
   const govOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'government');
   const privateOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'private');
@@ -461,8 +486,9 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
           <div>
             <h1 className="text-lg font-semibold">Financing offers — {entry.name}</h1>
             <p className="text-sm text-neutral-500">
+              Project needs <span className="num font-semibold">{formatMoney(projectCost)}</span>.
               Government offers are trust-priced; private offers are market-priced. Bigger
-              projects often need consortium financing or sovereign wealth.
+              projects often need consortium financing.
             </p>
           </div>
           <button
@@ -480,7 +506,12 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {govOffers.map((o) => (
-              <OfferCard key={o.approach} offer={o} onAccept={() => onAccept(o.approach)} />
+              <OfferCard
+                key={o.approach}
+                offer={o}
+                projectCost={projectCost}
+                onAccept={() => onAccept(o.approach)}
+              />
             ))}
           </div>
         </section>
@@ -491,10 +522,17 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
           </h2>
           <p className="mb-3 text-[11px] text-neutral-500">
             No political conditions attached. Market-priced rates; some carry optics costs.
+            Private caps tend to be lower than government consortium — useful for small/medium
+            projects, fallback for bigger ones.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             {privateOffers.map((o) => (
-              <OfferCard key={o.approach} offer={o} onAccept={() => onAccept(o.approach)} />
+              <OfferCard
+                key={o.approach}
+                offer={o}
+                projectCost={projectCost}
+                onAccept={() => onAccept(o.approach)}
+              />
             ))}
           </div>
         </section>
