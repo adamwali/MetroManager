@@ -6,6 +6,7 @@ import type { Characters } from './characters';
 import type { Cash, Debt } from './finance';
 import type { ActiveEvent, DelayedConsequence } from './events';
 import type { EngineVars } from './engineVars';
+import type { GameOver, GameOverCounters } from './gameOver';
 import type { OperatingAllowance } from './operatingAllowance';
 import type { Politics } from './politics';
 import type { Project } from './projects';
@@ -48,4 +49,9 @@ export interface GameState {
   actionLog: ActionLog;
   /** Monotonic counter for action log IDs. Bumped on every log append. */
   nextLogId: number;
+
+  /** End-of-campaign result. Undefined while campaign is in progress. */
+  gameOver?: GameOver;
+  /** Running counters for game-over detection (consecutive-quarter rules). */
+  gameOverCounters: GameOverCounters;
 }

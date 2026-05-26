@@ -1,4 +1,4 @@
-import { useGameStore } from '@state/gameStore';
+import { useGameStore, useHistory } from '@state/gameStore';
 import {
   describeBoardConfidence,
   describeCashRunway,
@@ -23,7 +23,7 @@ import { Sparkline } from './Sparkline';
  */
 export function TopStrip() {
   const state = useGameStore((s) => s.state);
-  const history = useGameStore((s) => s.history());
+  const history = useHistory();
   const k = deriveKpis(state, history);
 
   const cashBalance = state.cash.balance as unknown as number;
@@ -56,7 +56,7 @@ export function TopStrip() {
         caption={
           k.ridersYoyDelta !== null
             ? `${formatRidersDelta(k.ridersYoyDelta)} · ${describeRidersDelta(k.ridersYoyDelta)}`
-            : 'YoY pending'
+            : undefined
         }
         spark={<Sparkline values={ridersSpark} />}
       />

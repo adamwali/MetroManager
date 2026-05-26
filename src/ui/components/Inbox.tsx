@@ -13,7 +13,8 @@ export function Inbox() {
       </h2>
       {inbox.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-500">
-          No urgent items. End the turn when you're ready.
+          No urgent items. Click <span className="font-medium text-neutral-700">End turn</span>{' '}
+          when you're ready to advance the quarter.
         </p>
       ) : (
         <ul className="mt-3 space-y-2">

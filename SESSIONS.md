@@ -5,6 +5,83 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 2.2: campaign lifecycle complete
+
+**Done:**
+- Asked 3 design questions (archetype depth, save model, failure rules).
+  Repo owner picked deep divergent archetypes, 3 manual + 1 autosave,
+  standard failure thresholds.
+- Polish from Phase 2.1 self-review:
+  - Q0 cash caption fix ("starting balance" instead of "growing")
+  - "YoY pending" removed
+  - Empty-state copy improved on Inbox + NewsRail
+- New `src/engine/archetypes.ts` with 5 configs (4 pickable + Disruptor
+  deferred). Each has cash, board, trust, public approval, engineers,
+  templates, openBooks, subsystem adjust, plus displayName, blurb,
+  strengths, weaknesses arrays for the picker.
+- `createInitialGameState(seed, archetype, ceoName)` threads archetype
+  overrides through the starting state.
+- New `src/types/gameOver.ts` with `GameOver`, `GameOverCounters`,
+  thresholds. `GameState` extended with `gameOver?` and
+  `gameOverCounters`.
+- `endTurn` updates consecutive-quarter counters and emits a `GameOver`
+  when a threshold trips. Recovery (one good quarter) clears the
+  counter to 0.
+- `idb-keyval` installed; `src/state/saveSlots.ts` wraps it for the
+  3 manual + 1 autosave slot model with metadata listing.
+- Zustand store extended:
+  - `endTurn` writes autosave in background and updates `autosaveStatus`
+  - `newGame(seed, archetype, name)` resets state with archetype
+  - `loadFromSlot(slotId)` parses + reconstructs initialState
+    deterministically from the loaded seed/archetype
+  - `forecast(quartersAhead)` pure dry-run for time-jump preview
+- New UI components:
+  - `NewGameModal` — archetype picker with strengths/weaknesses cards +
+    seed/name inputs
+  - `SaveLoadModal` — slot list with metadata, save/load/delete actions
+  - `GameOverScreen` — full-page result with stats + start-new/load CTAs
+  - `TimeJumpPreview` — hover/focus tooltip with 4-quarter forecast
+    table (cash, riders, cumulative deltas, game-over warning)
+- `AppLayout` rewritten: brand bar with Save/Load/New buttons, autosave
+  status, time-jump preview, end-turn button. On boot, attempts
+  silent autosave restore; falls back to new-game modal.
+- New tests in `src/engine/gameOver.test.ts`:
+  - Archetype divergence (4 archetypes have distinct starting stats)
+  - Deterministic trajectories per seed+archetype
+  - Fiscal failure trips at 4 consecutive quarters below threshold
+  - Board firing trips at 2 consecutive quarters below threshold
+  - Recovery clears counters
+- 85 tests passing (was 75; +10 archetype + game-over tests).
+
+**Phase 2.2 DoD:**
+- ✓ New-game flow with archetype picker + seed selection
+- ✓ Save/load with 3 manual slots + autosave
+- ✓ Game-over screens for fiscal failure, board firing
+- ✓ Campaign-won screen at Q60
+- ✓ Time-jump prediction overlay (deterministic 4Q)
+- (Step-down screen deferred to Phase 6 per playbook)
+
+**Left for later phases:**
+- Step-down (player-initiated resignation) → Phase 6
+- Monte Carlo time-jump (ranges across stochastic outcomes) → Phase 3+
+- Disruptor archetype + random gaffes → Phase 3.1
+- Onboarding briefing for first-time players → Phase 10
+- Mobile UI polish → out of scope (MVP is desktop-first)
+
+**Surprises:**
+- `idb-keyval` is delightfully tiny and the IndexedDB ergonomics are
+  much better than the raw API. ~30 lines of save-slot code total.
+- Resuming from autosave on boot works cleanly because the Zustand store
+  reconstructs `initialState` from the loaded seed + archetype. No
+  duplicated state stored.
+- The archetype picker reveals how much the spec's §7 archetypes vary
+  from each other once you go deep — Insider feels totally different
+  to play from Technocrat from Q1, not Q20.
+- Time-jump preview is satisfying. Hovering shows "you'll go negative in
+  Q7" before you commit. Real planning surface.
+
+---
+
 ## 2026-05-26 — Phase 2.1: Mission Control dashboard
 
 **Done:**

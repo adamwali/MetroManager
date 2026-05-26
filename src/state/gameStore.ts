@@ -2,48 +2,112 @@ import { create } from 'zustand';
 import { createInitialGameState } from '@engine/createInitialGameState';
 import { endTurn } from '@engine/endTurn';
 import type { GameState } from '@/types/gameState';
+import type { CeoArchetype } from '@/types/ceo';
 import type { HistoryPoint } from '@/utils/kpis';
 import { buildHistory } from '@/utils/kpis';
+import { AUTOSAVE_SLOT, writeSlot, readSlot, type SlotId } from './saveSlots';
 
 /**
- * Global game store. Holds the current GameState. `endTurn` dispatches the
- * engine's pure function and replaces state. UI components subscribe via
- * selectors so they only re-render when relevant fields change.
+ * Global game store. Holds the current GameState. Quarter advances and
+ * game-loading replace state. Selectors pull what they need.
+ *
+ * Autosave: after every endTurn the new state is written to the autosave
+ * IndexedDB slot in the background. UI surfaces "saving…" / "saved" in
+ * the brand bar.
  */
+
+export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export interface GameStore {
   state: GameState;
   /** Initial state captured at game start. Used to derive history. */
   initialState: GameState;
+  autosaveStatus: AutosaveStatus;
+  /** Set false until the player explicitly starts a game. UI shows new-game modal otherwise. */
+  campaignStarted: boolean;
+
   endTurn: () => void;
-  newGame: (seed: number) => void;
-  history: () => HistoryPoint[];
+  newGame: (seed: number, archetype: CeoArchetype, ceoName: string) => void;
+  loadFromSlot: (slotId: SlotId) => Promise<void>;
+  /** Forecast next N quarters without committing to state. */
+  forecast: (quartersAhead: number) => GameState[];
 }
 
 const DEFAULT_SEED = 1;
 
-function initialFor(seed: number): GameState {
-  return createInitialGameState(seed);
+function initialFor(seed: number, archetype: CeoArchetype, ceoName: string): GameState {
+  return createInitialGameState(seed, archetype, ceoName);
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
-  const initial = initialFor(DEFAULT_SEED);
+  const initial = initialFor(DEFAULT_SEED, 'steadyOperator', 'CEO');
   return {
     state: initial,
     initialState: initial,
-    endTurn: () => set({ state: endTurn(get().state) }),
-    newGame: (seed: number) => {
-      const next = initialFor(seed);
-      set({ state: next, initialState: next });
+    autosaveStatus: 'idle',
+    campaignStarted: false,
+
+    endTurn: () => {
+      const next = endTurn(get().state);
+      set({ state: next, autosaveStatus: 'saving' });
+      // Autosave fire-and-forget. UI flips status when settled.
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
     },
-    history: () => {
-      const { state, initialState } = get();
-      const initialCash = initialState.cash.balance as unknown as number;
-      const initialRiders =
-        (initialState.agencies.ttc.dailyRiders as unknown as number) +
-        (initialState.agencies.go.dailyRiders as unknown as number) +
-        (initialState.agencies.up.dailyRiders as unknown as number);
-      return buildHistory(state, initialCash, initialRiders);
+
+    newGame: (seed, archetype, ceoName) => {
+      const next = initialFor(seed, archetype, ceoName);
+      set({
+        state: next,
+        initialState: next,
+        autosaveStatus: 'idle',
+        campaignStarted: true,
+      });
+    },
+
+    loadFromSlot: async (slotId) => {
+      const loaded = await readSlot(slotId);
+      if (!loaded) throw new Error(`Slot ${slotId} is empty`);
+      // Re-derive initialState from the loaded game's seed + archetype.
+      // We don't store the original initialState in the save (it would be
+      // redundant), so reconstruct it deterministically.
+      const initialReconstructed = createInitialGameState(
+        loaded.rng.masterSeed,
+        loaded.ceo.archetype,
+        loaded.ceo.name,
+      );
+      set({
+        state: loaded,
+        initialState: initialReconstructed,
+        autosaveStatus: 'idle',
+        campaignStarted: true,
+      });
+    },
+
+    forecast: (quartersAhead) => {
+      // Pure dry-run: advances a temporary state forward N times. Never
+      // touches store or autosave. Used by time-jump prediction overlay.
+      let cursor = get().state;
+      const trajectory: GameState[] = [];
+      for (let i = 0; i < quartersAhead; i++) {
+        cursor = endTurn(cursor);
+        trajectory.push(cursor);
+        if (cursor.gameOver) break; // Stop at end
+      }
+      return trajectory;
     },
   };
 });
+
+/** Convenience selector hook for history. */
+export function useHistory(): HistoryPoint[] {
+  const state = useGameStore((s) => s.state);
+  const initialState = useGameStore((s) => s.initialState);
+  const initialCash = initialState.cash.balance as unknown as number;
+  const initialRiders =
+    (initialState.agencies.ttc.dailyRiders as unknown as number) +
+    (initialState.agencies.go.dailyRiders as unknown as number) +
+    (initialState.agencies.up.dailyRiders as unknown as number);
+  return buildHistory(state, initialCash, initialRiders);
+}

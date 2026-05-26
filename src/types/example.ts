@@ -201,4 +201,5 @@ export const exampleGameState: GameState = {
   },
   actionLog: [],
   nextLogId: 1,
+  gameOverCounters: { quartersInDeepDeficit: 0, quartersWithFiringBoard: 0 },
 };

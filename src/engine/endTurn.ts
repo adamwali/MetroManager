@@ -1,6 +1,14 @@
 import type { GameState } from '@/types/gameState';
 import type { Agency, Agencies, AgencyId } from '@/types/agency';
 import type { ActionLogEntry, QuarterSummaryBreakdown } from '@/types/actionLog';
+import type { GameOver, GameOverCounters } from '@/types/gameOver';
+import {
+  BOARD_FIRING_CONFIDENCE_THRESHOLD,
+  BOARD_FIRING_CONSECUTIVE_QUARTERS,
+  CAMPAIGN_END_QUARTER,
+  FISCAL_FAILURE_CASH_THRESHOLD_M,
+  FISCAL_FAILURE_CONSECUTIVE_QUARTERS,
+} from '@/types/gameOver';
 import { cash, quarter, riders } from '@/types/scalars';
 import { applyMaturities, quarterlyDebtService } from './finance';
 import {
@@ -186,6 +194,14 @@ export function endTurn(state: GameState): GameState {
   };
 
   const nextBalance = (state.cash.balance as unknown as number) + netCashDelta;
+  const nextQuarterN = nextQuarter as unknown as number;
+  const boardScore = state.boardConfidence.score as unknown as number;
+  const { counters: nextCounters, gameOver } = detectGameOver(
+    state.gameOverCounters,
+    nextBalance,
+    boardScore,
+    nextQuarterN,
+  );
 
   return {
     ...state,
@@ -196,7 +212,63 @@ export function endTurn(state: GameState): GameState {
     cash: { balance: cash(nextBalance), lastQuarterDelta: cash(netCashDelta) },
     actionLog: [...state.actionLog, summaryEntry],
     nextLogId: state.nextLogId + 1,
+    gameOverCounters: nextCounters,
+    ...(gameOver ? { gameOver } : {}),
   };
+}
+
+/**
+ * Update consecutive-quarter counters and emit a GameOver if any trigger fires.
+ * Order of precedence: fiscal failure > board firing > campaign won (at Q60).
+ */
+function detectGameOver(
+  prev: GameOverCounters,
+  nextCashM: number,
+  boardConfidence: number,
+  nextQuarterN: number,
+): { counters: GameOverCounters; gameOver: GameOver | undefined } {
+  const quartersInDeepDeficit =
+    nextCashM < FISCAL_FAILURE_CASH_THRESHOLD_M ? prev.quartersInDeepDeficit + 1 : 0;
+  const quartersWithFiringBoard =
+    boardConfidence < BOARD_FIRING_CONFIDENCE_THRESHOLD
+      ? prev.quartersWithFiringBoard + 1
+      : 0;
+  const counters: GameOverCounters = { quartersInDeepDeficit, quartersWithFiringBoard };
+
+  if (quartersInDeepDeficit >= FISCAL_FAILURE_CONSECUTIVE_QUARTERS) {
+    return {
+      counters,
+      gameOver: {
+        kind: 'fiscalFailure',
+        endedAt: quarter(nextQuarterN),
+        headline: 'Fiscal failure',
+        detail: `Cash held below $${FISCAL_FAILURE_CASH_THRESHOLD_M / 1_000}B for ${FISCAL_FAILURE_CONSECUTIVE_QUARTERS} consecutive quarters. Bond market closes; the board terminates your contract and authorizes forced asset sale.`,
+      },
+    };
+  }
+  if (quartersWithFiringBoard >= BOARD_FIRING_CONSECUTIVE_QUARTERS) {
+    return {
+      counters,
+      gameOver: {
+        kind: 'boardFiring',
+        endedAt: quarter(nextQuarterN),
+        headline: 'Board termination',
+        detail: `Board confidence held below ${BOARD_FIRING_CONFIDENCE_THRESHOLD} for ${BOARD_FIRING_CONSECUTIVE_QUARTERS} consecutive quarters. The board has voted to terminate your contract.`,
+      },
+    };
+  }
+  if (nextQuarterN >= CAMPAIGN_END_QUARTER && nextCashM > 0 && boardConfidence > 0) {
+    return {
+      counters,
+      gameOver: {
+        kind: 'campaignWon',
+        endedAt: quarter(nextQuarterN),
+        headline: '15 years complete',
+        detail: 'You reached the end of the 15-year campaign with the agency still solvent and the board still backing you. Time to write the memoir.',
+      },
+    };
+  }
+  return { counters, gameOver: undefined };
 }
 
 function applyToAgencies(agencies: Agencies, fn: (a: Agency) => Agency): Agencies {

@@ -56,6 +56,9 @@ export function formatPctDelta(fraction: number, digits = 1): string {
 
 /** Cash runway estimate: "~3 months" / "~2 quarters" / "9+ years". */
 export function describeCashRunway(balanceMillions: number, lastQuarterDeltaMillions: number): string {
+  if (lastQuarterDeltaMillions === 0) {
+    return balanceMillions > 0 ? 'starting balance' : 'underwater';
+  }
   if (lastQuarterDeltaMillions >= 0) {
     return balanceMillions > 0 ? 'growing' : 'recovering';
   }

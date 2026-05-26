@@ -6,6 +6,7 @@ export * from './confidence';
 export * from './engineVars';
 export * from './events';
 export * from './finance';
+export * from './gameOver';
 export * from './gameState';
 export * from './operatingAllowance';
 export * from './politics';

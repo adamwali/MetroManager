@@ -5,6 +5,76 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 2.2: campaign lifecycle (new game, save/load, game over, time-jump)
+
+Completes Phase 2. The browser app now has a full campaign loop: pick an
+archetype, play through, save, load, get fired or win, start over.
+
+**CEO archetypes — deep divergent starts** per repo owner. Four archetypes
+exposed in the picker (Disruptor deferred until Phase 3 random-gaffe events):
+
+| Archetype | Cash | Board | Trust (O/QP/CH) | Engineers | Templates | OpenBooks | Subsystem |
+|---|---|---|---|---|---|---|---|
+| Steady Operator | $1.0B | 60 | 50/50/50 | 180 | 30 | no | baseline |
+| International Technocrat | $1.1B | 65 | 55/45/40 | 220 | 55 | yes | +4 |
+| The Insider | $1.2B | 50 | 60/65/40 | 140 | 20 | no | -2 |
+| Coalition Builder | $1.0B | 60 | 55/55/55 | 160 | 25 | no | baseline (+pubApp 60) |
+
+Each starts the player in a meaningfully different opening posture per
+spec §7. Tests verify archetype-specific stat overrides and that same
+seed + same archetype produces deterministic identical trajectories.
+
+**Game-over rules — standard** per repo owner:
+- **Fiscal failure**: cash < -$5B for 4 consecutive quarters → fired
+- **Board firing**: board confidence < 25 for 2 consecutive quarters → fired
+- **Campaign won**: reaches Q60 with positive cash and positive board confidence
+
+GameState carries `gameOverCounters: { quartersInDeepDeficit,
+quartersWithFiringBoard }` and an optional `gameOver: GameOver` once
+triggered. `endTurn` updates counters each quarter; resets to 0 when
+the condition is no longer met (single recovery quarter clears it).
+
+Game-over screen surfaces final cash + riders + board + tenure + CEO
+identity, with kind-specific tone color (red for fiscal, amber for board,
+emerald for campaign won). Two CTAs: start new + load earlier save.
+
+**Save/load — 3 manual + 1 autosave** in IndexedDB via `idb-keyval`
+(~600B, MIT). Slot module at `src/state/saveSlots.ts`. Slots store the
+full JSON SaveBundle (schema-version checked on load). Autosave fires
+after every `endTurn` in the background; UI shows "Saving…" / "Saved" /
+"Save failed" in the brand bar. Manual save/load modals show all 4
+slots with metadata (quarter, cash, riders, archetype, CEO name,
+game-over flag).
+
+On first boot the AppLayout auto-loads the autosave silently (resumes
+campaign). If no autosave exists, the new-game modal opens.
+
+**Time-jump prediction overlay** per design doc §0 P1. Hover or focus
+the "Preview next 4Q" button in the brand bar to see a deterministic
+4-quarter forecast (cash, riders, cumulative deltas, game-over warning
+if any). Forecast is pure — runs `endTurn` 4× on a temporary state, never
+touches the store or autosave.
+
+Phase 2.2 uses deterministic single-trajectory forecast (no events yet).
+Monte Carlo ranges with min/max/mean per metric wait for Phase 3 when
+stochastic event firing creates variance.
+
+**Polish from Phase 2.1 self-review** rolled in:
+- Q0 cash caption: "$0/Q growing" → "starting balance" when lastQuarterDelta = 0
+- "YoY pending" removed in favor of empty caption for first 4 quarters
+- Inbox empty state names the button: "Click End turn when you're ready"
+- News rail empty state: "Campaign just started. After your first turn,
+  this rail tracks each quarter's recap."
+
+**Test coverage:** 10 new tests for archetypes + game-over (deep
+divergence, deterministic trajectories, fiscal failure at 4 consecutive
+quarters, board firing at 2 consecutive quarters, recovery clears
+counters). 85 tests total all passing.
+
+**Bundle:** 330KB JS / 105KB gzip. Up ~21KB from Phase 2.1.
+
+---
+
 ## 2026-05-26 — Phase 2.1: Mission Control dashboard (browser UI)
 
 First playable UI. You can open `npm run dev`, see Mission Control, and

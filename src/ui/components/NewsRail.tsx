@@ -15,7 +15,9 @@ export function NewsRail() {
         Recent activity
       </h2>
       {recent.length === 0 ? (
-        <p className="mt-3 text-sm text-neutral-500">Campaign just started.</p>
+        <p className="mt-3 text-sm text-neutral-500">
+          Campaign just started. After your first turn, this rail tracks each quarter's recap.
+        </p>
       ) : (
         <ul className="mt-3 space-y-2">
           {recent.map((e) => (

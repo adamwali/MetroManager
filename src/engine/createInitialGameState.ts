@@ -1,34 +1,38 @@
 import type { GameState } from '@/types/gameState';
+import type { CeoArchetype } from '@/types/ceo';
+import { INITIAL_GAME_OVER_COUNTERS } from '@/types/gameOver';
 import { bp, cash, quarter, riders, score, signed } from '@/types/scalars';
 import { createRngSeeds } from './rng';
+import { ARCHETYPE_CONFIGS } from './archetypes';
 
 /**
- * Produce Q1 2026 starting state per design doc §5 v3.3.
+ * Produce Q1 2026 starting state per design doc §5 v3.3, modulated by
+ * CEO archetype per §7 / Phase 2.2 deep-divergent configs.
  *
- * Numbers reconciled with the v3.3 financing pivot:
- * - $5B opening cash (residual from previous regime)
- * - Operating allowance $2.4B/yr, signed for Y1-Y4 (renegotiates Q16)
- * - $8.2B inherited debt at AA, 70/30 fixed/floating split, ~4.2% weighted
- * - opex EXCLUDES maintenance (separate budget per subsystem)
- *   - TTC opex $275M/Q (was $675M; the $400M/Q maintenance moved to subsystems)
- *   - GO opex $190M/Q
- *   - UP opex $15M/Q
- * - Subsystem maintenance at "required" level (stable conditions)
- * - Per-agency catchment growth: TTC 0.8%/yr, GO 1.5%/yr, UP 0.3%/yr
- * - Ontario Line inherited at 21% complete with a synthetic consortium
- *   financing record reflecting the historical tri-government split.
+ * Deterministic from `(seed, archetype)`: same inputs → identical starting
+ * state and identical 60-quarter trajectory at default settings.
  *
- * Deterministic from `seed`: same seed → identical starting state and
- * identical 60-quarter trajectory.
+ * Archetype overrides (cash, board, trust, public approval, engineers,
+ * templates, openBooks, subsystem condition adjustment) live in
+ * `engine/archetypes.ts`.
  */
-export function createInitialGameState(seed: number): GameState {
+function clampScore(n: number): number {
+  return Math.max(0, Math.min(100, n));
+}
+
+export function createInitialGameState(
+  seed: number,
+  archetype: CeoArchetype = 'steadyOperator',
+  ceoName: string = 'CEO',
+): GameState {
+  const mods = ARCHETYPE_CONFIGS[archetype];
   return {
     schemaVersion: 1,
-    ceo: { archetype: 'steadyOperator', name: 'CEO' },
+    ceo: { archetype, name: ceoName },
     quarter: quarter(0),
-    // $1B starting cash — realistic working capital for a transit agency.
-    // Not enough to coast on; player has to make decisions from Q1.
-    cash: { balance: cash(1_000), lastQuarterDelta: cash(0) },
+    // Starting cash modulated by archetype. Default $1B (Steady Operator)
+    // is realistic working capital for a transit agency — not coast money.
+    cash: { balance: cash(mods.startingCashM), lastQuarterDelta: cash(0) },
     debt: {
       tranches: [
         {
@@ -69,7 +73,7 @@ export function createInitialGameState(seed: number): GameState {
       ottawa: {
         id: 'ottawa',
         partyInPower: 'liberal',
-        trust: score(50),
+        trust: score(clampScore(mods.trust.ottawa)),
         nextElectionAt: quarter(12),
         nextRenegotiationAt: quarter(16),
         approval: score(48),
@@ -79,7 +83,7 @@ export function createInitialGameState(seed: number): GameState {
       queensPark: {
         id: 'queensPark',
         partyInPower: 'conservative',
-        trust: score(50),
+        trust: score(clampScore(mods.trust.queensPark)),
         nextElectionAt: quarter(10),
         nextRenegotiationAt: quarter(16),
         approval: score(46),
@@ -89,7 +93,7 @@ export function createInitialGameState(seed: number): GameState {
       cityHall: {
         id: 'cityHall',
         partyInPower: 'other',
-        trust: score(50),
+        trust: score(clampScore(mods.trust.cityHall)),
         nextElectionAt: quarter(8),
         nextRenegotiationAt: quarter(16),
         approval: score(54),
@@ -97,7 +101,11 @@ export function createInitialGameState(seed: number): GameState {
         oppositionCharacterIds: [],
       },
     },
-    boardConfidence: { score: score(60), recentComponents: [], warningActive: false },
+    boardConfidence: {
+      score: score(clampScore(mods.boardConfidence)),
+      recentComponents: [],
+      warningActive: false,
+    },
     agencies: {
       // Starting numbers tuned for modest deficit at default settings —
       // the agency runs in the red without active player decisions.
@@ -110,10 +118,10 @@ export function createInitialGameState(seed: number): GameState {
         id: 'ttc',
         dailyRiders: riders(4_400_000),
         subsystems: [
-          { id: 'rollingStock', condition: score(72), maintenanceBudget: cash(100) },
-          { id: 'track', condition: score(68), maintenanceBudget: cash(100) },
-          { id: 'signals', condition: score(62), maintenanceBudget: cash(100) },
-          { id: 'stations', condition: score(70), maintenanceBudget: cash(100) },
+          { id: 'rollingStock', condition: score(clampScore(72 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(100) },
+          { id: 'track', condition: score(clampScore(68 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(100) },
+          { id: 'signals', condition: score(clampScore(62 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(100) },
+          { id: 'stations', condition: score(clampScore(70 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(100) },
         ],
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.008,
@@ -125,10 +133,10 @@ export function createInitialGameState(seed: number): GameState {
         id: 'go',
         dailyRiders: riders(335_000),
         subsystems: [
-          { id: 'rollingStock', condition: score(78), maintenanceBudget: cash(40) },
-          { id: 'track', condition: score(80), maintenanceBudget: cash(40) },
-          { id: 'catenary', condition: score(55), maintenanceBudget: cash(40) },
-          { id: 'stations', condition: score(74), maintenanceBudget: cash(40) },
+          { id: 'rollingStock', condition: score(clampScore(78 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(40) },
+          { id: 'track', condition: score(clampScore(80 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(40) },
+          { id: 'catenary', condition: score(clampScore(55 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(40) },
+          { id: 'stations', condition: score(clampScore(74 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(40) },
         ],
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.015,
@@ -140,9 +148,9 @@ export function createInitialGameState(seed: number): GameState {
         id: 'up',
         dailyRiders: riders(12_000),
         subsystems: [
-          { id: 'rollingStock', condition: score(82), maintenanceBudget: cash(3) },
-          { id: 'track', condition: score(80), maintenanceBudget: cash(3) },
-          { id: 'stations', condition: score(78), maintenanceBudget: cash(3) },
+          { id: 'rollingStock', condition: score(clampScore(82 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(3) },
+          { id: 'track', condition: score(clampScore(80 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(3) },
+          { id: 'stations', condition: score(clampScore(78 + mods.subsystemConditionAdjust)), maintenanceBudget: cash(3) },
         ],
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.003,
@@ -182,16 +190,17 @@ export function createInitialGameState(seed: number): GameState {
     delayedQueue: [],
     standingOrders: [],
     engineVars: {
-      templates: score(30),
+      templates: score(clampScore(mods.templates)),
       crosslinxLeverage: score(55),
       consultantAlignment: signed(0),
       nimbyOrganization: score(25),
-      openBooks: false,
-      engineers: 180,
-      publicApproval: score(50),
+      openBooks: mods.openBooks,
+      engineers: mods.engineers,
+      publicApproval: score(clampScore(mods.publicApproval)),
     },
     rng: createRngSeeds(seed),
     actionLog: [],
     nextLogId: 1,
+    gameOverCounters: { ...INITIAL_GAME_OVER_COUNTERS },
   };
 }
