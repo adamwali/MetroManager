@@ -37,10 +37,16 @@ export interface Agency {
   operatingParams: AgencyOperatingParams;
   /** Character id of the director running this agency. */
   directorCharacterId: string;
-  /** Latest quarter opex, $M. Updated by engine.endTurn. */
+  /** Latest quarter opex (operations only, excludes maintenance), $M. Updated by engine.endTurn. */
   lastQuarterOpex: CashMillions;
   /** Latest quarter fare revenue, $M. */
   lastQuarterFareRevenue: CashMillions;
+  /**
+   * Catchment population growth rate, annualized fraction. v3.3 economic model.
+   * TTC ~0.008 (0.8%/yr), GO ~0.015 (1.5%/yr), UP ~0.003 (0.3%/yr).
+   * Offsets reliability drag on ridership per quarter.
+   */
+  catchmentGrowthRate: number;
 }
 
 export type Agencies = Record<AgencyId, Agency>;

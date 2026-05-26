@@ -19,6 +19,13 @@ import { resolve } from 'node:path';
 import type { GameState } from '@/types/gameState';
 import { createInitialGameState } from './createInitialGameState';
 import { endTurn } from './endTurn';
+import { quarterlyDebtService } from './finance';
+import {
+  quarterlyFareRevenue,
+  quarterlyMaintenanceExpense,
+  quarterlyOperatingAllowance,
+  quarterlyOperatingExpense,
+} from './cashflow';
 
 interface QuarterSnapshot {
   q: number;
@@ -29,6 +36,8 @@ interface QuarterSnapshot {
   ttcReliability: number;
   bocPolicyRateBp: number;
   ontarioLineState: string;
+  /** Operating-side ins (allowance + fare) - outs (opex + maint + debt service). */
+  operatingGap: number;
 }
 
 const OUTPUT_DIR = resolve(process.cwd(), 'dist-harness');
@@ -56,6 +65,14 @@ function snapshot(state: GameState): QuarterSnapshot {
   const q = state.quarter as unknown as number;
   const conditions = state.agencies.ttc.subsystems.map((s) => s.condition as unknown as number);
   const ontarioLine = state.projects.find((p) => p.templateId === 'P00');
+
+  const allowance = quarterlyOperatingAllowance(state.operatingAllowance) as unknown as number;
+  const fare = quarterlyFareRevenue(state.agencies) as unknown as number;
+  const opex = quarterlyOperatingExpense(state.agencies) as unknown as number;
+  const maint = quarterlyMaintenanceExpense(state.agencies) as unknown as number;
+  const debtSvc = quarterlyDebtService(state.debt) as unknown as number;
+  const operatingGap = allowance + fare - opex - maint - debtSvc;
+
   return {
     q,
     yearLabel: quarterLabel(q),
@@ -65,6 +82,7 @@ function snapshot(state: GameState): QuarterSnapshot {
     ttcReliability: avg(conditions),
     bocPolicyRateBp: state.debt.bocPolicyRate as unknown as number,
     ontarioLineState: ontarioLine?.state ?? 'gone',
+    operatingGap,
   };
 }
 
@@ -93,12 +111,12 @@ function printTable(snapshots: QuarterSnapshot[]): void {
     'When',
     'Cash',
     'ΔCash',
+    'OpGap/Q',
     'Riders/day',
     'TTC reliab',
-    'BOC bp',
     'OL state',
   ];
-  const widths = [3, 8, 10, 9, 11, 11, 7, 18];
+  const widths = [3, 8, 10, 9, 9, 11, 11, 18];
   const pad = (s: string, w: number) => s.padEnd(w);
   console.log(header.map((h, i) => pad(h, widths[i] ?? 10)).join(' '));
   console.log(widths.map((w) => '-'.repeat(w)).join(' '));
@@ -108,9 +126,9 @@ function printTable(snapshots: QuarterSnapshot[]): void {
       s.yearLabel,
       fmtMoney(s.cash),
       `${s.cashDelta >= 0 ? '+' : ''}${fmtMoney(s.cashDelta)}`,
+      `${s.operatingGap >= 0 ? '+' : ''}${fmtMoney(s.operatingGap)}`,
       fmtRiders(s.dailyRiders),
       s.ttcReliability.toFixed(1),
-      String(s.bocPolicyRateBp),
       s.ontarioLineState,
     ];
     console.log(row.map((c, i) => pad(c, widths[i] ?? 10)).join(' '));
@@ -118,7 +136,9 @@ function printTable(snapshots: QuarterSnapshot[]): void {
 }
 
 function writeCsv(snapshots: QuarterSnapshot[], path: string): void {
-  const lines = ['quarter,year_label,cash_M,cash_delta_M,daily_riders,ttc_reliability,boc_bp,ontario_line_state'];
+  const lines = [
+    'quarter,year_label,cash_M,cash_delta_M,operating_gap_M,daily_riders,ttc_reliability,boc_bp,ontario_line_state',
+  ];
   for (const s of snapshots) {
     lines.push(
       [
@@ -126,6 +146,7 @@ function writeCsv(snapshots: QuarterSnapshot[], path: string): void {
         s.yearLabel,
         s.cash.toFixed(2),
         s.cashDelta.toFixed(2),
+        s.operatingGap.toFixed(2),
         s.dailyRiders,
         s.ttcReliability.toFixed(2),
         s.bocPolicyRateBp,

@@ -17,13 +17,14 @@ import { cash, quarter, riders } from '@/types/scalars';
 export function tickConstructingProject(
   p: ConstructingProject,
   currentQuarter: QuarterIndex,
-): { project: ConstructingProject | OperatingProject; spentThisQuarter: CashMillions } {
+): { project: ConstructingProject | OperatingProject; drawFromFunding: CashMillions } {
   const currentQ = currentQuarter as unknown as number;
   const brokeGroundQ = p.brokeGroundAt as unknown as number;
   const forecastOpenQ = p.forecastOpenAt as unknown as number;
   const buildLength = Math.max(1, forecastOpenQ - brokeGroundQ);
   const burnPerQuarter = (p.totalBudget as unknown as number) / buildLength;
   const spentSoFar = (p.spent as unknown as number) + burnPerQuarter;
+  const remainingAfter = Math.max(0, (p.remainingFunding as unknown as number) - burnPerQuarter);
 
   // Transition to operating once we hit the forecasted open date.
   // Ridership ramp happens via tickOperatingProject in subsequent quarters.
@@ -38,13 +39,14 @@ export function tickConstructingProject(
       openedAt: quarter(currentQ),
       finalCost: cash(spentSoFar),
       currentDailyRiders: riders(0),
+      financing: p.financing,
     };
-    return { project: opening, spentThisQuarter: cash(burnPerQuarter) };
+    return { project: opening, drawFromFunding: cash(burnPerQuarter) };
   }
 
   return {
-    project: { ...p, spent: cash(spentSoFar) },
-    spentThisQuarter: cash(burnPerQuarter),
+    project: { ...p, spent: cash(spentSoFar), remainingFunding: cash(remainingAfter) },
+    drawFromFunding: cash(burnPerQuarter),
   };
 }
 
@@ -64,26 +66,30 @@ export function tickOperatingProject(
 }
 
 /**
- * Tick a single project. Returns updated project + any cash impact + any
- * delta to daily ridership that should flow into the operating network.
+ * Tick a single project. Returns updated project + funding pool draw + any
+ * delta to daily ridership flowing into the operating network.
+ *
+ * `drawFromFunding` is NOT a cash outflow on the operating side. It comes
+ * out of the project's `remainingFunding` pool (which was fed by the
+ * accepted financing at break-ground). The operating-side cash flow in
+ * endTurn ignores this; it's purely a project-state mutation.
  */
 export function tickProject(
   p: Project,
   currentQuarter: QuarterIndex,
   ridershipForTemplate: (templateId: string) => number,
-): { project: Project; spentThisQuarter: CashMillions; ridershipDelta: number } {
+): { project: Project; drawFromFunding: CashMillions; ridershipDelta: number } {
   if (p.state === 'proposed') {
-    // Phase 1.2: proposed projects don't auto-advance; player decisions land Phase 4
-    return { project: p, spentThisQuarter: cash(0), ridershipDelta: 0 };
+    return { project: p, drawFromFunding: cash(0), ridershipDelta: 0 };
   }
   if (p.state === 'under_construction') {
     const result = tickConstructingProject(p, currentQuarter);
-    return { project: result.project, spentThisQuarter: result.spentThisQuarter, ridershipDelta: 0 };
+    return { project: result.project, drawFromFunding: result.drawFromFunding, ridershipDelta: 0 };
   }
   // operating
   const full = ridershipForTemplate(p.templateId);
   const before = p.currentDailyRiders as unknown as number;
   const next = tickOperatingProject(p, currentQuarter, full);
   const after = next.currentDailyRiders as unknown as number;
-  return { project: next, spentThisQuarter: cash(0), ridershipDelta: after - before };
+  return { project: next, drawFromFunding: cash(0), ridershipDelta: after - before };
 }

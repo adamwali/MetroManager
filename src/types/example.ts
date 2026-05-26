@@ -29,6 +29,12 @@ export const exampleGameState: GameState = {
     balance: cash(5_000),
     lastQuarterDelta: cash(0),
   },
+  operatingAllowance: {
+    annualAmount: cash(2_400),
+    signedAt: quarter(0),
+    renegotiatesAt: quarter(16),
+    controls: [],
+  },
   debt: {
     tranches: [
       {
@@ -107,6 +113,7 @@ export const exampleGameState: GameState = {
         { id: 'stations', condition: score(70), maintenanceBudget: cash(100) },
       ],
       operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
+      catchmentGrowthRate: 0,
       directorCharacterId: 'c_ttc_director',
       lastQuarterOpex: cash(675),
       lastQuarterFareRevenue: cash(350),
@@ -121,6 +128,7 @@ export const exampleGameState: GameState = {
         { id: 'stations', condition: score(74), maintenanceBudget: cash(30) },
       ],
       operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
+      catchmentGrowthRate: 0,
       directorCharacterId: 'c_go_director',
       lastQuarterOpex: cash(350),
       lastQuarterFareRevenue: cash(230),
@@ -134,6 +142,7 @@ export const exampleGameState: GameState = {
         { id: 'stations', condition: score(78), maintenanceBudget: cash(2) },
       ],
       operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
+      catchmentGrowthRate: 0,
       directorCharacterId: 'c_up_director',
       lastQuarterOpex: cash(24),
       lastQuarterFareRevenue: cash(14),
@@ -150,7 +159,9 @@ export const exampleGameState: GameState = {
       brokeGroundAt: quarter(-16),
       totalBudget: cash(27_000),
       spent: cash(9_000),
+      remainingFunding: cash(18_000),
       forecastOpenAt: quarter(20),
+      financing: [],
       perProject: {
         sitePrep: score(40),
         megaContract: true,

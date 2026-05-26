@@ -246,25 +246,89 @@ Ad-hoc funding request interface.
 
 ---
 
-## 5. The economic model
+## 5. The economic model (v3.3 — financing pivot)
+
+The agency has two completely separate money flows:
+
+1. **Operating side** — opex (running TTC / GO / UP) is funded by **fare revenue + a 4-year operating allowance** negotiated with all three governments. Any shortfall is closed by issuing bonds (private financing).
+2. **Capital side** — each new project the player initiates triggers a **financing approach** where the player pitches to one or more governments. Approved financing creates new debt at a rate that depends on the player's trust with the funder. There is no generic capital budget; capital is per-project.
+
+This is the structural change from v3.0–3.2: no more annual indexed government inflow. Capital comes per-project, opex comes from a 4-year political pact, gaps are filled by bonds.
 
 ### Starting position (Q1 2026)
 
-**Cash:** $5B opening balance. ~$9B/yr from three governments (federal $4B, provincial $3.5B, municipal $1.5B), indexed to construction inflation, renegotiated every 3 years.
+**Cash:** $5B opening balance (residual from previous regime).
 
-**Operating:** ~$2.1B annual fare revenue. ~$4.5B annual opex. ~$2.4B annual operating subsidy required.
+**Operating allowance:** $2.4B/yr, negotiated as a 4-year pact (years 1-4). Renegotiated at end of Y4, Y8, Y12. Outcome at renegotiation depends on trust + delivery + operational performance per §6 (same outcome ladder: continuation / increase / decrease with controls / drastic cut). No annual indexing — the pact amount is fixed for the 4-year term once signed.
 
-**Network state:** TTC subway 4 lines + Line 5, TTC bus 150 routes, GO 7 corridors mostly diesel, UP Pearson-Union. ~2.5M daily TTC subway, ~1.5M TTC bus, ~250k GO, ~12k UP.
+**Fare revenue:** ~$2.4B/yr at starting ridership, scales with ridership × fare × elasticity.
 
-**Capital inherited:** Ontario Line $27B budget, $9B spent, 21% complete. SOGR backlog $33B.
+**Combined opex (operations + maintenance at required levels):** ~$4.5B/yr. Gap to fare + allowance is therefore ~$0-300M/yr (close to break-even, leaning slightly negative).
 
-**Initial debt:** ~$8B at weighted average 4.2%. **Split: 70% fixed-rate, 30% floating-rate.** Mixed maturities, average duration 8.4 years. Credit rating AA-.
+**Inherited debt:** ~$8B at weighted average 4.2%. Split 70/30 fixed-vs-floating. Mixed maturities, average duration 8.4 years. Credit rating AA-.
+
+**Inherited project (Ontario Line):** $27B total budget, $9B spent, 21% complete. Financing was negotiated pre-game as a tri-government consortium ($10B federal + $9B provincial + $8B municipal) at a blended ~4.0% rate. That debt is already reflected in the inherited tranches.
+
+### Per-project capital financing
+
+When the player initiates a project (proposed state, §9), they choose a **financing approach** — one of four options:
+
+| Approach | Counterparty | Mechanics |
+|---|---|---|
+| **Federal only** | Ottawa | Single offer based on federal trust. Larger projects may exceed federal appetite. |
+| **Provincial only** | Queen's Park | Single offer based on provincial trust. Typically caps lower than federal. |
+| **Municipal only** | City Hall | Single offer based on municipal trust. Smallest amounts, lowest cap. |
+| **Consortium** | All three | Combined offer. Amount is sum of each gov's appetite; rate is the weighted-average rate across them. Easier to fund mega projects this way. |
+
+Each offer has three terms:
+
+1. **Amount** — max the funder is willing to put in. Function of project tier, gov's funding appetite for that mode/region, and current trust.
+2. **Rate** — interest rate on the resulting debt. Base 5%, adjusted ±1-3 percentage points by trust:
+   - Trust 100 → rate ≈ 2-3%
+   - Trust 50 → rate ≈ 5% (baseline)
+   - Trust 0 → rate ≈ 7-8%
+   - Formula: `rate = 5% + (50 - trust) × 0.06%` (linear)
+3. **Conditions** — 0-3 narrative conditions tied to the funding (must include stations in funder's ridings, cost cap, hiring freeze on certain roles, environmental commitments). Conditions become engine constraints; rejecting them rejects the offer.
+
+If the player can't or won't accept a financing offer (insufficient amount, terms unacceptable), they can fall back to **private financing** — issue bonds at market rates from one of the four creditor classes (pension / institutional / retail / foreign) per §5's existing bond mechanics. Worse rates than gov financing, but no political conditions.
+
+### Operating allowance — 4-year cycle
+
+Every 4 quarters: a quarter of the annual allowance lands in cash ($2.4B / 4 = $600M/Q at starting level).
+
+Every 16 quarters (Y4, Y8, Y12 endings): renegotiation. The combined trust score, delivery track record, and operational KPIs feed the outcome ladder:
+
+- **Continuation** — same nominal allowance for next 4 years. Default at trust ≥ 50.
+- **Increase (+10-30%)** — high trust + strong delivery.
+- **Decrease with controls (-10-30%)** — moderate trust drop; brings constraints (project deprioritization, cost cap, hiring freeze).
+- **Drastic cut (-40-60%)** — trust collapse. Forces deep operational cuts or step-down.
+
+Renegotiation is a player-facing decision moment (event EV073-EV075). No annual indexing; the negotiated number holds flat for the 4-year term.
+
+### Private financing for operating shortfall
+
+If `fare revenue + operating allowance < opex + maintenance + debt service` for a sustained period (2+ quarters), the player can issue bonds against operating projections. Worse rates than capital bonds (operating bond risk premium ~75bp), but available as a stopgap. Persistent reliance on operating bonds is a signal to the board (board confidence drag) and to credit rating agencies (downgrade pressure).
 
 ### Operating revenue
 
 Daily ridership × average fare × 250 (annualized days) × elasticity factors.
 
-Ridership responds to fare, frequency (+0.2 short, +0.4 long elasticity), network coverage (new lines ramp over 8Q), reliability (-1-2%/yr if poor), demographic drift, economy (-5-10% in recession), TOD/density (+30% on upzoned lines).
+### Ridership dynamics
+
+Ridership responds to:
+
+- **Fare and frequency:** elasticity per line type (table below).
+- **New capacity:** new lines ramp ridership over 8Q after opening.
+- **Reliability drag:** -1-2%/yr when reliability composite is poor (below ~50 on the 0-100 scale).
+- **Catchment population growth (new in v3.3):** per-agency growth rates that offset reliability drag. TTC catchment grows ~0.8%/yr (mature urban core, some suburban densification). GO catchment grows ~1.5%/yr (suburban Toronto is one of the fastest-growing regions in North America). UP catchment grows ~0.3%/yr (airport-tied, slow-growth).
+- **Economy:** -5-10% in recession.
+- **TOD/density (LVC-driven):** +30% on upzoned lines once stations are opened and density built out.
+
+Net per-quarter ridership change = growth − reliability drag ± event impacts.
+
+### Network state (Q1 2026)
+
+TTC subway 4 lines + Line 5, TTC bus 150 routes, GO 7 corridors mostly diesel, UP Pearson-Union. ~2.5M daily TTC subway, ~1.5M TTC bus, ~250k GO, ~12k UP. SOGR backlog $33B.
 
 ### Per-line fare elasticities
 
@@ -338,19 +402,21 @@ If cash deeply negative + debt service unmanageable:
 2. Forced asset sale (lose GO, UP, or a specific capital project)
 3. If board confidence > 40, keep job. If < 40, fired.
 
-### Government inflow renegotiation (every 3 years)
+### Operating allowance renegotiation (every 4 years)
 
-Each government independently renegotiates inflow on its own 3-year cycle (not tied to elections).
+The 4-year operating-allowance pact (introduced earlier in this section) renegotiates at end of Y4, Y8, Y12. Single tri-government negotiation — federal, provincial, municipal participate jointly. Not tied to election cycles (those affect trust scores feeding into the negotiation rather than triggering it).
 
-Outcomes based on trust + delivery + operational performance + political mood:
-- **Continuation:** trust ≥ 50 and adequate performance
-- **Increase (+10-30%):** trust ≥ 70 and strong performance
-- **Decrease (-10-30%) with controls:** trust < 40 or poor performance
-- **Drastic cut (-40-60%):** trust < 25 or fiscal scandal
+Outcomes based on combined trust + delivery + operational performance + political mood:
+- **Continuation:** average trust ≥ 50 and adequate performance
+- **Increase (+10-30%):** average trust ≥ 70 and strong performance
+- **Decrease (-10-30%) with controls:** average trust < 40 or poor performance
+- **Drastic cut (-40-60%):** average trust < 25 or fiscal scandal
 
-Controls: forced project deprioritization, mandatory pet project, cost cap, hiring freeze.
+Controls applied with decreases: forced project deprioritization, mandatory pet project, cost cap, hiring freeze.
 
-Player can negotiate within bounds.
+Player can negotiate within bounds — events EV073-EV075 surface the actual choice moment.
+
+Distinct from project financing: this is opex-only. Capital comes per-project via the financing approach in §5.
 
 ### Land value capture (LVC) — simplified
 
@@ -682,3 +748,5 @@ MVP successful if:
 *v3.1 — director tolerance normalized to 0-100 (was 0-12), board confidence weights spelled out, stagnated-ridership threshold defined (Y15 < Y1 × 1.05), trust drift clarified as bidirectional mean-reversion to 40, lobbying cooldown clarified as per-politician global / 3Q / independent across politicians, doctrine scope clarified (5 operating-director doctrines vs role-specific senior-staff doctrines), P03 Downtown Relief south removed (made redundant by Ontario Line in construction), EV079 rate-spike scope moved from Phase 3.2 to Phase 7.1.*
 
 *v3.2 — project lifecycle simplified to three states (proposed → under_construction → operating) with a 2-quarter minimum buffer during `proposed` for studies; canonical engine-variables table added to §5 (templates, crosslinxLeverage, consultantAlignment, nimbyOrganization, openBooks, engineers, publicApproval + per-project sitePrep / megaContract / settlementPremium).*
+
+*v3.3 — economic-model pivot. Removed annual indexed government inflow ($9B/yr indexed at 5%). Replaced with: (a) per-project capital financing where the player pitches one of four approaches (Federal / Provincial / Municipal / Consortium) and receives an offer of amount + rate + conditions, rate tied to trust score (5% base, ±1-3pt swing); (b) 4-year operating allowance pact starting at $2.4B/yr, renegotiated at Y4/Y8/Y12, covers opex shortfall vs fare; (c) private bond financing as fallback for operating gaps. Added per-agency catchment-population growth rates (TTC +0.8%/yr, GO +1.5%/yr, UP +0.3%/yr) that offset reliability drag. Inflation indexing removed entirely.*

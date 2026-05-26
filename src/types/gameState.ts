@@ -6,6 +6,7 @@ import type { Characters } from './characters';
 import type { Cash, Debt } from './finance';
 import type { ActiveEvent, DelayedConsequence } from './events';
 import type { EngineVars } from './engineVars';
+import type { OperatingAllowance } from './operatingAllowance';
 import type { Politics } from './politics';
 import type { Project } from './projects';
 import type { RngSeeds } from './rng';
@@ -29,6 +30,7 @@ export interface GameState {
 
   cash: Cash;
   debt: Debt;
+  operatingAllowance: OperatingAllowance;
   politics: Politics;
   boardConfidence: BoardConfidence;
 

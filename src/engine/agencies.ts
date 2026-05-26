@@ -98,3 +98,12 @@ export function reliabilityRidershipDrift(reliability: number): number {
   if (reliability >= 25) return -0.0025;
   return -0.005;
 }
+
+/**
+ * Per-quarter catchment population growth per design doc §5 (v3.3).
+ * Converts annualized growth rate to per-quarter compound: (1 + annual)^(1/4) - 1.
+ * Positive number; added to reliability drift each quarter.
+ */
+export function catchmentGrowthPerQuarter(annualRate: number): number {
+  return Math.pow(1 + annualRate, 0.25) - 1;
+}

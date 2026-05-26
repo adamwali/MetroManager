@@ -3,14 +3,20 @@ import { bp, cash, quarter, riders, score, signed } from '@/types/scalars';
 import { createRngSeeds } from './rng';
 
 /**
- * Produce Q1 2026 starting state per design doc §5.
+ * Produce Q1 2026 starting state per design doc §5 v3.3.
  *
- * Numbers match the doc within rounding:
- * - $5B opening cash
+ * Numbers reconciled with the v3.3 financing pivot:
+ * - $5B opening cash (residual from previous regime)
+ * - Operating allowance $2.4B/yr, signed for Y1-Y4 (renegotiates Q16)
  * - $8.2B inherited debt at AA, 70/30 fixed/floating split, ~4.2% weighted
- * - Three governments, trust 50 each
- * - TTC + GO + UP with the operating-data ridership baselines
- * - Ontario Line inherited at 21% complete (9B/27B), forecast open Q+20
+ * - opex EXCLUDES maintenance (separate budget per subsystem)
+ *   - TTC opex $275M/Q (was $675M; the $400M/Q maintenance moved to subsystems)
+ *   - GO opex $190M/Q
+ *   - UP opex $15M/Q
+ * - Subsystem maintenance at "required" level (stable conditions)
+ * - Per-agency catchment growth: TTC 0.8%/yr, GO 1.5%/yr, UP 0.3%/yr
+ * - Ontario Line inherited at 21% complete with a synthetic consortium
+ *   financing record reflecting the historical tri-government split.
  *
  * Deterministic from `seed`: same seed → identical starting state and
  * identical 60-quarter trajectory.
@@ -51,13 +57,19 @@ export function createInitialGameState(seed: number): GameState {
       rating: 'AA',
       bocPolicyRate: bp(350),
     },
+    operatingAllowance: {
+      annualAmount: cash(2_400),
+      signedAt: quarter(0),
+      renegotiatesAt: quarter(16),
+      controls: [],
+    },
     politics: {
       ottawa: {
         id: 'ottawa',
         partyInPower: 'liberal',
         trust: score(50),
         nextElectionAt: quarter(12),
-        nextRenegotiationAt: quarter(12),
+        nextRenegotiationAt: quarter(16),
         approval: score(48),
         cabinetCharacterIds: ['c_tremblay'],
         oppositionCharacterIds: [],
@@ -67,7 +79,7 @@ export function createInitialGameState(seed: number): GameState {
         partyInPower: 'conservative',
         trust: score(50),
         nextElectionAt: quarter(10),
-        nextRenegotiationAt: quarter(12),
+        nextRenegotiationAt: quarter(16),
         approval: score(46),
         cabinetCharacterIds: ['c_hartwell'],
         oppositionCharacterIds: [],
@@ -77,7 +89,7 @@ export function createInitialGameState(seed: number): GameState {
         partyInPower: 'other',
         trust: score(50),
         nextElectionAt: quarter(8),
-        nextRenegotiationAt: quarter(12),
+        nextRenegotiationAt: quarter(16),
         approval: score(54),
         cabinetCharacterIds: ['c_liang'],
         oppositionCharacterIds: [],
@@ -95,8 +107,9 @@ export function createInitialGameState(seed: number): GameState {
           { id: 'stations', condition: score(70), maintenanceBudget: cash(100) },
         ],
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
+        catchmentGrowthRate: 0.008,
         directorCharacterId: 'c_ttc_director',
-        lastQuarterOpex: cash(675),
+        lastQuarterOpex: cash(275),
         lastQuarterFareRevenue: cash(350),
       },
       go: {
@@ -109,8 +122,9 @@ export function createInitialGameState(seed: number): GameState {
           { id: 'stations', condition: score(74), maintenanceBudget: cash(40) },
         ],
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
+        catchmentGrowthRate: 0.015,
         directorCharacterId: 'c_go_director',
-        lastQuarterOpex: cash(350),
+        lastQuarterOpex: cash(190),
         lastQuarterFareRevenue: cash(230),
       },
       up: {
@@ -122,8 +136,9 @@ export function createInitialGameState(seed: number): GameState {
           { id: 'stations', condition: score(78), maintenanceBudget: cash(3) },
         ],
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
+        catchmentGrowthRate: 0.003,
         directorCharacterId: 'c_up_director',
-        lastQuarterOpex: cash(24),
+        lastQuarterOpex: cash(15),
         lastQuarterFareRevenue: cash(14),
       },
     },
@@ -138,7 +153,18 @@ export function createInitialGameState(seed: number): GameState {
         brokeGroundAt: quarter(-16),
         totalBudget: cash(27_000),
         spent: cash(9_000),
+        remainingFunding: cash(18_000),
         forecastOpenAt: quarter(20),
+        financing: [
+          {
+            approach: 'consortium',
+            amount: cash(27_000),
+            rateBp: 400,
+            conditions: [],
+            signedAt: quarter(-24),
+            trancheId: 't_ol_consortium',
+          },
+        ],
         perProject: { sitePrep: score(40), megaContract: true, settlementPremium: score(10) },
       },
     ],

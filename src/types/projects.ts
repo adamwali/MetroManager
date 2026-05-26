@@ -67,6 +67,52 @@ export interface LvcConfig {
   stationsCovered: number;
 }
 
+/**
+ * Per-project capital financing. v3.3 economic model.
+ *
+ * When a project enters `proposed`, the player pitches one of four
+ * financing approaches and receives an offer of `{ amount, rate,
+ * conditions }`. The accepted offer creates a new DebtTranche at the
+ * negotiated rate (see finance.ts) and adds principal as cash inflow
+ * at break-ground.
+ */
+export type FinancingApproach = 'federalOnly' | 'provincialOnly' | 'municipalOnly' | 'consortium';
+
+export interface FinancingCondition {
+  /** Short human-readable text describing the condition. UI surfaces this. */
+  label: string;
+  /** Engine-readable kind so the constraint can be enforced over time. */
+  kind:
+    | 'stationsInFunderRiding' // must include N stations in funder's territory
+    | 'costCap' // capex cannot exceed a stated number
+    | 'hiringFreezeRoles' // certain roles frozen during build
+    | 'environmentalCommitment' // net-zero / electrification ties
+    | 'localContractPreference'; // procurement preference for funder's region
+  /** Optional numeric parameter for the constraint. */
+  param?: number;
+}
+
+export interface FinancingOffer {
+  approach: FinancingApproach;
+  /** Max amount the funder is willing to put in, $M. */
+  maxAmount: CashMillions;
+  /** Annualized interest rate in basis points (e.g. 500 = 5%). */
+  rateBp: number;
+  conditions: FinancingCondition[];
+}
+
+export interface AcceptedFinancing {
+  approach: FinancingApproach;
+  /** Actual amount accepted (may be less than maxAmount if player took partial). */
+  amount: CashMillions;
+  rateBp: number;
+  conditions: FinancingCondition[];
+  /** Quarter the financing was signed. */
+  signedAt: QuarterIndex;
+  /** Reference to the DebtTranche created from this financing. */
+  trancheId: string;
+}
+
 /** Catalogue trait template, immutable per project id. */
 export interface ProjectTemplate {
   id: ProjectId;
@@ -137,8 +183,17 @@ export interface ConstructingProject {
   totalBudget: CashMillions;
   /** Amount actually spent so far. $M. */
   spent: CashMillions;
+  /**
+   * Funding pool drawn down each quarter to pay for construction. Funded by
+   * the accepted `financing` at break-ground. Project burn comes OUT OF this
+   * pool, not out of agency operating cash. If pool runs empty, project
+   * needs new financing or stalls.
+   */
+  remainingFunding: CashMillions;
   /** Forecast opening quarter at current pace. Shifts on construction events. */
   forecastOpenAt: QuarterIndex;
+  /** Capital financing accepted at break-ground. Inherited projects get a synthetic record. */
+  financing: AcceptedFinancing[];
   perProject: PerProjectVars;
 }
 
@@ -156,6 +211,8 @@ export interface OperatingProject {
   finalCost: CashMillions;
   /** Current daily ridership contribution (post-ramp at full ramp date). */
   currentDailyRiders: DailyRiders;
+  /** Financing accepted to fund this project. Debt servicing happens via tranches. */
+  financing: AcceptedFinancing[];
 }
 
 export type Project = ProposedProject | ConstructingProject | OperatingProject;

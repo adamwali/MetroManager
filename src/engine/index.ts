@@ -8,11 +8,17 @@ export {
   ratingSpreadBp,
 } from './finance';
 export {
-  quarterlyGovernmentInflow,
+  quarterlyOperatingAllowance,
   quarterlyOperatingExpense,
   quarterlyFareRevenue,
   quarterlyMaintenanceExpense,
 } from './cashflow';
-export { decaySubsystems, reliabilityScore, reliabilityRidershipDrift } from './agencies';
+export {
+  decaySubsystems,
+  reliabilityScore,
+  reliabilityRidershipDrift,
+  catchmentGrowthPerQuarter,
+} from './agencies';
+export { generateFinancingOffers, rateForTrust } from './financing';
 export { tickProject, tickConstructingProject, tickOperatingProject } from './projects';
 export { createRngSeeds, nextFloat } from './rng';

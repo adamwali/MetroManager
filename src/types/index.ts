@@ -7,6 +7,7 @@ export * from './engineVars';
 export * from './events';
 export * from './finance';
 export * from './gameState';
+export * from './operatingAllowance';
 export * from './politics';
 export * from './projects';
 export * from './rng';

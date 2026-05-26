@@ -1,39 +1,24 @@
 import type { Agencies } from '@/types/agency';
-import type { CashMillions, QuarterIndex } from '@/types/scalars';
+import type { OperatingAllowance } from '@/types/operatingAllowance';
+import type { CashMillions } from '@/types/scalars';
 import { cash } from '@/types/scalars';
 
 /**
- * Cash-flow components. Per design doc §5.
+ * Cash-flow components. v3.3 economic model.
  *
- * Engine math is in $M to keep numbers human-scale in the simulator.
- * Per-quarter values; annual numbers are quartered.
+ * Operating-side cash flow only — capital comes per-project via financing
+ * approaches at break-ground (see finance.ts and projects.ts).
+ *
+ * Operating allowance is a flat 4-year pact (no annual indexing). Each
+ * quarter the engine credits annualAmount / 4 to cash.
  */
 
-/** Starting annual government inflow at Q1 2026, $M. Per design doc §5. */
-const INFLOW_Q0_ANNUAL: Record<string, number> = {
-  ottawa: 4_000,
-  queensPark: 3_500,
-  cityHall: 1_500,
-};
-
-/** Construction-inflation indexing rate applied each game-year (4 quarters). */
-const INFLATION_PER_YEAR = 0.05;
-
-/**
- * Government inflow for a given quarter, $M.
- * Splits the annual amount evenly into 4 quarters, then applies cumulative
- * yearly indexing per the user's Phase 1.2 decision (5%/yr).
- */
-export function quarterlyGovernmentInflow(quarterIndex: QuarterIndex): CashMillions {
-  const q = quarterIndex as unknown as number;
-  const yearsElapsed = Math.floor(q / 4);
-  const indexFactor = Math.pow(1 + INFLATION_PER_YEAR, yearsElapsed);
-  const annualBase =
-    INFLOW_Q0_ANNUAL.ottawa! + INFLOW_Q0_ANNUAL.queensPark! + INFLOW_Q0_ANNUAL.cityHall!;
-  return cash((annualBase * indexFactor) / 4);
+/** Quarterly slice of the negotiated operating allowance, $M. */
+export function quarterlyOperatingAllowance(allowance: OperatingAllowance): CashMillions {
+  return cash((allowance.annualAmount as unknown as number) / 4);
 }
 
-/** Annualized opex × 1/4. Sum per agency, this quarter. */
+/** Annualized opex × 1/4. Sum per agency, this quarter (excludes maintenance). */
 export function quarterlyOperatingExpense(agencies: Agencies): CashMillions {
   const total =
     (agencies.ttc.lastQuarterOpex as unknown as number) +
@@ -54,6 +39,8 @@ export function quarterlyFareRevenue(agencies: Agencies): CashMillions {
 /**
  * Quarterly maintenance expense across all agencies and subsystems.
  * Maintenance is a $M-per-quarter budget set per subsystem on each agency.
+ * Comes out of cash separately from `lastQuarterOpex` (which is now
+ * operations-only excluding maintenance).
  */
 export function quarterlyMaintenanceExpense(agencies: Agencies): CashMillions {
   let total = 0;

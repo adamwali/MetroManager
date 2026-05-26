@@ -5,6 +5,69 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Economic model pivot (v3.3)
+
+**Done:**
+- Reviewed Phase 1.2 heartbeat output with repo owner. Identified that the
+  prior model produced unrealistic cash accumulation ($119B over 15 years)
+  because capital project burn was sharing cash with operating flows.
+- Locked design pivot: per-project financing + 4-year operating pact +
+  city growth offset + no inflation.
+- Spec updated to v3.3: replaced economic-model §5 entirely; added §5
+  subsections on capital financing, operating allowance, private bonds,
+  ridership dynamics with growth.
+- Type system extended:
+  - `FinancingApproach`, `FinancingCondition`, `FinancingOffer`,
+    `AcceptedFinancing` in projects.ts
+  - `OperatingAllowance` and `OperatingAllowanceControl` in new
+    operatingAllowance.ts
+  - `catchmentGrowthRate` on Agency
+  - `remainingFunding` on ConstructingProject (capital lives here, not in
+    agency operating cash)
+- Engine modules updated:
+  - `cashflow.ts`: `quarterlyGovernmentInflow` removed; replaced with
+    `quarterlyOperatingAllowance`. Inflation gone. opex/maint/fare helpers
+    unchanged.
+  - `agencies.ts`: added `catchmentGrowthPerQuarter` helper
+  - `projects.ts`: `tickConstructingProject` now draws from
+    `remainingFunding`, returns `drawFromFunding` (not `spentThisQuarter`)
+  - `endTurn.ts`: project burn no longer subtracted from cash; operating
+    cash flow is purely operating-side
+  - `financing.ts`: NEW — `rateForTrust`, `generateFinancingOffers`
+    producing four offers per project per current trust scores
+  - `createInitialGameState.ts`: opex split out from maintenance, OL has
+    `remainingFunding: $18B` reflecting historical pre-game financing
+- Tests: dropped inflation test, added 8 new tests (operating allowance,
+  financing offers, catchment growth, agency near-break-even check).
+  24 tests total, all passing.
+- Harness updated with OpGap column showing operating-side gap per quarter.
+
+**New heartbeat trajectory:**
+- Cash $5B → $8.29B over 60Q. Operating surplus ~$232M/yr at defaults.
+- Operating gap +$55-58M/Q (slight surplus — allowance + fare covers
+  opex + maint + debt service with headroom).
+- Ridership 4.75M → 5.36M (Ontario Line ramp + city growth > reliability
+  drag at default maintenance).
+- Ontario Line opens Q20 as before, draws from its $18B remaining funding
+  pool over the 16 quarters of remaining construction.
+
+**Left for later phases:**
+- Project financing UI (player picks offer at proposed-state initiation) →
+  Phase 4.
+- Operating allowance renegotiation event flow → Phase 6.3.
+- Operating bonds for persistent shortfall → Phase 7.
+- BOC rate cycling → Phase 7.
+
+**Surprises:**
+- The original spec's $2.4B subsidy figure was correctly sized — it took
+  separating opex from maintenance to see it. The earlier model was
+  double-counting maintenance inside opex.
+- Once project burn was moved off cash, the trajectory became almost
+  realistic-feeling on first try. Good signal that the per-project
+  financing model is the right abstraction.
+
+---
+
 ## 2026-05-26 — Phase 1.2: cash flow engine
 
 **Done:**

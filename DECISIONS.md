@@ -5,6 +5,75 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Economic model pivot (spec v3.3)
+
+Repo owner reviewed the Phase 1.2 heartbeat output and identified that the
+prior model (annual indexed $9B government inflow → all cash, capital
+spending → all cash) didn't match the intended game feel. Pivot:
+
+**Capital and operating are now separate money flows.** Capital comes
+per-project via a financing approach (Federal / Provincial / Municipal /
+Consortium), each offering `{ amount, rate, conditions }` where rate is
+tied to that government's trust score. Operating is funded by a 4-year
+tri-government pact ($2.4B/yr starting) renegotiated at Y4 / Y8 / Y12.
+Annual indexing dropped entirely.
+
+**Project burn comes out of a per-project funding pool, NOT operating cash.**
+Each `ConstructingProject` has `remainingFunding: CashMillions` (funded by
+accepted financing at break-ground). Quarterly construction burn draws this
+pool down. Operating cash only sees opex / maintenance / debt service / refi
+fees. This matches how real agencies structure project capital vs operating
+budgets and is much clearer for the player ("your bank account" = operating
+liquid, "project budget" = per-project funded pool).
+
+**Rate formula for financing offers:** `rate_bp = 500 + (50 - trust) × 6`,
+clamped to [100, 1200]. Trust 50 → 5%. Trust 100 → 2%. Trust 0 → 8%.
+Linear, easy to telegraph in UI ("your federal trust at 65 gets you 4.1%
+on this project").
+
+**Consortium = sum of three gov appetites, weighted-average rate, dedup'd
+conditions.** No special discount for cooperating; just mechanics of the
+combined offer.
+
+**Funding appetite per gov per tier:** Federal larger, provincial mid,
+municipal smaller (matches real-world Canadian transit funding stack).
+Tunable per project tier (small / medium / large / mega).
+
+**Per-agency catchment growth rates added to ridership math.** TTC 0.8%/yr,
+GO 1.5%/yr (suburban Toronto growth is real), UP 0.3%/yr. Compounds per
+quarter, added to reliability drag for net ridership delta. Captures the
+real-world dynamic that population growth offsets aging-infrastructure
+ridership drag.
+
+**Operating allowance flat for its 4-year term.** No annual indexing within
+the pact. Renegotiation event at end of term adjusts the next 4 years based
+on trust + delivery + performance per the §6 outcome ladder.
+
+**Private financing fallback:** if operating side runs persistently
+negative, player can issue operating bonds against future inflow. Worse
+rates than capital bonds, board confidence drag, downgrade pressure.
+Implementation lands when needed (Phase 7).
+
+**Reconciled opex split:** `lastQuarterOpex` is now operations-only
+(labor, fuel, station ops) — excludes maintenance. Maintenance is its own
+budget per subsystem, player-controllable. TTC opex dropped from $675M/Q
+(double-counted) to $275M/Q. With $400M/Q maintenance at required level,
+total TTC operating burden is $675M/Q matching the spec.
+
+**Sanity check on the new model:** at default settings the operating gap
+is +$55-58M/Q (slight surplus). The $2.4B/yr allowance covers the
+opex - fare - debt-service shortfall with about $232M/yr headroom. The
+spec's $2.4B subsidy estimate from §5 was correctly sized.
+
+**Inflation indexing removed everywhere.** The 5%/yr indexing on gov
+inflow is gone. All amounts in the simulation are nominal $M with no
+implicit inflation. Construction inflation as a cost-factor pressure on
+projects (§5) remains a separate mechanic.
+
+Spec docs updated to v3.3.
+
+---
+
 ## 2026-05-26 — Phase 1.2: cash flow engine
 
 **Debt maturity = auto-refi at current market rate** (per repo owner). When
