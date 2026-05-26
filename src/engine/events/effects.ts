@@ -72,6 +72,12 @@ function applyOne(state: GameState, e: EventEffect): GameState {
       );
       return { ...state, engineVars: { ...state.engineVars, templates: score(next) } };
     }
+    case 'nimbyOrganization': {
+      const next = clampScore(
+        (state.engineVars.nimbyOrganization as unknown as number) + e.delta,
+      );
+      return { ...state, engineVars: { ...state.engineVars, nimbyOrganization: score(next) } };
+    }
     case 'opex':
       return {
         ...state,

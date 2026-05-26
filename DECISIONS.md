@@ -5,6 +5,92 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 3.2 polish (round 2): kill empty-calorie features
+
+Repo-owner asked for an honest audit of empty-calorie features —
+state/UI/types that exist but don't actually affect gameplay. Found 6
+high-priority items and fixed all of them. The deferred items are
+documented as such with explicit phase pointers.
+
+**1. Public approval → ridership drift.**
+- Was: moved by ~10 events, showed in KPI strip, did literally nothing else.
+- Now: < 30 approval drags ridership -0.3%/Q across all agencies; ≥ 70
+  boosts +0.1%/Q. Player who lets approval crash watches ridership
+  bleed; player who builds approval gets organic growth assist.
+- Folded into the `reliabilityRidershipDrag` line in quarter_summary
+  breakdown so the trace shows the contribution.
+
+**2. Engineers count → project burn rate.**
+- Was: gated 1 event (EV036 engineer poached), did nothing else.
+- Now: project construction speed scales by `engineers / 180`, clamped
+  [0.5×, 1.5×]. Technocrat at 220 engineers burns 1.22× faster (~3Q
+  earlier on a 16Q project). Insider at 140 burns 0.78× (3Q later).
+- `tickConstructingProject(p, currentQ, engineers)` and `tickProject`
+  both take engineers count; threaded through endTurn.
+- Real archetype divergence on project velocity. Phase 4 (project
+  initiation) will benefit immediately.
+
+**3. OpenBooks flag → -20bp on floating-rate spreads.**
+- Was: gated 2 event branches (EV005 climate, EV007 renegotiation),
+  did nothing else.
+- Now: `effectiveCouponBp(tranche, bocRate, openBooks)` reduces floating
+  spreads by 20bp when openBooks=true. Technocrat (starts with openBooks
+  = true) saves ~$5M/Q on debt service vs Steady. Real bond benefit.
+
+**4. NIMBY organization → EV022 lawsuit gate + grows on confrontation.**
+- Was: engineVar existed, never read by anything. Default 25; never moved.
+- Now: EV022 NIMBY lawsuit only fires when nimbyOrganization ≥ 30.
+  Confrontational event choices grow it (+15 on "vocal minority"
+  framing of EV022, +10 on fighting heritage designation). Settlement
+  branches reduce it (-10 on EV022 settle-with-concessions).
+- New `nimbyOrganization` predicate kind in EventPredicate union.
+- New `nimbyOrganization` effect kind in EventEffect union.
+
+**5. BOC policy rate → drifts each quarter via keyed RNG.**
+- Was: stuck at 350bp forever; floating-rate debt was effectively
+  fixed. EV039 informational was vapor.
+- Now: `driftBocRate(currentBp, roll)` applies a random walk per
+  quarter: ±15bp stochastic + 2% mean-reversion pull toward 350bp.
+  Bounded [100, 700] bp. Keyed RNG → deterministic per seed.
+- 8Q drift visible in harness: 350 → 348 → 339 → 328 → 326 → 330 → 319.
+  Floating-rate debt service moves with it.
+
+**6. Elections → trust shifts + party flips.**
+- Was: EV032/33/34 fired as pure informationals; party + trust never
+  changed. Election day was theatre.
+- Now: when an election informational fires, `applyElectionOutcome`:
+  - Shifts the corresponding gov's trust by [-12, +8] via keyed RNG
+    (slight negative bias — elections shake trust regardless of winner)
+  - 35% chance to flip `partyInPower` (between liberal / conservative
+    / other)
+  - Re-arms `nextElectionAt` 8Q out (Phase 6.1 will deepen this)
+- Same gov + same seed = same outcome (deterministic across replays).
+
+**Tier 2 fixes — explicitly deferred to specific phases:**
+- `Characters: {}` → Phase 6 (characters + dialogue + tolerance)
+- `StandingOrders: []` → Phase 8 (auto-handlers + decision density)
+- `proposed` state, `FinancingOffer`, `LvcConfig` → Phase 4 (project
+  initiation)
+- `templates` → project cost reduction → Phase 4
+- Board `recentComponents`, `warningActive` → Phase 8.6 (why-did-this-
+  happen trace UI)
+- CEO `portraitId` → Phase 6
+- `OperatingAllowance.controls` → Phase 6.3 (renegotiation)
+- `nextRenegotiationAt` per gov → Phase 6.3
+- EV037 board retires (no replacement flow) → Phase 6.2
+
+**15 new tests** cover the 6 fixes:
+- approval drift bands + 8Q ridership comparison
+- engineers project burn comparison (Technocrat vs Insider)
+- openBooks tranche discount + total debt service comparison
+- NIMBY EV022 gating + effect application
+- BOC rate bounds + mean-reversion + endTurn moves it
+- Election trust shifts + nextElection re-arm + party flip across seeds
+
+**160 tests total passing.** Bundle 401KB JS / 124KB gzip.
+
+---
+
 ## 2026-05-26 — Phase 3.2 polish: telegraph trim + active obligations
 
 Two issues from repo-owner review of the 3.2 ship:

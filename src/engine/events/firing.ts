@@ -7,9 +7,68 @@ import type {
   EventTemplate,
 } from '@/types/events';
 import { keyedFloat } from '@/engine/rng';
+import { score } from '@/types/scalars';
 import { applyEffects } from './effects';
 import { evaluatePredicate } from './predicates';
 import { EVENT_TEMPLATES, eventTemplateById } from './templates';
+
+/**
+ * Map election event ids to the government whose election just concluded.
+ * Phase 3.2 polish: previously elections fired as pure informationals with
+ * no mechanical consequence (empty calorie). Now they shift trust by a
+ * deterministic random delta (-12 to +8) and have a 35% chance to flip
+ * the party in power. Phase 6.1 will deepen this with campaign events.
+ */
+const ELECTION_TEMPLATE_TO_GOV: Record<
+  string,
+  'ottawa' | 'queensPark' | 'cityHall'
+> = {
+  EV032_federalElection: 'ottawa',
+  EV033_provincialElection: 'queensPark',
+  EV034_cityElection: 'cityHall',
+};
+
+function applyElectionOutcome(state: GameState, templateId: string): GameState {
+  const gov = ELECTION_TEMPLATE_TO_GOV[templateId];
+  if (!gov) return state;
+  const q = state.quarter as unknown as number;
+  // Trust shift: roll in [0,1) → delta in [-12, +8], slight negative bias
+  // because elections often shake trust regardless of outcome.
+  const trustRoll = keyedFloat(state.rng.masterSeed, `election:${gov}:trust:q${q}`);
+  const trustDelta = Math.round(trustRoll * 20 - 12);
+  const currentTrust = state.politics[gov].trust as unknown as number;
+  const newTrust = Math.max(0, Math.min(100, currentTrust + trustDelta));
+
+  // Party flip: 35% chance
+  const flipRoll = keyedFloat(state.rng.masterSeed, `election:${gov}:flip:q${q}`);
+  const partyChanged = flipRoll < 0.35;
+  const PARTY_ORDER: ('liberal' | 'conservative' | 'other')[] = [
+    'liberal',
+    'conservative',
+    'other',
+  ];
+  const currentParty = state.politics[gov].partyInPower;
+  let newParty = currentParty;
+  if (partyChanged) {
+    const alternates = PARTY_ORDER.filter((p) => p !== currentParty);
+    const partyPickRoll = keyedFloat(state.rng.masterSeed, `election:${gov}:party:q${q}`);
+    newParty = alternates[Math.floor(partyPickRoll * alternates.length)]!;
+  }
+
+  return {
+    ...state,
+    politics: {
+      ...state.politics,
+      [gov]: {
+        ...state.politics[gov],
+        trust: score(newTrust),
+        partyInPower: newParty,
+        // Re-arm the election clock: 8 quarters out (Phase 6.1 will refine)
+        nextElectionAt: ((q + 8) as unknown) as typeof state.politics[typeof gov]['nextElectionAt'],
+      },
+    },
+  };
+}
 
 /**
  * Event firing engine. Phase 3.1 + 3.2.
@@ -171,13 +230,16 @@ function fireOrInform(
   const outletPrefix = template.outlet ? `${template.outlet}: ` : '';
 
   if (isInformational) {
+    // Apply election outcome side-effects (Phase 3.2 polish — elections
+    // now actually shift trust + may flip party in power)
+    const afterOutcome = applyElectionOutcome(state, template.id);
     return {
-      state,
+      state: afterOutcome,
       entries: [
         {
           kind: 'event_informational',
           id: logId,
-          quarter: state.quarter,
+          quarter: afterOutcome.quarter,
           cause: { kind: 'system', system },
           eventTemplateId: template.id,
           ...(template.outlet ? { outlet: template.outlet } : {}),

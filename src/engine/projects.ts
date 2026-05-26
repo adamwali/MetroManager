@@ -13,16 +13,28 @@ import { cash, quarter, riders } from '@/types/scalars';
  * Until then, projects tick at their forecast rate.
  */
 
-/** Advance one constructing project by a quarter. May transition to operating. */
+const BASELINE_ENGINEERS = 180;
+
+/**
+ * Advance one constructing project by a quarter. May transition to operating.
+ *
+ * Phase 3.2 polish: engineers count now affects burn rate. More engineers =
+ * faster construction. Multiplier = engineers / 180 (baseline), clamped 0.5×
+ * to 1.5×. Wires the previously-orphan `engineVars.engineers` into a real
+ * project-velocity lever.
+ */
 export function tickConstructingProject(
   p: ConstructingProject,
   currentQuarter: QuarterIndex,
+  engineers: number = BASELINE_ENGINEERS,
 ): { project: ConstructingProject | OperatingProject; drawFromFunding: CashMillions } {
   const currentQ = currentQuarter as unknown as number;
   const brokeGroundQ = p.brokeGroundAt as unknown as number;
   const forecastOpenQ = p.forecastOpenAt as unknown as number;
   const buildLength = Math.max(1, forecastOpenQ - brokeGroundQ);
-  const burnPerQuarter = (p.totalBudget as unknown as number) / buildLength;
+  const baseBurn = (p.totalBudget as unknown as number) / buildLength;
+  const engineerMul = Math.max(0.5, Math.min(1.5, engineers / BASELINE_ENGINEERS));
+  const burnPerQuarter = baseBurn * engineerMul;
   const spentSoFar = (p.spent as unknown as number) + burnPerQuarter;
   const remainingAfter = Math.max(0, (p.remainingFunding as unknown as number) - burnPerQuarter);
 
@@ -96,6 +108,7 @@ export function tickProject(
   p: Project,
   currentQuarter: QuarterIndex,
   ridershipModelFor: (templateId: string) => ProjectRidershipModel | undefined,
+  engineers: number = BASELINE_ENGINEERS,
 ): ProjectTickResult {
   if (p.state === 'proposed') {
     return {
@@ -106,7 +119,7 @@ export function tickProject(
     };
   }
   if (p.state === 'under_construction') {
-    const result = tickConstructingProject(p, currentQuarter);
+    const result = tickConstructingProject(p, currentQuarter, engineers);
     return {
       project: result.project,
       drawFromFunding: result.drawFromFunding,

@@ -10,7 +10,9 @@ import {
   FISCAL_FAILURE_CONSECUTIVE_QUARTERS,
 } from '@/types/gameOver';
 import { cash, quarter, riders } from '@/types/scalars';
-import { applyMaturities, quarterlyDebtService } from './finance';
+import { applyMaturities, driftBocRate, quarterlyDebtService } from './finance';
+import { keyedFloat } from './rng';
+import { bp as bpScalar } from '@/types/scalars';
 import {
   quarterlyFareRevenue,
   quarterlyMaintenanceExpense,
@@ -18,6 +20,7 @@ import {
   quarterlyOperatingExpense,
 } from './cashflow';
 import {
+  approvalRidershipDrift,
   catchmentGrowthPerQuarter,
   decaySubsystems,
   reliabilityRidershipDrift,
@@ -49,10 +52,14 @@ export function endTurn(state: GameState): GameState {
   const nextQuarter = quarter(prevQuarter + 1);
 
   // 2. Maturities
-  const { debt: debtAfterMaturity, refiFee } = applyMaturities(
+  const { debt: debtAfterStep, refiFee } = applyMaturities(
     state.debt,
     nextQuarter as unknown as number,
   );
+  // BOC policy rate drift (Phase 3.2 polish — was orphan, now floats)
+  const bocRoll = keyedFloat(state.rng.masterSeed, `boc:q${nextQuarter as unknown as number}`);
+  const newBocBp = driftBocRate(debtAfterStep.bocPolicyRate as unknown as number, bocRoll);
+  const debtAfterMaturity = { ...debtAfterStep, bocPolicyRate: bpScalar(newBocBp) };
   const refiFeeN = refiFee as unknown as number;
   const tranchesRefinanced = state.debt.tranches.length - debtAfterMaturity.tranches.length + 1;
   const actualTranchesRefinanced = Math.max(0, tranchesRefinanced - 1); // -1 hack avoided below
@@ -67,7 +74,10 @@ export function endTurn(state: GameState): GameState {
   const fareN = quarterlyFareRevenue(state.agencies) as unknown as number;
   const opexN = quarterlyOperatingExpense(state.agencies) as unknown as number;
   const maintN = quarterlyMaintenanceExpense(state.agencies) as unknown as number;
-  const debtServiceN = quarterlyDebtService(debtAfterMaturity) as unknown as number;
+  const debtServiceN = quarterlyDebtService(
+    debtAfterMaturity,
+    state.engineVars.openBooks,
+  ) as unknown as number;
   const netCashDelta = allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN;
 
   // 4. Decay subsystems (archetype maintenance efficiency applied inside)
@@ -75,7 +85,8 @@ export function endTurn(state: GameState): GameState {
     decaySubsystems(a, state.ceo.archetype),
   );
 
-  // 5. Per-agency ridership: growth + reliability drag, separately tracked
+  // 5. Per-agency ridership: growth + reliability drag + approval effect,
+  // separately tracked for action-log breakdown
   type AgencyTracking = {
     before: number;
     fromGrowth: number;
@@ -83,13 +94,16 @@ export function endTurn(state: GameState): GameState {
     afterOrganic: number;
   };
   const organicTracking = {} as Record<AgencyId, AgencyTracking>;
+  const publicApprovalN = state.engineVars.publicApproval as unknown as number;
+  const approvalDriftPct = approvalRidershipDrift(publicApprovalN);
   const agenciesWithOrganicRidership = applyToAgencies(agenciesDecayed, (a) => {
     const before = a.dailyRiders as unknown as number;
     const reliability = reliabilityScore(a);
     const dragPct = reliabilityRidershipDrift(reliability);
     const growthPct = catchmentGrowthPerQuarter(a.catchmentGrowthRate);
+    // approval drift folded into reliability drag tracking for the breakdown
     const fromGrowth = Math.floor(before * growthPct);
-    const fromReliabilityDrag = Math.floor(before * dragPct);
+    const fromReliabilityDrag = Math.floor(before * (dragPct + approvalDriftPct));
     const afterOrganic = Math.max(0, before + fromGrowth + fromReliabilityDrag);
     organicTracking[a.id] = { before, fromGrowth, fromReliabilityDrag, afterOrganic };
     return { ...a, dailyRiders: riders(afterOrganic) };
@@ -103,7 +117,7 @@ export function endTurn(state: GameState): GameState {
 
   const tickedProjects = state.projects.map((p, idx) => {
     const before = state.projects[idx]!;
-    const r = tickProject(p, nextQuarter, ridershipModelFor);
+    const r = tickProject(p, nextQuarter, ridershipModelFor, state.engineVars.engineers);
     if (r.primaryAgency && r.primaryAgencyDelta !== 0) {
       primaryByAgency[r.primaryAgency] += r.primaryAgencyDelta;
     }

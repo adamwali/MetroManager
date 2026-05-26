@@ -1097,7 +1097,10 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'construction_crisis',
     trigger: {
       kind: 'random',
-      baseWeight: 0.05,
+      baseWeight: 0.10,
+      // Wired to nimbyOrganization: an organized opposition is required for
+      // a lawsuit. Phase 3.2 polish — previously this engineVar was orphan.
+      predicate: { kind: 'nimbyOrganization', gte: 30 },
       cooldownQuarters: 12,
     },
     outlet: 'Star',
@@ -1117,21 +1120,23 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'settle_with_concessions',
         label: 'Settle: noise mitigation + community fund',
-        tradeoff: '-$120M cash, +10 public approval, +5 City Hall trust',
+        tradeoff: '-$120M cash, +10 public approval, +5 City Hall trust, -10 NIMBY organization',
         effects: [
           { kind: 'cash', deltaM: -120 },
           { kind: 'publicApproval', delta: 10 },
           { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+          { kind: 'nimbyOrganization', delta: -10 }, // settlement dissolves the opposition
         ],
       },
       {
         id: 'public_attack',
         label: '"Vocal minority blocking transit for the region"',
-        tradeoff: '+5 board, -15 public approval (NIMBY backlash), -10 City Hall trust',
+        tradeoff: '+5 board, -15 public approval (NIMBY backlash), -10 City Hall trust, +15 NIMBY organization',
         effects: [
           { kind: 'boardConfidence', delta: 5, reason: 'Pushed back on NIMBY framing' },
           { kind: 'publicApproval', delta: -15 },
           { kind: 'governmentTrust', gov: 'cityHall', delta: -10 },
+          { kind: 'nimbyOrganization', delta: 15 }, // backlash organizes the opposition further
         ],
       },
     ],
@@ -1211,11 +1216,12 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'fight_designation',
         label: 'Fight heritage designation in court',
-        tradeoff: '-$80M legal, -10 public approval, -5 City Hall trust, 2Q delay',
+        tradeoff: '-$80M legal, -10 public approval, -5 City Hall trust, +10 NIMBY organization',
         effects: [
           { kind: 'cash', deltaM: -80 },
           { kind: 'publicApproval', delta: -10 },
           { kind: 'governmentTrust', gov: 'cityHall', delta: -5 },
+          { kind: 'nimbyOrganization', delta: 10 }, // court fight mobilizes opposition
         ],
       },
     ],

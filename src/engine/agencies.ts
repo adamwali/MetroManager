@@ -137,3 +137,20 @@ export function reliabilityRidershipDrift(reliability: number): number {
 export function catchmentGrowthPerQuarter(annualRate: number): number {
   return Math.pow(1 + annualRate, 0.25) - 1;
 }
+
+/**
+ * Per-quarter ridership drift from public approval. Phase 3.2 polish — wires
+ * public approval (previously an empty-calorie KPI moved by many events but
+ * with no mechanical consequence) into ridership.
+ *
+ * - Approval ≥ 70: +0.10%/Q growth assist (modest boost to organic growth)
+ * - Approval 30-70: 0 (no effect)
+ * - Approval < 30: -0.30%/Q drag (low public sentiment hurts ridership)
+ *
+ * Applied alongside reliability drag and catchment growth.
+ */
+export function approvalRidershipDrift(approval: number): number {
+  if (approval >= 70) return 0.001;
+  if (approval < 30) return -0.003;
+  return 0;
+}

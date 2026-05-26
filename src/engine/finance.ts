@@ -28,11 +28,45 @@ export function ratingSpreadBp(rating: CreditRating): BasisPoints {
   return bp(RATING_SPREAD[rating]);
 }
 
-/** Effective annualized coupon (bp) for a tranche given current BOC policy rate. */
-export function effectiveCouponBp(tranche: DebtTranche, bocPolicyRate: BasisPoints): BasisPoints {
-  return tranche.coupon.kind === 'fixed'
-    ? tranche.coupon.rate
-    : bp((bocPolicyRate as unknown as number) + (tranche.coupon.spreadOverBOC as unknown as number));
+/** OpenBooks discount: -20bp on floating-rate spread when transparency is on. */
+const OPEN_BOOKS_SPREAD_DISCOUNT_BP = 20;
+
+/** BOC policy rate bounds (basis points). */
+export const BOC_RATE_MIN_BP = 100;
+export const BOC_RATE_MAX_BP = 700;
+
+/**
+ * Per-quarter BOC policy rate drift. Phase 3.2 polish — previously the
+ * rate was stuck forever; now it walks by ±10bp deterministically per
+ * quarter via keyed RNG. EV039 informational events surface the drift.
+ *
+ * Drift is small + bounded so floating-rate debt service shifts modestly
+ * without dominating cash flow.
+ */
+export function driftBocRate(currentBp: number, roll: number): number {
+  // roll in [0,1) → drift in [-15, +15] bp, biased slightly toward mean reversion
+  const meanReversionPull = (350 - currentBp) * 0.02; // ±10bp pull toward 350bp
+  const stochastic = (roll - 0.5) * 30; // ±15bp
+  const next = currentBp + stochastic + meanReversionPull;
+  return Math.max(BOC_RATE_MIN_BP, Math.min(BOC_RATE_MAX_BP, Math.round(next)));
+}
+
+/**
+ * Effective annualized coupon (bp) for a tranche given current BOC policy rate.
+ *
+ * Phase 3.2 polish: when the agency has openBooks=true, floating-rate
+ * spreads get a -20bp discount (bond market rewards transparency). Wires
+ * the previously-orphan `engineVars.openBooks` into real debt-service savings.
+ */
+export function effectiveCouponBp(
+  tranche: DebtTranche,
+  bocPolicyRate: BasisPoints,
+  openBooks: boolean = false,
+): BasisPoints {
+  if (tranche.coupon.kind === 'fixed') return tranche.coupon.rate;
+  const baseSpread = tranche.coupon.spreadOverBOC as unknown as number;
+  const discount = openBooks ? OPEN_BOOKS_SPREAD_DISCOUNT_BP : 0;
+  return bp((bocPolicyRate as unknown as number) + Math.max(0, baseSpread - discount));
 }
 
 /**
@@ -40,10 +74,10 @@ export function effectiveCouponBp(tranche: DebtTranche, bocPolicyRate: BasisPoin
  * Annualized coupon × principal ÷ 4 = quarterly payment.
  * Result is positive (cash outflow).
  */
-export function quarterlyDebtService(debt: Debt): CashMillions {
+export function quarterlyDebtService(debt: Debt, openBooks: boolean = false): CashMillions {
   let total = 0;
   for (const t of debt.tranches) {
-    const couponBp = effectiveCouponBp(t, debt.bocPolicyRate) as unknown as number;
+    const couponBp = effectiveCouponBp(t, debt.bocPolicyRate, openBooks) as unknown as number;
     const principal = t.principal as unknown as number;
     total += (principal * couponBp) / 10_000 / 4;
   }

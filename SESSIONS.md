@@ -5,6 +5,66 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 3.2 polish (round 2): empty-calorie audit + 6 fixes
+
+**Pre-execute:** Repo owner asked for an empty-calorie audit. Walked
+through every defined feature and identified 6 high-priority items where
+state/UI exists but no mechanical consequence flows from it.
+
+**Done — 6 empty-calorie fixes:**
+
+1. Public approval now drags ridership when < 30, boosts when ≥ 70.
+   `approvalRidershipDrift(approval)` helper; folded into the existing
+   reliability-drag line.
+2. Engineers count now scales project construction burn rate by
+   `engineers/180` clamped [0.5×, 1.5×]. Technocrat builds 1.22×
+   faster; Insider 0.78×.
+3. OpenBooks=true gets -20bp on floating-rate spreads via the new
+   `openBooks` parameter on `effectiveCouponBp` + `quarterlyDebtService`.
+4. NIMBY organization predicate added to EventPredicate; EV022 lawsuit
+   now requires `nimbyOrganization >= 30`. New `nimbyOrganization`
+   effect kind; confrontational event choices grow it, settlement
+   reduces it.
+5. `driftBocRate(currentBp, roll)` random walk with mean-reversion;
+   endTurn applies it via keyed RNG; floating-rate debt service moves
+   accordingly.
+6. Elections (EV032/33/34) now call `applyElectionOutcome` inside
+   firing.ts: trust shifts -12 to +8, 35% party flip chance,
+   `nextElectionAt` re-armed.
+
+**Deferred items documented with phase pointers** (Characters → Phase 6,
+StandingOrders → Phase 8, projects/FinancingOffer/templates effect →
+Phase 4, board components → Phase 8.6, board retirement replacement →
+Phase 6.2, allowance controls + renegotiation → Phase 6.3, CEO portrait
+→ Phase 6).
+
+**15 new tests in `src/engine/emptyCalories.test.ts`** cover all 6
+fixes. 160 tests total.
+
+**Heartbeat sample (seed 1, 30Q):**
+- BOC rate drifts: 350 → 348 → 339 → 328 → 326 → 330 → 319bp over 6Q.
+  Floating-rate debt service moves quarter-to-quarter.
+- Election at Q8 (city) shifts cityHall trust + may flip mayor party.
+- NIMBY lawsuit (EV022) doesn't fire because default nimbyOrganization
+  is 25 (gated at 30). Would fire after a confrontational event grew
+  it above 30.
+
+**Surprises:**
+- The approval-drift fix made low approval feel real for the first
+  time. Watching ridership bleed after a scandal hits differently than
+  just seeing a number tick down.
+- Engineers count finally matters. Insider archetype now has TWO
+  operational disadvantages (higher opex AND slower projects) which
+  the political-cash advantage has to overcome.
+- Election-outcome randomness adds genuine campaign-cycle texture even
+  before Phase 6.1's full political layer lands.
+
+**Next per playbook order: Phase 3.3** (character actors deliver event
+text in their own voice) or **Phase 4** (project initiation flow). 3.3
+is narrative polish; 4 is the biggest remaining strategic unlock.
+
+---
+
 ## 2026-05-26 — Phase 3.2 polish: telegraph trim + active obligations
 
 **Pre-execute:** Repo owner flagged that:
