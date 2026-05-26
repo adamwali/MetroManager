@@ -6,8 +6,9 @@ import type {
   FinancingOffer,
   ProposedProject,
 } from '@/types/projects';
-import type { DebtTranche } from '@/types/finance';
+import type { DebtTranche, CreditorType } from '@/types/finance';
 import { bp, cash, pct, quarter, score } from '@/types/scalars';
+import { applyEffects } from './events/effects';
 import { generateFinancingOffers } from './financing';
 import {
   PROJECT_CATALOG,
@@ -121,11 +122,22 @@ export function acceptFinancing(
   const amount = Math.min(projectCost, offer.maxAmount as unknown as number);
   if (amount <= 0) return state;
 
-  // Create new debt tranche from the accepted offer
+  // Create new debt tranche from the accepted offer.
+  // Creditor class derived from financing approach so the debt portfolio
+  // reflects who funded each project.
+  const creditorFor: Record<FinancingApproach, CreditorType> = {
+    federalOnly: 'institutional', // gov debt counts as institutional in our model
+    provincialOnly: 'institutional',
+    municipalOnly: 'institutional',
+    consortium: 'institutional',
+    pensionConsortium: 'pension',
+    bondMarket: 'institutional',
+    sovereignWealth: 'foreign',
+  };
   const trancheId = `t_${catalogProjectId.toLowerCase()}_${approach}_q${state.quarter as unknown as number}`;
   const newTranche: DebtTranche = {
     id: trancheId,
-    creditor: 'institutional',
+    creditor: creditorFor[approach],
     principal: cash(amount),
     coupon: { kind: 'fixed', rate: bp(offer.rateBp) },
     maturity: quarter(
@@ -165,7 +177,7 @@ export function acceptFinancing(
   // Apply starting political support
   const sup = entry.startingPoliticalSupport;
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
-  return {
+  let next: GameState = {
     ...state,
     projects: state.projects.map((p, i) => (i === proposedIdx ? constructing : p)),
     debt: { ...state.debt, tranches: [...state.debt.tranches, newTranche] },
@@ -184,6 +196,12 @@ export function acceptFinancing(
       },
     },
   };
+
+  // Apply per-offer onAcceptEffects (e.g., sovereign wealth political optics)
+  if (offer.onAcceptEffects && offer.onAcceptEffects.length > 0) {
+    next = applyEffects(next, offer.onAcceptEffects);
+  }
+  return next;
 }
 
 /** Cancel a proposed project. Player backs out before financing. */

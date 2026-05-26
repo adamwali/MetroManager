@@ -117,5 +117,52 @@ export function generateFinancingOffers(politics: Politics, tier: SizeTier): Fin
     conditions,
   };
 
-  return [fed, prov, muni, consortium];
+  // Private offers — independent of trust, market-driven.
+  const pensionAppetite: Record<SizeTier, number> = {
+    small: 1_000,
+    medium: 3_000,
+    large: 7_000,
+    mega: 15_000,
+  };
+  const pension: FinancingOffer = {
+    approach: 'pensionConsortium',
+    maxAmount: cash(pensionAppetite[tier]),
+    rateBp: 550, // 5.5% — patient capital, slight premium over gov base
+    conditions: [],
+  };
+
+  const bondMarketAppetite: Record<SizeTier, number> = {
+    small: 500,
+    medium: 1_500,
+    large: 4_000,
+    mega: 8_000,
+  };
+  const bondMarket: FinancingOffer = {
+    approach: 'bondMarket',
+    maxAmount: cash(bondMarketAppetite[tier]),
+    rateBp: 490, // BOC ~350 + AA spread ~90 + ~50 issuance premium
+    conditions: [],
+  };
+
+  const sovereignAppetite: Record<SizeTier, number> = {
+    small: 1_500,
+    medium: 4_000,
+    large: 10_000,
+    mega: 20_000,
+  };
+  const sovereign: FinancingOffer = {
+    approach: 'sovereignWealth',
+    maxAmount: cash(sovereignAppetite[tier]),
+    rateBp: 530, // slightly worse than pension, larger appetite
+    conditions: [],
+    onAcceptEffects: [
+      { kind: 'governmentTrust', gov: 'cityHall', delta: -8 },
+      { kind: 'publicApproval', delta: -5 },
+      { kind: 'boardConfidence', delta: -2, reason: 'Foreign-capital optics' },
+    ],
+    opticsLabel:
+      "Political cost on accept: -8 City Hall trust, -5 public approval, -2 board (foreign-capital optics)",
+  };
+
+  return [fed, prov, muni, consortium, pension, bondMarket, sovereign];
 }

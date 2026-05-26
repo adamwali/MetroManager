@@ -12,7 +12,12 @@ import {
   availableProjectCatalog,
 } from '@engine/projectActions';
 import { generateFinancingOffers } from '@engine/financing';
-import type { FinancingApproach, Project } from '@/types/projects';
+import {
+  FINANCING_APPROACH_SOURCE,
+  type FinancingApproach,
+  type FinancingOffer,
+  type Project,
+} from '@/types/projects';
 import {
   formatMoney,
   formatPct,
@@ -359,29 +364,105 @@ function InitiateProjectModal({ onClose }: { onClose: () => void }) {
 // Financing modal
 // ============================================================================
 
+const APPROACH_LABEL: Record<FinancingApproach, string> = {
+  federalOnly: 'Federal only',
+  provincialOnly: "Queen's Park only",
+  municipalOnly: 'City Hall only',
+  consortium: 'Tri-government consortium',
+  pensionConsortium: 'Pension fund consortium',
+  bondMarket: 'Bond market issuance',
+  sovereignWealth: 'Sovereign wealth (foreign)',
+};
+
+const APPROACH_SUBTITLE: Record<FinancingApproach, string> = {
+  federalOnly: 'Ottawa',
+  provincialOnly: "Queen's Park",
+  municipalOnly: 'City Hall',
+  consortium: 'All three governments, blended rate',
+  pensionConsortium: 'OMERS / OTPP / CDPQ-style patient capital',
+  bondMarket: 'Institutional + retail bond issuance',
+  sovereignWealth: 'Foreign SWF — political optics apply',
+};
+
+function OfferCard({
+  offer,
+  onAccept,
+}: {
+  offer: FinancingOffer;
+  onAccept: () => void;
+}) {
+  const ratePct = offer.rateBp / 100;
+  const isSovereign = offer.approach === 'sovereignWealth';
+  return (
+    <div
+      className={`rounded-md border p-4 flex flex-col ${
+        isSovereign ? 'border-amber-300' : 'border-neutral-200'
+      }`}
+    >
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold">{APPROACH_LABEL[offer.approach]}</h3>
+        <span className="num text-xs text-neutral-500">{ratePct.toFixed(2)}% rate</span>
+      </div>
+      <p className="mt-0.5 text-[10px] text-neutral-500">{APPROACH_SUBTITLE[offer.approach]}</p>
+      <div className="mt-2 num text-xl font-semibold">
+        up to {formatMoney(offer.maxAmount as unknown as number)}
+      </div>
+      {offer.opticsLabel && (
+        <div className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] text-red-800">
+          ⚠ {offer.opticsLabel}
+        </div>
+      )}
+      {offer.conditions.length > 0 ? (
+        <ul className="mt-3 space-y-1 text-xs text-neutral-700">
+          {offer.conditions.map((c, i) => (
+            <li key={i} className="border-l-2 border-amber-300 pl-2">
+              <span className="font-medium">Condition:</span> {c.label}
+            </li>
+          ))}
+        </ul>
+      ) : !offer.opticsLabel ? (
+        <p className="mt-3 text-xs text-neutral-500">No conditions attached.</p>
+      ) : null}
+      <div className="mt-auto pt-3">
+        <button
+          type="button"
+          onClick={onAccept}
+          className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white ${
+            isSovereign
+              ? 'bg-red-700 hover:bg-red-800'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          Accept this offer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FinancingModal({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const state = useGameStore((s) => s.state);
   const accept = useGameStore((s) => s.acceptFinancing);
   const entry = catalogEntry(projectId);
   if (!entry) return null;
   const offers = generateFinancingOffers(state.politics, entry.tier);
+  const govOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'government');
+  const privateOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'private');
 
-  const approachLabel: Record<FinancingApproach, string> = {
-    federalOnly: 'Federal only',
-    provincialOnly: "Queen's Park only",
-    municipalOnly: 'City Hall only',
-    consortium: 'Tri-government consortium',
+  const onAccept = (approach: FinancingApproach) => {
+    accept(projectId, approach);
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4">
-      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl">
         <header className="border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold">Financing offers — {entry.name}</h1>
             <p className="text-sm text-neutral-500">
-              Each option presents amount + rate + any conditions. Rates depend on your trust
-              score with the funding government. Pick one.
+              Government offers are trust-priced; private offers are market-priced. Bigger
+              projects often need consortium financing or sovereign wealth.
             </p>
           </div>
           <button
@@ -392,53 +473,38 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
             Close
           </button>
         </header>
-        <div className="grid gap-3 px-6 py-4 sm:grid-cols-2">
-          {offers.map((o) => {
-            const ratePct = o.rateBp / 100;
-            return (
-              <div
-                key={o.approach}
-                className="rounded-md border border-neutral-200 p-4 flex flex-col"
-              >
-                <div className="flex items-baseline justify-between">
-                  <h3 className="text-sm font-semibold">{approachLabel[o.approach]}</h3>
-                  <span className="num text-xs text-neutral-500">{ratePct.toFixed(2)}% rate</span>
-                </div>
-                <div className="mt-2 num text-xl font-semibold">
-                  up to {formatMoney(o.maxAmount as unknown as number)}
-                </div>
-                {o.conditions.length > 0 ? (
-                  <ul className="mt-3 space-y-1 text-xs text-neutral-700">
-                    {o.conditions.map((c, i) => (
-                      <li key={i} className="border-l-2 border-amber-300 pl-2">
-                        <span className="font-medium">Condition:</span> {c.label}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-3 text-xs text-neutral-500">No conditions attached.</p>
-                )}
-                <div className="mt-auto pt-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      accept(projectId, o.approach);
-                      onClose();
-                    }}
-                    className="w-full rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
-                  >
-                    Accept this offer
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="px-6 pb-4 text-[11px] text-neutral-500">
+
+        <section className="px-6 py-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-blue-700">
+            Government financing
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {govOffers.map((o) => (
+              <OfferCard key={o.approach} offer={o} onAccept={() => onAccept(o.approach)} />
+            ))}
+          </div>
+        </section>
+
+        <section className="border-t border-neutral-200 px-6 py-4">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-700">
+            Private financing
+          </h2>
+          <p className="mb-3 text-[11px] text-neutral-500">
+            No political conditions attached. Market-priced rates; some carry optics costs.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {privateOffers.map((o) => (
+              <OfferCard key={o.approach} offer={o} onAccept={() => onAccept(o.approach)} />
+            ))}
+          </div>
+        </section>
+
+        <p className="px-6 pb-4 text-[11px] text-neutral-500 border-t border-neutral-200 pt-3">
           Trust scores: Ottawa {(state.politics.ottawa.trust as unknown as number).toFixed(0)} ·
           QP {(state.politics.queensPark.trust as unknown as number).toFixed(0)} · City Hall{' '}
-          {(state.politics.cityHall.trust as unknown as number).toFixed(0)}. Rate = 5% +
-          (50 − trust) × 0.06%, clamped {formatPct(0.01)} – {formatPct(0.12)}.
+          {(state.politics.cityHall.trust as unknown as number).toFixed(0)}. Government rate
+          = 5% + (50 − trust) × 0.06%, clamped {formatPct(0.01)} – {formatPct(0.12)}. Private
+          rates are market-driven.
         </p>
       </div>
     </div>

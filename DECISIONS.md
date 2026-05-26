@@ -5,6 +5,86 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 4 polish: private financing (pension / bond market / sovereign)
+
+Repo owner flagged that the design doc §5 promises private financing as a
+fallback when government offers aren't enough — pension funds, bond market,
+sovereign wealth. Added per spec.
+
+**3 new financing approaches** alongside the 4 government options:
+
+| Approach | Rate | Appetite (mega) | Conditions / optics |
+|---|---|---|---|
+| Pension consortium | 5.50% (flat) | $15B | None — patient capital, no political strings |
+| Bond market | 4.90% (flat) | $8B | None — market rate, requires AA rating implied |
+| Sovereign wealth | 5.30% (flat) | $20B | -8 City Hall trust, -5 public approval, -2 board on accept |
+
+Per-tier appetite scales: small/medium/large/mega.
+
+**Rate independence:** Private rates are flat — they don't move with trust
+scores. The whole point is that private capital doesn't care about your
+political relationships. Insider (high QP trust) and Technocrat (low City
+Hall trust) get identical private offers.
+
+**Sovereign wealth political optics:** Accepting carries an `onAcceptEffects`
+payload that fires when you confirm the offer. Cost: -8 City Hall trust, -5
+public approval, -2 board confidence. Surfaced in the offer card as a red
+warning banner BEFORE the player clicks. Insider can absorb the hit;
+Coalition Builder typically can't afford it.
+
+**Type additions:**
+- `FinancingApproach` extended with 'pensionConsortium' | 'bondMarket' |
+  'sovereignWealth'
+- `FinancingSource` discriminator union ('government' | 'private') with
+  `FINANCING_APPROACH_SOURCE` map for UI sectioning
+- `FinancingOffer.onAcceptEffects?: FinancingOfferEffect[]` — narrow alias
+  type so projects.ts doesn't have to import the full EventEffect union
+- `FinancingOffer.opticsLabel?: string` for UI warning text
+- `DebtTranche.creditor` now uses the right `CreditorType` value per
+  approach: 'pension' for pension, 'foreign' for sovereign, 'institutional'
+  for everything else
+
+**Engine wiring:**
+- `generateFinancingOffers` now returns 7 offers (4 gov + 3 private)
+- `acceptFinancing` applies `onAcceptEffects` after creating the tranche
+- Creditor type mapping per approach
+
+**UI:**
+- Financing modal split into two sections: "Government financing"
+  (4 cards) and "Private financing" (3 cards)
+- Each offer card now shows a subtitle (e.g., "OMERS / OTPP / CDPQ-style
+  patient capital", "Foreign SWF — political optics apply")
+- Sovereign wealth card gets amber border + red warning banner with
+  optics cost laid out in plain language
+- Accept button is red on sovereign wealth (vs blue elsewhere) to signal
+  the political weight
+
+**Strategic implications:**
+- Mega projects (P06 Don Mills, future expansions): government offers
+  may cap below project cost; player MUST use consortium or sovereign
+  wealth or pension
+- Low-trust archetypes: private financing is the way out when no gov
+  will lend at decent rates
+- Coalition Builder: government consortium is naturally strongest;
+  private a fallback
+- Insider: can game the politics for gov offers, but sovereign optics
+  hurt less because Insider's City Hall is already low (40 → 32)
+- Technocrat: openBooks 20bp discount applies to NEW debt tranches too
+  (existing finance.ts logic). Bond market financing benefits.
+
+**7 new tests:**
+- 3 private offers exist (pension/bond/sovereign)
+- Private rates independent of trust
+- Sovereign wealth has onAcceptEffects + opticsLabel
+- Accepting sovereign applies optics cost
+- Accepting pension does NOT
+- Creditor types correct (pension → 'pension', sovereign → 'foreign')
+
+**182 tests total passing.** Bundle 424KB JS / 130KB gzip (+3KB for the
+private financing layer).
+
+---
+
 ## 2026-05-26 — Phase 4: project initiation + financing flow
 
 The proactive/reactive loop is complete. Player can now propose new

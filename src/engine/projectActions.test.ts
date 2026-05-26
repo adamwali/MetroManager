@@ -128,6 +128,80 @@ describe('rejectProject', () => {
   });
 });
 
+describe('private financing offers', () => {
+  it('generates 3 private offers (pension / bond market / sovereign)', async () => {
+    const { generateFinancingOffers } = await import('@engine/financing');
+    const s = createInitialGameState(0);
+    const offers = generateFinancingOffers(s.politics, 'large');
+    expect(offers.find((o) => o.approach === 'pensionConsortium')).toBeDefined();
+    expect(offers.find((o) => o.approach === 'bondMarket')).toBeDefined();
+    expect(offers.find((o) => o.approach === 'sovereignWealth')).toBeDefined();
+  });
+
+  it('private offers have market-driven rates independent of trust', async () => {
+    const { generateFinancingOffers } = await import('@engine/financing');
+    const high = createInitialGameState(0, 'insider'); // QP trust 65
+    const low = createInitialGameState(0, 'internationalTechnocrat'); // QP trust 45
+
+    const highOffers = generateFinancingOffers(high.politics, 'large');
+    const lowOffers = generateFinancingOffers(low.politics, 'large');
+
+    // Private rates should be identical across archetypes
+    const highPension = highOffers.find((o) => o.approach === 'pensionConsortium')!;
+    const lowPension = lowOffers.find((o) => o.approach === 'pensionConsortium')!;
+    expect(highPension.rateBp).toBe(lowPension.rateBp);
+  });
+
+  it('sovereign wealth has onAcceptEffects + opticsLabel', async () => {
+    const { generateFinancingOffers } = await import('@engine/financing');
+    const s = createInitialGameState(0);
+    const offers = generateFinancingOffers(s.politics, 'mega');
+    const sov = offers.find((o) => o.approach === 'sovereignWealth')!;
+    expect(sov.onAcceptEffects).toBeDefined();
+    expect(sov.onAcceptEffects!.length).toBeGreaterThan(0);
+    expect(sov.opticsLabel).toBeDefined();
+  });
+
+  it('accepting sovereign wealth applies political optics cost', () => {
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P06', 'A', 'standard');
+    const cityHallBefore = s.politics.cityHall.trust as unknown as number;
+    const approvalBefore = s.engineVars.publicApproval as unknown as number;
+    s = acceptFinancing(s, 'P06', 'sovereignWealth');
+    // Sovereign wealth: -8 City Hall trust, -5 public approval
+    // P06 starting political support: City Hall +10
+    // Net City Hall: +10 - 8 = +2
+    expect(s.politics.cityHall.trust as unknown as number).toBe(cityHallBefore + 10 - 8);
+    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore - 5);
+  });
+
+  it('accepting pension financing does NOT apply optics cost', () => {
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P11', 'A', 'standard');
+    const approvalBefore = s.engineVars.publicApproval as unknown as number;
+    s = acceptFinancing(s, 'P11', 'pensionConsortium');
+    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore);
+  });
+
+  it('debt tranche creditor reflects financing approach', () => {
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P11', 'A', 'standard');
+    const beforeTranches = s.debt.tranches.length;
+    s = acceptFinancing(s, 'P11', 'pensionConsortium');
+    const newTranche = s.debt.tranches[beforeTranches];
+    expect(newTranche?.creditor).toBe('pension');
+  });
+
+  it('sovereign wealth creditor is "foreign"', () => {
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P06', 'A', 'standard');
+    const beforeTranches = s.debt.tranches.length;
+    s = acceptFinancing(s, 'P06', 'sovereignWealth');
+    const newTranche = s.debt.tranches[beforeTranches];
+    expect(newTranche?.creditor).toBe('foreign');
+  });
+});
+
 describe('catalog entry lookup', () => {
   it('returns entry for valid id', () => {
     expect(catalogEntry('P01')?.name).toBe('Yonge North extension');

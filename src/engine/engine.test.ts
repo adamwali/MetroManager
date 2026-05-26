@@ -114,15 +114,18 @@ describe('financing offers (v3.3)', () => {
     expect(rateForTrust(0)).toBeGreaterThan(700);
   });
 
-  it('generates four offers (fed / prov / muni / consortium)', () => {
+  it('generates seven offers (4 gov + 3 private)', () => {
     const s = createInitialGameState(0);
     const offers = generateFinancingOffers(s.politics, 'large');
-    expect(offers).toHaveLength(4);
+    expect(offers).toHaveLength(7);
     expect(offers.map((o) => o.approach).sort()).toEqual([
+      'bondMarket',
       'consortium',
       'federalOnly',
       'municipalOnly',
+      'pensionConsortium',
       'provincialOnly',
+      'sovereignWealth',
     ]);
   });
 

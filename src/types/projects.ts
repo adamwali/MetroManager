@@ -76,7 +76,27 @@ export interface LvcConfig {
  * negotiated rate (see finance.ts) and adds principal as cash inflow
  * at break-ground.
  */
-export type FinancingApproach = 'federalOnly' | 'provincialOnly' | 'municipalOnly' | 'consortium';
+export type FinancingApproach =
+  | 'federalOnly'
+  | 'provincialOnly'
+  | 'municipalOnly'
+  | 'consortium'
+  | 'pensionConsortium'
+  | 'bondMarket'
+  | 'sovereignWealth';
+
+/** Government vs. private. Used by UI to section the offers list. */
+export type FinancingSource = 'government' | 'private';
+
+export const FINANCING_APPROACH_SOURCE: Record<FinancingApproach, FinancingSource> = {
+  federalOnly: 'government',
+  provincialOnly: 'government',
+  municipalOnly: 'government',
+  consortium: 'government',
+  pensionConsortium: 'private',
+  bondMarket: 'private',
+  sovereignWealth: 'private',
+};
 
 export interface FinancingCondition {
   /** Short human-readable text describing the condition. UI surfaces this. */
@@ -99,7 +119,25 @@ export interface FinancingOffer {
   /** Annualized interest rate in basis points (e.g. 500 = 5%). */
   rateBp: number;
   conditions: FinancingCondition[];
+  /**
+   * Side-effects applied at acceptance time. Used for political optics
+   * costs (e.g., sovereign wealth → -8 City Hall trust). Empty for
+   * government offers and pension/bond-market private offers.
+   */
+  onAcceptEffects?: FinancingOfferEffect[];
+  /** Plain-language label for any optics warning shown on the offer card. */
+  opticsLabel?: string;
 }
+
+/**
+ * Narrow alias so projects.ts doesn't need to import the full EventEffect
+ * union here (would create a circular-ish dependency with events.ts).
+ * Import the canonical EventEffect type wherever you actually apply effects.
+ */
+export type FinancingOfferEffect =
+  | { kind: 'governmentTrust'; gov: 'ottawa' | 'queensPark' | 'cityHall'; delta: number }
+  | { kind: 'publicApproval'; delta: number }
+  | { kind: 'boardConfidence'; delta: number; reason: string };
 
 export interface AcceptedFinancing {
   approach: FinancingApproach;
