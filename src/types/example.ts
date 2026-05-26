@@ -173,6 +173,7 @@ export const exampleGameState: GameState = {
   inbox: [],
   delayedQueue: [],
   standingOrders: [],
+  activeObligations: [],
   engineVars: {
     templates: score(30),
     crosslinxLeverage: score(55),

@@ -5,6 +5,80 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 3.2 polish: telegraph trim + active obligations
+
+Two issues from repo-owner review of the 3.2 ship:
+
+**1. Too many telegraphs.** Trimmed from 7 templates → 4 (~10% of
+catalog). Only events that real CEOs genuinely see coming get
+telegraphs:
+- EV017 mayor fare-freeze pressure (election cycle, predictable)
+- EV018 federal minister visit (planned tour, scheduled in advance)
+- EV029 climate adaptation funding (federal budget cycle)
+- EV032 federal election (scheduled)
+
+Removed telegraphs from:
+- EV016 premier pet project (opportunistic, should surprise)
+- EV021 OL design flaw (engineering crises blow up suddenly)
+- EV026 whistleblower leak (kept it but trimmed for balance)
+
+Heartbeat: 12 telegraphs over 60Q (down from ~20). One every ~5
+quarters. Telegraphs now feel like signal, not noise.
+
+New invariant test: every telegraphed template MUST be scheduled
+(can't telegraph a conditional or random event going forward — they're
+sudden by nature).
+
+**2. Fare-freeze pledge was empty calories.** If you accepted "no fare
+hike for 4Q" pledge, then went to /ttc and raised fares, nothing
+happened. The pledge needed to be a real constraint with visible cost.
+
+**Active obligations system:**
+- New type `ActiveObligation` with discriminated union (currently just
+  `fareFreezePledge` kind; more kinds in future phases)
+- `GameState.activeObligations: ActiveObligation[]`
+- New `EventEffect` variant: `addObligation` creates a pledge
+- New helper `fareFreezeObligationBroken(state, agencyId, newPolicy)`
+  returns the obligation that would break (or undefined)
+- `setFarePolicy` checks for active pledge; if raising fares would
+  break: applies `costOfBreaking` effects immediately + removes the
+  pledge from `activeObligations`
+- `endTurn` prunes expired obligations each quarter (expiresAt ≤ next)
+
+**EV017 updated:**
+- "Public no-fare-hike pledge" choice now adds a real `fareFreezePledge`
+  obligation lasting 4Q
+- Cost of breaking: -20 City Hall trust, -12 public approval, -3 board
+  confidence
+- Tradeoff text now reads: "fare-hike pledge active 4Q (TTC dashboard
+  will warn if you break it)"
+
+**UI:**
+- AgencyDashboard surfaces a yellow banner: "Active pledge: no fare hike,
+  expires in N quarters. Breaking costs ..."
+- Fare-policy buttons that would break the pledge get amber border +
+  red inline text under the forecast: "Breaks pledge: -20 City Hall
+  trust, -12 public approval, -3 board confidence"
+- Clicking a pledge-breaking option opens a confirm dialog showing
+  both the operating uplift (revenue + ridership shift) and the
+  political cost. Player can keep the pledge or break it explicitly.
+- Reducing fares does NOT trigger pledge cost (the pledge is against
+  hikes only)
+
+The principle: **inform, don't block.** Player can always raise fares.
+The dashboard makes the cost visible BEFORE they click.
+
+**Test additions:**
+- Accepting EV017 pledge creates active obligation
+- setFarePolicy applies cost when raising fare with active pledge
+- setFarePolicy does NOT apply cost when reducing fare
+- endTurn prunes expired obligations
+- Telegraph invariant: all telegraphed templates are scheduled
+
+**145 tests passing total.** Bundle 399KB JS / 124KB gzip.
+
+---
+
 ## 2026-05-26 — Phase 3.2: event catalog expansion + telegraphs + informational + Monte Carlo
 
 Returned to Phase 3.2 after the Phase 5.1 detour. Catalog goes from

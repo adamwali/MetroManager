@@ -8,6 +8,7 @@ import {
   FREQUENCY_RIDERSHIP_MULTIPLIER,
   type FrequencyPolicy,
 } from './policies';
+import { applyEffects } from './events/effects';
 
 /**
  * Pure functions for the proactive operations levers introduced in
@@ -34,10 +35,41 @@ export function setMaintenanceBudget(
 }
 
 /**
+ * Returns the obligation that would break if the player changed fare
+ * policy for this agency in this direction, or undefined if none.
+ *
+ * Only fare HIKES break the freeze pledge — reducing fares doesn't.
+ */
+export function fareFreezeObligationBroken(
+  state: GameState,
+  agencyId: AgencyId,
+  newPolicy: FarePolicyTier,
+):
+  | (NonNullable<GameState['activeObligations'][number]> & { kind: 'fareFreezePledge' })
+  | undefined {
+  const agency = state.agencies[agencyId];
+  const oldPolicy = agency.operatingParams.farePolicy;
+  const oldMul = FARE_PRICE_MULTIPLIER[oldPolicy];
+  const newMul = FARE_PRICE_MULTIPLIER[newPolicy];
+  if (newMul <= oldMul) return undefined; // No hike — pledge not broken
+  const currentQ = state.quarter as unknown as number;
+  for (const obl of state.activeObligations) {
+    if (obl.kind !== 'fareFreezePledge') continue;
+    if (obl.agencyId !== agencyId) continue;
+    if ((obl.expiresAt as unknown as number) <= currentQ) continue;
+    return obl as typeof obl & { kind: 'fareFreezePledge' };
+  }
+  return undefined;
+}
+
+/**
  * Change fare policy. Triggers an immediate ridership shift via elasticity
- * and revenue recompute (next quarter the engine reads the new policy
- * automatically; we also adjust lastQuarterFareRevenue so the UI reflects
- * the new equilibrium immediately).
+ * and revenue recompute. If a fare-freeze pledge is active for this agency
+ * and the new policy is a HIKE, the obligation's `costOfBreaking` effects
+ * apply immediately (-City Hall trust, -public approval, etc.) and the
+ * pledge is consumed (removed from activeObligations).
+ *
+ * Player isn't blocked — they're informed via the UI before they click.
  */
 export function setFarePolicy(
   state: GameState,
@@ -58,10 +90,9 @@ export function setFarePolicy(
   const newRiders = Math.max(0, Math.round(oldRiders * ridershipFactor));
 
   const oldFareRev = agency.lastQuarterFareRevenue as unknown as number;
-  // New revenue = old × (new price / old price) × ridership factor
   const newFareRev = Math.max(0, Math.round(oldFareRev * (newMul / oldMul) * ridershipFactor));
 
-  return {
+  let next: GameState = {
     ...state,
     agencies: {
       ...state.agencies,
@@ -73,6 +104,18 @@ export function setFarePolicy(
       },
     },
   };
+
+  // Check + apply pledge-breaking cost
+  const brokenObligation = fareFreezeObligationBroken(state, agencyId, newPolicy);
+  if (brokenObligation) {
+    next = applyEffects(next, brokenObligation.costOfBreaking);
+    // Consume the pledge once broken
+    next = {
+      ...next,
+      activeObligations: next.activeObligations.filter((o) => o.id !== brokenObligation.id),
+    };
+  }
+  return next;
 }
 
 /**

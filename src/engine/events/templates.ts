@@ -815,12 +815,6 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Premier announces "priority connection" to suburban riding',
     body: "Premier's office quietly requests you prioritize a feasibility study for a low-ridership line connecting their riding. Province has political reasons; you have operational ones.",
     urgency: 55,
-    telegraph: {
-      headline: 'Sources: Premier weighing transit announcement before fall session',
-      body: 'Speculation builds around a suburban infrastructure unveil. No formal request yet.',
-      quartersBefore: 3,
-      outlet: 'Globe',
-    },
     choices: [
       {
         id: 'commit_full',
@@ -871,11 +865,26 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     choices: [
       {
         id: 'public_pledge',
-        label: 'Public no-fare-hike pledge for 4Q',
-        tradeoff: '+15 City Hall trust, +5 public approval, +0.85× fare cap (queued)',
+        label: 'Public no-fare-hike pledge for next 4 quarters',
+        tradeoff:
+          '+15 City Hall trust, +5 public approval, fare-hike pledge active 4Q (TTC dashboard will warn if you break it)',
         effects: [
           { kind: 'governmentTrust', gov: 'cityHall', delta: 15 },
           { kind: 'publicApproval', delta: 5 },
+          {
+            kind: 'addObligation',
+            obligationId: 'ttc-fare-freeze-pledge',
+            obligationKind: 'fareFreezePledge',
+            agencyId: 'ttc',
+            durationQuarters: 4,
+            costOfBreaking: [
+              { kind: 'governmentTrust', gov: 'cityHall', delta: -20 },
+              { kind: 'publicApproval', delta: -12 },
+              { kind: 'boardConfidence', delta: -3, reason: 'Broke fare-freeze pledge' },
+            ],
+            breakingDescription:
+              '-20 City Hall trust, -12 public approval, -3 board confidence (broken pledge)',
+          },
         ],
       },
       {
@@ -1045,12 +1054,6 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Crosslinx engineers flag tunnel-grade design flaw on Ontario Line',
     body: "Independent peer review identifies an 800m tunnel section where the original design exceeds maximum gradient. Options: redesign + delay, exception waiver, or eat the construction risk.",
     urgency: 80,
-    telegraph: {
-      headline: 'Whispers from Crosslinx engineers about tunnel grade specifications',
-      body: 'Engineering forums quietly raise concerns about a tunnel section. No formal report yet.',
-      quartersBefore: 2,
-      outlet: 'Star',
-    },
     choices: [
       {
         id: 'redesign',
@@ -1274,12 +1277,6 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     body: 'Anonymous source provides Star with confidential capital planning documents showing $5B in known but unreported backlog.',
     urgency: 85,
     noGoodOptions: true,
-    telegraph: {
-      headline: 'Tip line: Star reporters asking around about maintenance backlog',
-      body: 'Multiple journalists fishing for sources at the agency.',
-      quartersBefore: 2,
-      outlet: 'Star',
-    },
     choices: [
       {
         id: 'come_clean',

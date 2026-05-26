@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 import { maintenanceTier, reliabilityScore, requiredMaintenanceFor } from '@engine/agencies';
 import {
+  fareFreezeObligationBroken,
   forecastFarePolicy,
   forecastFrequencyPolicy,
 } from '@engine/agencyActions';
@@ -14,6 +15,7 @@ import {
   formatMoneyDelta,
   formatPctDelta,
   formatRiders,
+  quartersUntilLabel,
 } from '@/utils/humanize';
 
 const SUBSYSTEM_LABELS: Record<SubsystemId, string> = {
@@ -47,6 +49,32 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
   const reliability = reliabilityScore(agency);
   const required = requiredMaintenanceFor(agencyId);
   const efficiency = ARCHETYPE_MAINTENANCE_EFFICIENCY[archetype];
+  const currentQ = state.quarter as unknown as number;
+
+  // Active fare-freeze obligation for this agency, if any
+  const activePledge = state.activeObligations.find(
+    (o) =>
+      o.kind === 'fareFreezePledge' &&
+      o.agencyId === agencyId &&
+      (o.expiresAt as unknown as number) > currentQ,
+  );
+  const quartersLeftInPledge = activePledge
+    ? (activePledge.expiresAt as unknown as number) - currentQ
+    : 0;
+
+  const [pendingFareChange, setPendingFareChange] = useState<FarePolicyTier | null>(null);
+  const handleFareClick = (p: FarePolicyTier) => {
+    const broken = fareFreezeObligationBroken(state, agencyId, p);
+    if (broken) {
+      setPendingFareChange(p);
+    } else {
+      setFare(agencyId, p);
+    }
+  };
+  const confirmBreak = () => {
+    if (pendingFareChange) setFare(agencyId, pendingFareChange);
+    setPendingFareChange(null);
+  };
 
   const farePolicyForecasts = useMemo(
     () => ({
@@ -167,6 +195,19 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
         </ul>
       </section>
 
+      {/* Active obligations banner */}
+      {activePledge && (
+        <div className="rounded-md border-2 border-amber-300 bg-amber-50 p-3 flex items-center gap-3">
+          <span className="rounded bg-amber-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+            Active pledge
+          </span>
+          <div className="flex-1 text-sm text-amber-900">
+            No fare hike pledge — expires in {quartersUntilLabel(quartersLeftInPledge)}.
+            Breaking costs <span className="font-semibold">{activePledge.breakingDescription}</span>.
+          </div>
+        </div>
+      )}
+
       {/* Policies */}
       <div className="grid gap-4 lg:grid-cols-2">
         <PolicyCard
@@ -179,13 +220,20 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
             { id: 'modestIncrease', label: 'Modest (+10%)' },
             { id: 'aggressiveIncrease', label: 'Aggressive (+25%)' },
           ] satisfies Array<{ id: FarePolicyTier; label: string }>}
-          onChange={(p) => setFare(agencyId, p)}
+          onChange={handleFareClick}
+          isBlocked={(p) => fareFreezeObligationBroken(state, agencyId, p) !== undefined}
           renderForecast={(p) => {
             const f = farePolicyForecasts[p];
+            const broken = fareFreezeObligationBroken(state, agencyId, p);
             return (
               <div className="mt-1 text-[10px] text-neutral-500">
                 {formatPctDelta(f.ridershipChangePct)} riders ·{' '}
                 {formatPctDelta(f.revenueChangePct)} revenue
+                {broken && (
+                  <span className="mt-0.5 block font-semibold text-red-700">
+                    Breaks pledge: {broken.breakingDescription}
+                  </span>
+                )}
               </div>
             );
           }}
@@ -211,6 +259,42 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
           }}
         />
       </div>
+
+      {/* Confirm-break dialog for fare-freeze pledge */}
+      {pendingFareChange && activePledge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+            <h2 className="text-base font-semibold text-amber-900">Break the fare-freeze pledge?</h2>
+            <p className="mt-2 text-sm text-neutral-700">
+              You pledged no fare hikes for {quartersUntilLabel(quartersLeftInPledge)} more. Raising
+              fares now will cost:
+            </p>
+            <p className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">
+              {activePledge.breakingDescription}
+            </p>
+            <p className="mt-2 text-xs text-neutral-600">
+              Operating upside: the fare change still applies — you'll see the revenue + ridership
+              shift on the next tick.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingFareChange(null)}
+                className="rounded-md border border-neutral-300 px-3 py-1.5 text-xs text-neutral-700 hover:bg-neutral-50"
+              >
+                Keep the pledge
+              </button>
+              <button
+                type="button"
+                onClick={confirmBreak}
+                className="rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-800"
+              >
+                Break pledge & raise fare
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -242,6 +326,8 @@ interface PolicyCardProps<T extends string> {
   options: Array<{ id: T; label: string }>;
   onChange: (p: T) => void;
   renderForecast: (p: T) => React.ReactNode;
+  /** Optional: returns true if this option would break an active obligation. */
+  isBlocked?: (p: T) => boolean;
 }
 
 function PolicyCard<T extends string>({
@@ -251,6 +337,7 @@ function PolicyCard<T extends string>({
   options,
   onChange,
   renderForecast,
+  isBlocked,
 }: PolicyCardProps<T>) {
   return (
     <section className="rounded-md border border-neutral-200 bg-white p-4">
@@ -259,6 +346,7 @@ function PolicyCard<T extends string>({
       <div className="mt-3 space-y-1.5">
         {options.map((opt) => {
           const isCurrent = opt.id === current;
+          const blocked = isBlocked ? isBlocked(opt.id) : false;
           return (
             <button
               key={opt.id}
@@ -267,7 +355,9 @@ function PolicyCard<T extends string>({
               className={`block w-full text-left rounded-md border px-3 py-2 transition-colors ${
                 isCurrent
                   ? 'border-blue-500 bg-blue-50/60'
-                  : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                  : blocked
+                    ? 'border-amber-300 bg-amber-50/40 hover:border-amber-500'
+                    : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
               }`}
             >
               <div className="text-sm font-medium">{opt.label}</div>

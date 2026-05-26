@@ -7,6 +7,7 @@ import type { Cash, Debt } from './finance';
 import type { ActiveEvent, DelayedConsequence } from './events';
 import type { EngineVars } from './engineVars';
 import type { GameOver, GameOverCounters } from './gameOver';
+import type { ActiveObligation } from './obligations';
 import type { OperatingAllowance } from './operatingAllowance';
 import type { Politics } from './politics';
 import type { Project } from './projects';
@@ -41,6 +42,8 @@ export interface GameState {
 
   inbox: ActiveEvent[];
   delayedQueue: DelayedConsequence[];
+  /** Active obligations (pledges) constraining future actions. */
+  activeObligations: ActiveObligation[];
 
   standingOrders: StandingOrders;
   engineVars: EngineVars;

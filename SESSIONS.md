@@ -5,6 +5,57 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 3.2 polish: telegraph trim + active obligations
+
+**Pre-execute:** Repo owner flagged that:
+1. Telegraphs were too frequent — felt like getting a heads-up on
+   everything
+2. Fare-freeze pledge was empty calories — player could break it freely
+   with no cost
+
+Both fair. Engineered both fixes.
+
+**Done:**
+- Trimmed telegraphs from 7 → 4 templates (~10% of catalog). Kept only
+  on genuinely-predictable scheduled events (elections, minister
+  visits, mayor election-cycle pressure, federal budget cycle).
+- New `ActiveObligation` type system with `fareFreezePledge` kind
+- `GameState.activeObligations: ActiveObligation[]`
+- `addObligation` EventEffect variant
+- `setFarePolicy` checks obligations + applies costs + consumes pledge
+  if broken
+- `endTurn` prunes expired obligations
+- EV017 pledge choice now creates a real 4Q obligation with costs:
+  -20 City Hall trust, -12 public approval, -3 board confidence
+- AgencyDashboard:
+  - Yellow active-pledge banner showing remaining quarters + cost
+  - Fare-policy buttons that would break get amber border + inline red
+    "Breaks pledge: ..." text
+  - Confirm dialog when clicking a pledge-breaker, showing both
+    operating uplift AND political cost side-by-side
+- 4 new tests for the pledge mechanic
+- 1 new test for telegraph invariant (all telegraphs on scheduled events)
+- 145 tests total passing
+
+**Heartbeat:**
+- 12 telegraphs over 60Q (was ~20) — about 1 every 5 quarters
+- 51 decision events over 60Q ≈ 0.85/Q
+- The mayor's fare-freeze pledge now reads as a real commitment in
+  the UI. Player who accepts then raises fares sees the full tradeoff
+  rendered before the click.
+
+**Surprises:**
+- The confirm dialog naturally surfaces the trade-off the user wanted:
+  "operating upside vs political cost" rendered together. Player can
+  make the informed call.
+- The "inform, don't block" principle (P8) feels right. Insider archetype
+  players will probably break pledges often; Steady Operator will
+  honor them. Both are valid strategy.
+- The telegraph trim made the news rail feel less like a constant
+  weather forecast and more like meaningful signal.
+
+---
+
 ## 2026-05-26 — Phase 3.2: event expansion + telegraphs + informational + Monte Carlo
 
 **Pre-execute:** Confirmed user understands base-case trajectories are

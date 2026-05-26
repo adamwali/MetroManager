@@ -183,6 +183,103 @@ describe('forecasting', () => {
   });
 });
 
+describe('fare freeze pledge obligation', () => {
+  it('accepting EV017 pledge creates active obligation', async () => {
+    const { resolveEventChoice } = await import('@engine/events/firing');
+    const { applyEffects: applyE } = await import('@engine/events/effects');
+    let s = createInitialGameState(0);
+    // Manually add EV017 to inbox (simulating it firing)
+    s = applyE(s, [
+      // No-op effect to keep shape; the real flow uses processEventsForQuarter
+    ]);
+    s = { ...s, inbox: [{ templateId: 'EV017_mayorFareFreezePreElection', firedAt: s.quarter, urgency: 70 }] };
+    const result = resolveEventChoice(s, 'EV017_mayorFareFreezePreElection', 'public_pledge');
+    s = result.state;
+    expect(s.activeObligations.length).toBe(1);
+    const obl = s.activeObligations[0]!;
+    expect(obl.kind).toBe('fareFreezePledge');
+    if (obl.kind === 'fareFreezePledge') {
+      expect(obl.agencyId).toBe('ttc');
+    }
+  });
+
+  it('setFarePolicy with active pledge applies cost when raising fare', () => {
+    let s = createInitialGameState(0);
+    const cityHallBefore = s.politics.cityHall.trust as unknown as number;
+    const publicBefore = s.engineVars.publicApproval as unknown as number;
+    // Add an active pledge directly
+    s = {
+      ...s,
+      activeObligations: [
+        {
+          id: 'test-pledge',
+          sourceEventTemplateId: 'EV017_mayorFareFreezePreElection',
+          expiresAt: ((s.quarter as unknown as number) + 4) as unknown as typeof s.quarter,
+          kind: 'fareFreezePledge',
+          agencyId: 'ttc',
+          costOfBreaking: [
+            { kind: 'governmentTrust', gov: 'cityHall', delta: -20 },
+            { kind: 'publicApproval', delta: -12 },
+          ],
+          breakingDescription: '-20 City Hall trust, -12 public approval',
+        },
+      ],
+    };
+    s = setFarePolicy(s, 'ttc', 'modestIncrease');
+    expect(s.politics.cityHall.trust as unknown as number).toBe(cityHallBefore - 20);
+    expect(s.engineVars.publicApproval as unknown as number).toBe(publicBefore - 12);
+    // Pledge consumed
+    expect(s.activeObligations.length).toBe(0);
+  });
+
+  it('setFarePolicy with active pledge does NOT apply cost when reducing fare', () => {
+    let s = createInitialGameState(0);
+    s = {
+      ...s,
+      activeObligations: [
+        {
+          id: 'test-pledge',
+          sourceEventTemplateId: 'EV017',
+          expiresAt: ((s.quarter as unknown as number) + 4) as unknown as typeof s.quarter,
+          kind: 'fareFreezePledge',
+          agencyId: 'ttc',
+          costOfBreaking: [{ kind: 'publicApproval', delta: -12 }],
+          breakingDescription: 'test',
+        },
+      ],
+    };
+    const cityBefore = s.politics.cityHall.trust as unknown as number;
+    s = setFarePolicy(s, 'ttc', 'reduced');
+    // Cost NOT applied for fare cut
+    expect(s.politics.cityHall.trust as unknown as number).toBe(cityBefore);
+    // Pledge still active
+    expect(s.activeObligations.length).toBe(1);
+  });
+
+  it('pledge expires after duration; endTurn prunes it', async () => {
+    const { endTurn } = await import('@engine/endTurn');
+    let s = createInitialGameState(0);
+    s = {
+      ...s,
+      activeObligations: [
+        {
+          id: 'test-pledge',
+          sourceEventTemplateId: 'EV017',
+          expiresAt: ((s.quarter as unknown as number) + 2) as unknown as typeof s.quarter,
+          kind: 'fareFreezePledge',
+          agencyId: 'ttc',
+          costOfBreaking: [{ kind: 'publicApproval', delta: -12 }],
+          breakingDescription: 'test',
+        },
+      ],
+    };
+    s = endTurn(s); // Q1, expires at Q2
+    expect(s.activeObligations.length).toBe(1);
+    s = endTurn(s); // Q2, pledge should expire
+    expect(s.activeObligations.length).toBe(0);
+  });
+});
+
 describe('end-to-end: player tunes ops to close deficit', () => {
   it('raising fares + cutting frequency closes deficit (compared to baseline)', () => {
     let baseline = createInitialGameState(0);

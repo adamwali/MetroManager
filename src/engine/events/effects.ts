@@ -1,6 +1,7 @@
 import type { GameState } from '@/types/gameState';
 import type { Agencies, AgencyId } from '@/types/agency';
 import type { DelayedConsequence, EventEffect } from '@/types/events';
+import type { ActiveObligation } from '@/types/obligations';
 import { cash, quarter, riders, score } from '@/types/scalars';
 
 /**
@@ -127,6 +128,18 @@ function applyOne(state: GameState, e: EventEffect): GameState {
         payload: { kind: 'event', templateId: e.eventId },
       };
       return { ...state, delayedQueue: [...state.delayedQueue, dc] };
+    }
+    case 'addObligation': {
+      const obligation: ActiveObligation = {
+        id: e.obligationId,
+        sourceEventTemplateId: '', // filled in by event flow if needed
+        expiresAt: quarter((state.quarter as unknown as number) + e.durationQuarters),
+        kind: e.obligationKind,
+        agencyId: e.agencyId,
+        costOfBreaking: e.costOfBreaking,
+        breakingDescription: e.breakingDescription,
+      };
+      return { ...state, activeObligations: [...state.activeObligations, obligation] };
     }
   }
 }

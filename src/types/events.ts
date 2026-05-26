@@ -71,7 +71,16 @@ export type EventEffect =
   | { kind: 'reliability'; agency: AgencyId; delta: number }
   | { kind: 'ridership'; agency: AgencyId; delta: number }
   | { kind: 'queueDelayedEffect'; quartersOut: number; effects: EventEffect[]; cause: string }
-  | { kind: 'queueDelayedEvent'; eventId: EventId; quartersOut: number; cause: string };
+  | { kind: 'queueDelayedEvent'; eventId: EventId; quartersOut: number; cause: string }
+  | {
+      kind: 'addObligation';
+      obligationId: string;
+      obligationKind: 'fareFreezePledge';
+      agencyId: 'ttc' | 'go' | 'up';
+      durationQuarters: number;
+      costOfBreaking: EventEffect[];
+      breakingDescription: string;
+    };
 
 export interface EventChoice {
   id: string;

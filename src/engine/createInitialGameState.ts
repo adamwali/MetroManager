@@ -194,6 +194,7 @@ export function createInitialGameState(
     inbox: [],
     delayedQueue: [],
     standingOrders: [],
+    activeObligations: [],
     engineVars: {
       templates: score(clampScore(mods.templates)),
       crosslinxLeverage: score(55),

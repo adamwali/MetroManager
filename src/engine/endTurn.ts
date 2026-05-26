@@ -206,6 +206,11 @@ export function endTurn(state: GameState): GameState {
     nextQuarterN,
   );
 
+  // Prune expired obligations (those whose expiresAt <= nextQuarter)
+  const activeObligations = state.activeObligations.filter(
+    (o) => (o.expiresAt as unknown as number) > nextQuarterN,
+  );
+
   // Compose the post-tick state before event processing
   const postTick: GameState = {
     ...state,
@@ -217,6 +222,7 @@ export function endTurn(state: GameState): GameState {
     actionLog: [...state.actionLog, summaryEntry],
     nextLogId: state.nextLogId + 1,
     gameOverCounters: nextCounters,
+    activeObligations,
     ...(gameOver ? { gameOver } : {}),
   };
 

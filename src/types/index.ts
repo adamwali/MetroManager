@@ -8,6 +8,7 @@ export * from './events';
 export * from './finance';
 export * from './gameOver';
 export * from './gameState';
+export * from './obligations';
 export * from './operatingAllowance';
 export * from './politics';
 export * from './projects';

@@ -258,15 +258,15 @@ describe('telegraphs (Phase 3.2)', () => {
     expect(s.inbox.some((e) => e.templateId === 'EV018_federalMinisterVisit')).toBe(true);
   });
 
-  it('random event with telegraph schedules actual fire via delayed queue', () => {
-    // Find a random event with telegraph
-    const tmpl = EVENT_TEMPLATES.find(
-      (t) => t.trigger.kind === 'random' && t.telegraph !== undefined,
-    );
-    expect(tmpl).toBeDefined();
-    // We can't easily force a random roll to pass deterministically without
-    // changing seeds. Just verify the mechanic: when telegraph schedules a
-    // delayed event, the inbox doesn't gain the event but the delayed queue does.
+  it('telegraphs are kept for genuinely predictable events only', () => {
+    // After review: telegraphs only on scheduled events that real CEOs
+    // would foresee (election cycles, minister visits, budget announcements).
+    // Sudden events (signal failures, NIMBY lawsuits, OL design flaws) do NOT
+    // get telegraphs.
+    const telegraphed = EVENT_TEMPLATES.filter((t) => t.telegraph !== undefined);
+    for (const t of telegraphed) {
+      expect(t.trigger.kind).toBe('scheduled');
+    }
   });
 });
 
@@ -367,9 +367,10 @@ describe('event template registry', () => {
     expect(noGood.length).toBeGreaterThanOrEqual(4);
   });
 
-  it('has at least 6 telegraphed templates', () => {
+  it('has 3-6 telegraphed templates (~10% of catalog)', () => {
     const tele = EVENT_TEMPLATES.filter((t) => t.telegraph !== undefined);
-    expect(tele.length).toBeGreaterThanOrEqual(6);
+    expect(tele.length).toBeGreaterThanOrEqual(3);
+    expect(tele.length).toBeLessThanOrEqual(6);
   });
 
   it('processEventsForQuarter is deterministic for the same input', () => {
