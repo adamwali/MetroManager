@@ -5,6 +5,74 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Baseline tuned to deficit + cannibalization model
+
+Repo owner reviewed v3.3 output and flagged two issues:
+
+**Baseline should not run an easy surplus.** Real-world Toronto transit
+agencies lose money and need political padding. The prior v3.3 numbers
+showed +$232M/yr surplus at defaults, which created no pressure for the
+player. Re-tuned starting numbers:
+- TTC fare: $350M/Q → $295M/Q ($1.18B/yr, matches spec's $2.1B/yr split
+  across 3 agencies)
+- GO fare: $230M/Q → $200M/Q ($800M/yr)
+- UP fare: $14M/Q → $12M/Q ($48M/yr)
+- TTC opex (excl maint): $275M/Q → $340M/Q (bumped to capture unmodeled
+  cost categories the player mentioned: security, cleanliness,
+  accessibility, customer experience — these become per-agency sliders
+  in Phase 5.1)
+- GO opex (excl maint): $190M/Q → $225M/Q
+- UP opex (excl maint): $15M/Q → $20M/Q
+
+New baseline: **-$134M/Q operating deficit (-$536M/yr).** Agency runs
+in the red at default settings. Player must close the gap via tradeoffs:
+raise fares (with elasticity-driven ridership drop), cut maintenance
+(with decay risk → eventual replacement events), reduce frequency (with
+satisfaction drop), lobby for higher allowance at renegotiation (with
+political capital cost), or issue operating bonds (with rating/board
+confidence drag).
+
+At -$134M/Q the $5B starting cash lasts ~37 quarters (9-10 years) before
+going negative. Player has to act before then. This is the strategic
+pressure the design called for.
+
+**Ontario Line cannibalization modeled.** A new downtown subway in
+Toronto realistically pulls riders from parallel services. v3.3 was
+crediting +380k system-wide ridership from OL opening, which is the
+line's own ridership, not net new. Modeled per-agency cannibalization:
+- -150k from TTC Line 1 (Yonge relief is the entire point of OL)
+- -50k from TTC streetcars (Queen/King/Dundas parallel surface routes)
+- -38k from GO Lakeshore West (Exhibition station overlap)
+- Net induced demand (truly new riders): ~142k system-wide
+
+Cannibalization scales with the project's current ramp (0% at opening,
+100% at full ramp). Opening ridership corrected from 0 to 290k per spec
+catalogue ("290k → 380k by Q+8 ramp").
+
+Type addition: `ProjectRidershipModel` in engine/data.ts with
+`openingRidership`, `fullRidership`, `cannibalization` map, and
+`primaryAgency`. `tickProject` returns per-agency deltas, `endTurn`
+distributes to the right agencies.
+
+Specific cannibalization numbers (-150k/-50k/-38k) are my call based on
+Toronto transit-network analysis — not in the spec. Tunable. Other
+projects' cannibalization defined in Phase 4 when the full catalogue
+lands in engine code.
+
+**Unmodeled opex categories noted for Phase 5.1.** Security, cleanliness,
+fare gates / accessibility, customer service — currently absorbed into
+the bumped opex number, but should become explicit per-agency sliders in
+Phase 5.1 so the player sees the tradeoff: invest in security → lower
+incidents, higher cost vs cut security → save money, scandal risk.
+
+**Verified the spec's $2.4B subsidy figure was conceptually right.**
+The original §5 numbers assumed break-even at baseline. We're now
+operating at slight deficit because (a) debt service wasn't in the
+spec's accounting and (b) the bumped opex accounts for cost categories
+the spec didn't itemize.
+
+---
+
 ## 2026-05-26 — Economic model pivot (spec v3.3)
 
 Repo owner reviewed the Phase 1.2 heartbeat output and identified that the

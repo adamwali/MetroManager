@@ -33,6 +33,9 @@ interface QuarterSnapshot {
   cash: number;
   cashDelta: number;
   dailyRiders: number;
+  ttcRiders: number;
+  goRiders: number;
+  upRiders: number;
   ttcReliability: number;
   bocPolicyRateBp: number;
   ontarioLineState: string;
@@ -79,6 +82,9 @@ function snapshot(state: GameState): QuarterSnapshot {
     cash: state.cash.balance as unknown as number,
     cashDelta: state.cash.lastQuarterDelta as unknown as number,
     dailyRiders: totalDailyRiders(state),
+    ttcRiders: state.agencies.ttc.dailyRiders as unknown as number,
+    goRiders: state.agencies.go.dailyRiders as unknown as number,
+    upRiders: state.agencies.up.dailyRiders as unknown as number,
     ttcReliability: avg(conditions),
     bocPolicyRateBp: state.debt.bocPolicyRate as unknown as number,
     ontarioLineState: ontarioLine?.state ?? 'gone',
@@ -110,13 +116,16 @@ function printTable(snapshots: QuarterSnapshot[]): void {
     'Q',
     'When',
     'Cash',
-    'ΔCash',
+    'ΔCash/Q',
     'OpGap/Q',
-    'Riders/day',
+    'TTC',
+    'GO',
+    'UP',
+    'Total',
     'TTC reliab',
-    'OL state',
+    'OL',
   ];
-  const widths = [3, 8, 10, 9, 9, 11, 11, 18];
+  const widths = [3, 8, 10, 9, 9, 8, 7, 6, 8, 10, 18];
   const pad = (s: string, w: number) => s.padEnd(w);
   console.log(header.map((h, i) => pad(h, widths[i] ?? 10)).join(' '));
   console.log(widths.map((w) => '-'.repeat(w)).join(' '));
@@ -127,6 +136,9 @@ function printTable(snapshots: QuarterSnapshot[]): void {
       fmtMoney(s.cash),
       `${s.cashDelta >= 0 ? '+' : ''}${fmtMoney(s.cashDelta)}`,
       `${s.operatingGap >= 0 ? '+' : ''}${fmtMoney(s.operatingGap)}`,
+      fmtRiders(s.ttcRiders),
+      fmtRiders(s.goRiders),
+      fmtRiders(s.upRiders),
       fmtRiders(s.dailyRiders),
       s.ttcReliability.toFixed(1),
       s.ontarioLineState,
@@ -137,7 +149,7 @@ function printTable(snapshots: QuarterSnapshot[]): void {
 
 function writeCsv(snapshots: QuarterSnapshot[], path: string): void {
   const lines = [
-    'quarter,year_label,cash_M,cash_delta_M,operating_gap_M,daily_riders,ttc_reliability,boc_bp,ontario_line_state',
+    'quarter,year_label,cash_M,cash_delta_M,operating_gap_M,ttc_riders,go_riders,up_riders,total_riders,ttc_reliability,boc_bp,ontario_line_state',
   ];
   for (const s of snapshots) {
     lines.push(
@@ -147,6 +159,9 @@ function writeCsv(snapshots: QuarterSnapshot[], path: string): void {
         s.cash.toFixed(2),
         s.cashDelta.toFixed(2),
         s.operatingGap.toFixed(2),
+        s.ttcRiders,
+        s.goRiders,
+        s.upRiders,
         s.dailyRiders,
         s.ttcReliability.toFixed(2),
         s.bocPolicyRateBp,
@@ -158,26 +173,26 @@ function writeCsv(snapshots: QuarterSnapshot[], path: string): void {
 }
 
 /**
- * Generate a two-panel SVG chart: cash over time and daily riders over time.
- * No chart libraries; hand-rolled SVG so the harness has zero runtime deps.
+ * Generate a 3-panel SVG: cash, operating gap, per-agency ridership.
+ * Hand-rolled SVG so the harness has zero runtime deps.
  */
 function writeSvg(snapshots: QuarterSnapshot[], path: string): void {
   const width = 1000;
-  const panelHeight = 280;
+  const panelHeight = 240;
+  const panelGap = 50;
   const padding = { top: 30, right: 30, bottom: 40, left: 80 };
-  const totalHeight = panelHeight * 2 + 60;
+  const totalHeight = panelHeight * 3 + panelGap * 2 + 30;
   const innerW = width - padding.left - padding.right;
   const innerH = panelHeight - padding.top - padding.bottom;
 
-  const cashSeries = snapshots.map((s) => s.cash);
-  const ridersSeries = snapshots.map((s) => s.dailyRiders);
-
-  function minMax(arr: number[]): [number, number] {
+  function minMax(arrs: number[][]): [number, number] {
     let mn = Infinity;
     let mx = -Infinity;
-    for (const v of arr) {
-      if (v < mn) mn = v;
-      if (v > mx) mx = v;
+    for (const arr of arrs) {
+      for (const v of arr) {
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
     }
     if (mn === mx) {
       mn -= 1;
@@ -197,38 +212,72 @@ function writeSvg(snapshots: QuarterSnapshot[], path: string): void {
       .join(' ');
   }
 
-  function axisTicks(yMin: number, yMax: number, yOffset: number, formatter: (v: number) => string) {
-    const ticks: { y: number; label: string }[] = [];
-    const N = 4;
-    for (let i = 0; i <= N; i++) {
-      const v = yMin + ((yMax - yMin) * i) / N;
+  function ticks(yMin: number, yMax: number, yOffset: number, formatter: (v: number) => string) {
+    const out: { y: number; label: string }[] = [];
+    for (let i = 0; i <= 4; i++) {
+      const v = yMin + ((yMax - yMin) * i) / 4;
       const y = yOffset + padding.top + (1 - (v - yMin) / (yMax - yMin)) * innerH;
-      ticks.push({ y, label: formatter(v) });
+      out.push({ y, label: formatter(v) });
     }
-    return ticks;
+    return out;
   }
 
-  const [cashMin, cashMax] = minMax(cashSeries);
-  const [ridersMin, ridersMax] = minMax(ridersSeries);
+  const cashSeries = snapshots.map((s) => s.cash);
+  const gapSeries = snapshots.map((s) => s.operatingGap);
+  const ttcSeries = snapshots.map((s) => s.ttcRiders);
+  const goSeries = snapshots.map((s) => s.goRiders);
 
-  const cashTicks = axisTicks(cashMin, cashMax, 0, (v) => fmtMoney(v));
-  const ridersTicks = axisTicks(ridersMin, ridersMax, panelHeight + 60, (v) => fmtRiders(v));
+  const cashY = 0;
+  const gapY = panelHeight + panelGap;
+  const ridersY = (panelHeight + panelGap) * 2;
+
+  const [cashMn, cashMx] = minMax([cashSeries]);
+  const [gapMn, gapMx] = minMax([gapSeries]);
+  const [ttcMn, ttcMx] = minMax([ttcSeries]);
+  const [goMn, goMx] = minMax([goSeries]);
+
+  const cashTicks = ticks(cashMn, cashMx, cashY, fmtMoney);
+  const gapTicks = ticks(gapMn, gapMx, gapY, (v) => `${v >= 0 ? '+' : ''}${fmtMoney(v)}`);
+  const ttcTicks = ticks(ttcMn, ttcMx, ridersY, fmtRiders);
 
   const xLabels = snapshots
     .filter((_, i) => i % 8 === 0)
     .map((s) => {
       const i = snapshots.indexOf(s);
       const stepX = innerW / Math.max(1, snapshots.length - 1);
-      const x = padding.left + i * stepX;
-      return { x, label: s.yearLabel };
+      return { x: padding.left + i * stepX, label: s.yearLabel };
     });
 
-  const cashPanelBottom = padding.top + innerH;
-  const ridersPanelTop = panelHeight + 60 + padding.top;
-  const ridersPanelBottom = ridersPanelTop + innerH;
+  const cashPath = points(cashSeries, cashMn, cashMx, cashY);
+  const gapPath = points(gapSeries, gapMn, gapMx, gapY);
+  const ttcPath = points(ttcSeries, ttcMn, ttcMx, ridersY);
+  // GO scaled to same min/max as TTC for visual comparison? No — too different.
+  // Show GO on right-side independent axis instead. Simpler: just show TTC.
+  // We'll annotate GO numerically on the chart.
 
-  const cashPath = points(cashSeries, cashMin, cashMax, 0);
-  const ridersPath = points(ridersSeries, ridersMin, ridersMax, panelHeight + 60);
+  // Zero line for the gap panel
+  const gapZeroPos =
+    gapMn < 0 && gapMx > 0
+      ? gapY + padding.top + (1 - (0 - gapMn) / (gapMx - gapMn)) * innerH
+      : null;
+
+  const cashBottom = cashY + padding.top + innerH;
+  const gapBottom = gapY + padding.top + innerH;
+  const ridersBottom = ridersY + padding.top + innerH;
+
+  // GO line scaled to TTC axis is unreadable due to scale gap. Show GO on
+  // a normalized axis (right-side ticks) by mapping its [min, max] to the
+  // same screen [yMin, yMax] coordinates.
+  const goPath = goSeries
+    .map((v, i) => {
+      const stepX = innerW / Math.max(1, goSeries.length - 1);
+      const x = padding.left + i * stepX;
+      const y = ridersY + padding.top + (1 - (v - goMn) / (goMx - goMn)) * innerH;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  const goRightTicks = ticks(goMn, goMx, ridersY, fmtRiders);
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${totalHeight}" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-size="12">
@@ -237,46 +286,67 @@ function writeSvg(snapshots: QuarterSnapshot[], path: string): void {
     .panel-bg { fill: #171717; }
     .axis { stroke: #404040; stroke-width: 1; }
     .grid { stroke: #262626; stroke-width: 0.5; }
+    .zero-line { stroke: #525252; stroke-width: 0.5; stroke-dasharray: 4 4; }
     .label { fill: #a3a3a3; }
+    .label-go { fill: #a78bfa; }
     .title { fill: #f5f5f5; font-size: 14px; font-weight: 600; }
     .cash-line { stroke: #fbbf24; stroke-width: 2; fill: none; }
-    .riders-line { stroke: #22d3ee; stroke-width: 2; fill: none; }
+    .gap-line { stroke: #f87171; stroke-width: 2; fill: none; }
+    .ttc-line { stroke: #22d3ee; stroke-width: 2; fill: none; }
+    .go-line { stroke: #a78bfa; stroke-width: 1.5; fill: none; stroke-dasharray: 3 3; }
+    .legend { fill: #d4d4d8; font-size: 11px; }
   </style>
   <rect class="bg" width="${width}" height="${totalHeight}" />
 
   <!-- Cash panel -->
-  <rect class="panel-bg" x="${padding.left}" y="${padding.top}" width="${innerW}" height="${innerH}" />
-  <text class="title" x="${padding.left}" y="20">Cash on hand ($M)</text>
+  <rect class="panel-bg" x="${padding.left}" y="${cashY + padding.top}" width="${innerW}" height="${innerH}" />
+  <text class="title" x="${padding.left}" y="${cashY + 20}">Cash on hand ($M)</text>
   ${cashTicks
     .map(
-      (t) => `
-  <line class="grid" x1="${padding.left}" y1="${t.y}" x2="${padding.left + innerW}" y2="${t.y}" />
-  <text class="label" x="${padding.left - 8}" y="${t.y + 4}" text-anchor="end">${t.label}</text>`,
+      (t) => `<line class="grid" x1="${padding.left}" y1="${t.y}" x2="${padding.left + innerW}" y2="${t.y}" /><text class="label" x="${padding.left - 8}" y="${t.y + 4}" text-anchor="end">${t.label}</text>`,
     )
     .join('')}
-  <line class="axis" x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${cashPanelBottom}" />
-  <line class="axis" x1="${padding.left}" y1="${cashPanelBottom}" x2="${padding.left + innerW}" y2="${cashPanelBottom}" />
+  <line class="axis" x1="${padding.left}" y1="${cashY + padding.top}" x2="${padding.left}" y2="${cashBottom}" />
+  <line class="axis" x1="${padding.left}" y1="${cashBottom}" x2="${padding.left + innerW}" y2="${cashBottom}" />
   <polyline class="cash-line" points="${cashPath}" />
 
-  <!-- Riders panel -->
-  <rect class="panel-bg" x="${padding.left}" y="${ridersPanelTop}" width="${innerW}" height="${innerH}" />
-  <text class="title" x="${padding.left}" y="${panelHeight + 60 + 20}">Daily riders (M)</text>
-  ${ridersTicks
+  <!-- Operating gap panel -->
+  <rect class="panel-bg" x="${padding.left}" y="${gapY + padding.top}" width="${innerW}" height="${innerH}" />
+  <text class="title" x="${padding.left}" y="${gapY + 20}">Operating gap per quarter ($M) — agency loss/profit before project burn</text>
+  ${gapTicks
     .map(
-      (t) => `
-  <line class="grid" x1="${padding.left}" y1="${t.y}" x2="${padding.left + innerW}" y2="${t.y}" />
-  <text class="label" x="${padding.left - 8}" y="${t.y + 4}" text-anchor="end">${t.label}</text>`,
+      (t) => `<line class="grid" x1="${padding.left}" y1="${t.y}" x2="${padding.left + innerW}" y2="${t.y}" /><text class="label" x="${padding.left - 8}" y="${t.y + 4}" text-anchor="end">${t.label}</text>`,
     )
     .join('')}
-  <line class="axis" x1="${padding.left}" y1="${ridersPanelTop}" x2="${padding.left}" y2="${ridersPanelBottom}" />
-  <line class="axis" x1="${padding.left}" y1="${ridersPanelBottom}" x2="${padding.left + innerW}" y2="${ridersPanelBottom}" />
-  <polyline class="riders-line" points="${ridersPath}" />
+  ${gapZeroPos !== null ? `<line class="zero-line" x1="${padding.left}" y1="${gapZeroPos}" x2="${padding.left + innerW}" y2="${gapZeroPos}" />` : ''}
+  <line class="axis" x1="${padding.left}" y1="${gapY + padding.top}" x2="${padding.left}" y2="${gapBottom}" />
+  <line class="axis" x1="${padding.left}" y1="${gapBottom}" x2="${padding.left + innerW}" y2="${gapBottom}" />
+  <polyline class="gap-line" points="${gapPath}" />
+
+  <!-- Riders panel (TTC primary, GO on right axis) -->
+  <rect class="panel-bg" x="${padding.left}" y="${ridersY + padding.top}" width="${innerW}" height="${innerH}" />
+  <text class="title" x="${padding.left}" y="${ridersY + 20}">Daily riders</text>
+  <text class="legend" x="${padding.left + 160}" y="${ridersY + 20}">— TTC (left)   ┄ GO (right)</text>
+  ${ttcTicks
+    .map(
+      (t) => `<line class="grid" x1="${padding.left}" y1="${t.y}" x2="${padding.left + innerW}" y2="${t.y}" /><text class="label" x="${padding.left - 8}" y="${t.y + 4}" text-anchor="end">${t.label}</text>`,
+    )
+    .join('')}
+  ${goRightTicks
+    .map(
+      (t) => `<text class="label-go" x="${padding.left + innerW + 8}" y="${t.y + 4}" text-anchor="start">${t.label}</text>`,
+    )
+    .join('')}
+  <line class="axis" x1="${padding.left}" y1="${ridersY + padding.top}" x2="${padding.left}" y2="${ridersBottom}" />
+  <line class="axis" x1="${padding.left}" y1="${ridersBottom}" x2="${padding.left + innerW}" y2="${ridersBottom}" />
+  <polyline class="ttc-line" points="${ttcPath}" />
+  <polyline class="go-line" points="${goPath}" />
 
   <!-- X axis labels -->
   ${xLabels
     .map(
       (l) =>
-        `<text class="label" x="${l.x}" y="${ridersPanelBottom + 16}" text-anchor="middle">${l.label}</text>`,
+        `<text class="label" x="${l.x}" y="${ridersBottom + 16}" text-anchor="middle">${l.label}</text>`,
     )
     .join('')}
 </svg>`;

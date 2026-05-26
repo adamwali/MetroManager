@@ -1,6 +1,5 @@
 export { createInitialGameState } from './createInitialGameState';
 export { endTurn } from './endTurn';
-export { fullRidershipFor, PROJECT_FULL_RIDERSHIP } from './data';
 export {
   quarterlyDebtService,
   applyMaturities,
@@ -21,4 +20,5 @@ export {
 } from './agencies';
 export { generateFinancingOffers, rateForTrust } from './financing';
 export { tickProject, tickConstructingProject, tickOperatingProject } from './projects';
+export { ridershipModelFor, PROJECT_RIDERSHIP } from './data';
 export { createRngSeeds, nextFloat } from './rng';

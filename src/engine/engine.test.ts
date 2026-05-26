@@ -191,7 +191,7 @@ describe('endTurn', () => {
     expect(s.quarter as unknown as number).toBe(60);
   });
 
-  it('agency runs near break-even on operating side (within $1B/yr)', () => {
+  it('baseline runs slight operating DEFICIT (~$300-500M/yr)', () => {
     const s = createInitialGameState(0);
     const allowanceQ = quarterlyOperatingAllowance(s.operatingAllowance) as unknown as number;
     const fareQ = quarterlyFareRevenue(s.agencies) as unknown as number;
@@ -199,11 +199,54 @@ describe('endTurn', () => {
     const maintQ = quarterlyMaintenanceExpense(s.agencies) as unknown as number;
     const debtServiceQ = quarterlyDebtService(s.debt) as unknown as number;
 
-    const inflow = allowanceQ + fareQ;
-    const outflow = opexQ + maintQ + debtServiceQ;
-    const quarterlyGap = Math.abs(inflow - outflow);
+    const annualGap = (allowanceQ + fareQ - opexQ - maintQ - debtServiceQ) * 4;
+    // Want modest deficit: agency loses money at default settings, player must
+    // make tradeoffs to break even.
+    expect(annualGap).toBeLessThan(0);
+    expect(annualGap).toBeGreaterThan(-700);
+  });
+});
 
-    // Annualized gap should be within $1B (close to break-even, slight tilt one way or other)
-    expect(quarterlyGap * 4).toBeLessThan(1_000);
+describe('Ontario Line cannibalization', () => {
+  it('opens at 290k riders (not 0) per spec catalogue', () => {
+    let s = createInitialGameState(0);
+    // Run to quarter 20 (Ontario Line opens at Q20 per createInitialGameState)
+    for (let i = 0; i < 21; i++) s = endTurn(s);
+    const ol = s.projects.find((p) => p.templateId === 'P00');
+    expect(ol?.state).toBe('operating');
+    if (ol?.state === 'operating') {
+      const r = ol.currentDailyRiders as unknown as number;
+      expect(r).toBeGreaterThanOrEqual(280_000);
+      expect(r).toBeLessThanOrEqual(320_000);
+    }
+  });
+
+  it('cannibalizes ridership from TTC and GO when ramped', () => {
+    let s = createInitialGameState(0);
+    const ttcBeforeOpening = s.agencies.ttc.dailyRiders as unknown as number;
+    const goBeforeOpening = s.agencies.go.dailyRiders as unknown as number;
+
+    // Run to Q28 (8 quarters after opening — fully ramped)
+    for (let i = 0; i < 29; i++) s = endTurn(s);
+
+    const ttcAfter = s.agencies.ttc.dailyRiders as unknown as number;
+    const goAfter = s.agencies.go.dailyRiders as unknown as number;
+
+    // TTC: gained 380k from OL, lost 200k to cannibalization → net +180k roughly
+    //      Plus 7 years of catchment growth (~0.8%/yr × 7 ≈ +5.7%) and some
+    //      reliability drift at reliability ~68 (mild). Total TTC should be
+    //      noticeably higher than start.
+    expect(ttcAfter).toBeGreaterThan(ttcBeforeOpening);
+
+    // GO: catchment growth (~+37k over 7yr at 1.5%/yr) nearly offsets the
+    //     -38k OL cannibalization. Expected GO is roughly flat (±10%).
+    const goChange = (goAfter - goBeforeOpening) / goBeforeOpening;
+    expect(Math.abs(goChange)).toBeLessThan(0.1);
+
+    // Net system gain from OL alone: ~142k (380 - 200 - 38), not 380k.
+    // System total still up year-on-year from catchment growth + OL net.
+    const totalBefore = ttcBeforeOpening + goBeforeOpening;
+    const totalAfter = ttcAfter + goAfter;
+    expect(totalAfter).toBeGreaterThan(totalBefore);
   });
 });

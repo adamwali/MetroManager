@@ -15,7 +15,8 @@ import {
   reliabilityScore,
 } from './agencies';
 import { tickProject } from './projects';
-import { fullRidershipFor } from './data';
+import { ridershipModelFor } from './data';
+import type { AgencyId } from '@/types/agency';
 
 /**
  * Advance one quarter. Pure function — does not mutate input.
@@ -66,27 +67,29 @@ export function endTurn(state: GameState): GameState {
   // 7. Project ticks — project burn draws from each project's funding pool
   // (set at break-ground from accepted financing), NOT from operating cash.
   // Operating cash only sees opex / maint / debt service / refi fees.
-  let openingRidershipDelta = 0;
+  // Ridership effects: primary-agency positive delta + per-agency cannibalization.
+  const perAgencyRidershipDelta: Record<AgencyId, number> = { ttc: 0, go: 0, up: 0 };
   const tickedProjects = state.projects.map((p) => {
-    const r = tickProject(p, nextQuarter, fullRidershipFor);
-    openingRidershipDelta += r.ridershipDelta;
+    const r = tickProject(p, nextQuarter, ridershipModelFor);
+    if (r.primaryAgency && r.primaryAgencyDelta !== 0) {
+      perAgencyRidershipDelta[r.primaryAgency] += r.primaryAgencyDelta;
+    }
+    for (const [agencyId, delta] of Object.entries(r.cannibalizationDeltas) as [
+      AgencyId,
+      number,
+    ][]) {
+      perAgencyRidershipDelta[agencyId] += delta;
+    }
     return r.project;
   });
 
-  // Distribute opening ridership to TTC (Ontario Line is a TTC-integrated asset)
-  const agenciesAfterOpening =
-    openingRidershipDelta > 0
-      ? {
-          ...agenciesWithRidership,
-          ttc: {
-            ...agenciesWithRidership.ttc,
-            dailyRiders: riders(
-              (agenciesWithRidership.ttc.dailyRiders as unknown as number) +
-                openingRidershipDelta,
-            ),
-          },
-        }
-      : agenciesWithRidership;
+  // Apply per-agency ridership deltas from project openings/ramps + cannibalization
+  const agenciesAfterOpening = applyToAgencies(agenciesWithRidership, (a) => {
+    const delta = perAgencyRidershipDelta[a.id];
+    if (delta === 0) return a;
+    const before = a.dailyRiders as unknown as number;
+    return { ...a, dailyRiders: riders(Math.max(0, before + delta)) };
+  });
 
   // 8. Net cash flow (operating side only — project burn is funding-pool draw)
   const cashIn = (allowanceQ as unknown as number) + (fareQ as unknown as number);

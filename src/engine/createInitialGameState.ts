@@ -97,6 +97,13 @@ export function createInitialGameState(seed: number): GameState {
     },
     boardConfidence: { score: score(60), recentComponents: [], warningActive: false },
     agencies: {
+      // Starting numbers tuned for modest deficit at default settings —
+      // the agency runs in the red without active player decisions.
+      // Per-Q fare totals ~$510M ($2.04B/yr ≈ spec's $2.1B), per-Q opex
+      // ~$545M ($2.18B/yr, captures unmodeled categories: security,
+      // cleanliness, accessibility — these become Phase 5 sliders).
+      // Plus $2.3B/yr maintenance + $0.35B/yr debt service brings total
+      // outflow to ~$4.83B/yr vs ~$4.44B/yr inflow → -$390M/yr baseline.
       ttc: {
         id: 'ttc',
         dailyRiders: riders(4_400_000),
@@ -109,8 +116,8 @@ export function createInitialGameState(seed: number): GameState {
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.008,
         directorCharacterId: 'c_ttc_director',
-        lastQuarterOpex: cash(275),
-        lastQuarterFareRevenue: cash(350),
+        lastQuarterOpex: cash(340), // was 275; bumped for unmodeled cost categories
+        lastQuarterFareRevenue: cash(295), // was 350; aligned to spec's $1.18B/yr
       },
       go: {
         id: 'go',
@@ -124,8 +131,8 @@ export function createInitialGameState(seed: number): GameState {
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.015,
         directorCharacterId: 'c_go_director',
-        lastQuarterOpex: cash(190),
-        lastQuarterFareRevenue: cash(230),
+        lastQuarterOpex: cash(225), // was 190
+        lastQuarterFareRevenue: cash(200), // was 230
       },
       up: {
         id: 'up',
@@ -138,8 +145,8 @@ export function createInitialGameState(seed: number): GameState {
         operatingParams: { frequencyPolicy: 'current', farePolicy: 'current' },
         catchmentGrowthRate: 0.003,
         directorCharacterId: 'c_up_director',
-        lastQuarterOpex: cash(15),
-        lastQuarterFareRevenue: cash(14),
+        lastQuarterOpex: cash(20), // was 15
+        lastQuarterFareRevenue: cash(12), // was 14
       },
     },
     projects: [

@@ -5,6 +5,55 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Baseline tuning + cannibalization
+
+**Done:**
+- Repo-owner review of v3.3 numbers identified surplus-too-easy + missing
+  cannibalization on Ontario Line opening.
+- Re-tuned per-agency opex (bumped) and fare (lowered to spec) so baseline
+  is now -$134M/Q ($536M/yr) operating deficit. Cash $5B → -$3.23B over
+  60Q at default settings. Goes negative around Q37 — player has to act.
+- Added `ProjectRidershipModel` with `openingRidership`, `fullRidership`,
+  per-agency `cannibalization` map, `primaryAgency`. Ontario Line model:
+  -150k TTC Line 1, -50k TTC streetcars, -38k GO Lakeshore West. Net new
+  ~142k system-wide (not 380k).
+- `tickProject` now returns per-agency ridership deltas (primary +
+  cannibalization). `endTurn` distributes to TTC and GO separately.
+- Opening ridership corrected from 0 to 290k per spec catalogue.
+- Tests: added 2 cannibalization tests + updated baseline test to assert
+  deficit (was asserting break-even). 26 tests total, all passing.
+- Harness updated: per-agency rider columns in the table, 3-panel SVG
+  (cash / operating gap / TTC+GO riders with dual axis).
+
+**Heartbeat trajectory now:**
+- Cash $5B → -$3.23B over 60Q. Negative around Q37 (about 9 years in).
+- Operating gap -$134M/Q steady. Clearly visible in the gap panel.
+- TTC riders: 4.40M → 4.75M (Ontario Line opening Q20 bump from 4.45M to
+  4.60M is the OL primary contribution minus its cannibalization).
+- GO riders: 0.34M → 0.35M (catchment growth +37k offsets -38k OL
+  cannibalization, roughly flat).
+- System total: 4.75M → 5.11M. Net +360k over 15 years, of which ~142k
+  is OL induced demand and ~218k is organic catchment growth.
+
+**Left for later phases:**
+- Player-controllable security / cleanliness / accessibility sliders →
+  Phase 5.1 (currently absorbed into baseline opex).
+- New-line operating cost increase (opening a subway adds to opex) →
+  Phase 4 when project opening is fully wired.
+- Operating bonds as deficit-closing lever → Phase 7.
+
+**Surprises:**
+- Once cannibalization landed, the trajectory looked like a real Toronto
+  transit agency: bleeding money slowly, dependent on government
+  padding, modest organic ridership growth offset by aging
+  infrastructure. The Ontario Line opening is meaningful but not a
+  silver bullet, which matches reality.
+- The cannibalization math (-150/-50/-38) is my call — Toronto-realistic
+  but not in the spec. Worth revisiting with real ridership modeling if
+  we get serious about that.
+
+---
+
 ## 2026-05-26 — Economic model pivot (v3.3)
 
 **Done:**
