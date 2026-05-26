@@ -90,25 +90,42 @@ export type EventTrigger =
   | { kind: 'conditional'; predicate: EventPredicate; cooldownQuarters?: number }
   | { kind: 'random'; baseWeight: number; predicate?: EventPredicate; cooldownQuarters?: number };
 
+/**
+ * Event display kind. Phase 3.2.
+ *
+ * - `decision`: classic event with branches; lands in inbox; player picks a choice
+ * - `informational`: news-rail-only entry, no choices. Used for election results,
+ *   milestones, telegraphs ("oncoming event") flavor, etc. Never blocks End Turn.
+ */
+export type EventDisplayKind = 'decision' | 'informational';
+
 /** Static template — lives in the event catalogue, not in GameState. */
 export interface EventTemplate {
   id: EventId;
   category: EventCategory;
   trigger: EventTrigger;
+  /** Decision (inbox) vs informational (news rail only). Defaults to 'decision'. */
+  displayKind?: EventDisplayKind;
   /** Headline outlet/voice prefix for newsroom-style display ("Star:", "CBC:", "Internal memo:"). */
   outlet?: string;
   /** Character id of the actor delivering this event (optional). */
   actorCharacterId?: string;
   headline: string;
   body: string;
+  /** For informational kind: empty array. */
   choices: EventChoice[];
   /** Urgency 0-100 when fired — controls inbox sort order. */
   urgency: number;
+  /** Optional flag: if true, all branches have a meaningful downside ("no good options" event per §0 P5). */
+  noGoodOptions?: boolean;
   /** Telegraph signal — surfaces as news 2-4 quarters before the event fires. */
   telegraph?: {
     headline: string;
     body: string;
+    /** How many quarters early to surface the telegraph. */
     quartersBefore: number;
+    /** Outlet attribution (defaults to template outlet). */
+    outlet?: string;
   };
 }
 

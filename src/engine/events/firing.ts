@@ -12,43 +12,61 @@ import { evaluatePredicate } from './predicates';
 import { EVENT_TEMPLATES, eventTemplateById } from './templates';
 
 /**
- * Event firing engine. Phase 3.1.
+ * Event firing engine. Phase 3.1 + 3.2.
  *
- * Called from endTurn AFTER quarter has advanced and the quarter_summary
- * has been computed. It does three things:
- *
+ * Pipeline each quarter:
  *   1. Drain the delayed-consequences queue for anything due this quarter.
- *      Each drained entry either applies effects directly or queues a
- *      new event into the inbox.
+ *      Each drained entry either applies effects directly or queues a new
+ *      event into the inbox / news rail (depending on displayKind).
+ *   2. Emit telegraphs for events that will fire `quartersBefore` from now
+ *      (scheduled events: known target; random events: when their roll
+ *      passes, schedule the actual fire via delayedQueue and emit the
+ *      telegraph now).
+ *   3. For each template, check trigger eligibility (scheduled / conditional
+ *      / random with keyed RNG) and cooldown. Eligible templates either:
+ *      - fire immediately into inbox (decision events, no telegraph), OR
+ *      - emit a telegraph + schedule actual fire (events with telegraph),
+ *      - append to actionLog only (informational events, no inbox entry)
+ *   4. Cap *inbox fires* per quarter at MAX_FIRES_PER_QUARTER. Telegraphs
+ *      and informational entries are not capped (they don't demand action).
  *
- *   2. For each template, check trigger eligibility (scheduled / conditional
- *      / random with keyed RNG) and cooldown (derived from action log
- *      `event_fired` entries). Eligible templates become ActiveEvents in
- *      the inbox.
- *
- *   3. Cap fires per quarter at MAX_FIRES_PER_QUARTER to keep decision
- *      density manageable (~1/Q steady pressure target).
- *
- * Returns the updated state with new inbox entries + drained queue +
- * appended action log entries for each fire/drain.
+ * Returns the updated state + appended action log entries.
  */
 
 const MAX_FIRES_PER_QUARTER = 2;
 
-/** Quarters since the template last fired, or Infinity if never. */
-function quartersSinceLastFire(
-  state: GameState,
-  templateId: string,
-): number {
+/** Quarters since the template last fired into the inbox, or Infinity if never. */
+function quartersSinceLastFire(state: GameState, templateId: string): number {
   const currentQ = state.quarter as unknown as number;
   let latest = -Infinity;
   for (const entry of state.actionLog) {
-    if (entry.kind === 'event_fired' && entry.eventTemplateId === templateId) {
+    if (
+      (entry.kind === 'event_fired' || entry.kind === 'event_informational') &&
+      ('eventTemplateId' in entry ? entry.eventTemplateId : '') === templateId
+    ) {
       const q = entry.quarter as unknown as number;
       if (q > latest) latest = q;
     }
   }
   return latest === -Infinity ? Infinity : currentQ - latest;
+}
+
+/** Has a telegraph for this template + expected fire quarter already been emitted? */
+function telegraphAlreadyEmitted(
+  state: GameState,
+  templateId: string,
+  expectedFireQuarter: number,
+): boolean {
+  for (const entry of state.actionLog) {
+    if (
+      entry.kind === 'event_telegraph' &&
+      entry.sourceEventTemplateId === templateId &&
+      (entry.expectedFireQuarter as unknown as number) === expectedFireQuarter
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function withinCooldown(state: GameState, template: EventTemplate): boolean {
@@ -61,8 +79,16 @@ function withinCooldown(state: GameState, template: EventTemplate): boolean {
 }
 
 function templateEligible(state: GameState, template: EventTemplate): boolean {
-  // Skip if already in inbox (don't double-fire)
+  // Skip if already in inbox
   if (state.inbox.some((e) => e.templateId === template.id)) return false;
+  // Skip if a delayed fire is already queued for this template
+  if (
+    state.delayedQueue.some(
+      (dc) => dc.payload.kind === 'event' && dc.payload.templateId === template.id,
+    )
+  ) {
+    return false;
+  }
   if (withinCooldown(state, template)) return false;
 
   const t = template.trigger;
@@ -73,8 +99,6 @@ function templateEligible(state: GameState, template: EventTemplate): boolean {
       return evaluatePredicate(state, t.predicate);
     case 'random': {
       if (t.predicate && !evaluatePredicate(state, t.predicate)) return false;
-      // Keyed RNG: same masterSeed + same key = same roll, so adding new
-      // templates does not shift existing ones (per Phase 1.3 design).
       const roll = keyedFloat(
         state.rng.masterSeed,
         `event:${template.id}:q${state.quarter as unknown as number}`,
@@ -84,10 +108,7 @@ function templateEligible(state: GameState, template: EventTemplate): boolean {
   }
 }
 
-/**
- * Step 1: drain delayed consequences whose firesAt == current quarter.
- * Returns updated state + log entries for each drain.
- */
+/** Step 1: drain delayed consequences whose firesAt == current quarter. */
 function drainDelayedQueue(state: GameState): {
   state: GameState;
   newLogEntries: ActionLogEntry[];
@@ -119,25 +140,12 @@ function drainDelayedQueue(state: GameState): {
       });
       nextLogId++;
     } else {
-      // payload kind 'event' — push the queued template into the inbox
       const tmpl = eventTemplateById(dc.payload.templateId);
       if (tmpl) {
-        const active: ActiveEvent = {
-          templateId: tmpl.id,
-          firedAt: s.quarter,
-          urgency: tmpl.urgency,
-        };
-        const logId = `q${currentQ}-${nextLogId}`;
-        s = { ...s, inbox: [...s.inbox, active] };
-        newLogEntries.push({
-          kind: 'event_fired',
-          id: logId,
-          quarter: s.quarter,
-          cause: { kind: 'system', system: 'macro' },
-          eventTemplateId: tmpl.id,
-          summary: `${tmpl.outlet ? `${tmpl.outlet}: ` : ''}${tmpl.headline}`,
-        });
-        nextLogId++;
+        const result = fireOrInform(s, tmpl, nextLogId, 'macro');
+        s = result.state;
+        newLogEntries.push(...result.entries);
+        nextLogId = result.nextLogId;
       }
     }
   }
@@ -147,10 +155,102 @@ function drainDelayedQueue(state: GameState): {
 }
 
 /**
- * Step 2-3: select eligible templates and fire up to MAX_FIRES_PER_QUARTER.
- * Scheduled + conditional fire first (they're mandatory); random rolls
- * compete for any remaining slots, sorted by weight descending.
+ * Either push the template into the inbox (decision) OR emit an
+ * informational news-rail entry (informational). Returns updated state
+ * + log entries.
  */
+function fireOrInform(
+  state: GameState,
+  template: EventTemplate,
+  startLogId: number,
+  system: 'endTurn' | 'macro',
+): { state: GameState; entries: ActionLogEntry[]; nextLogId: number } {
+  const currentQ = state.quarter as unknown as number;
+  const isInformational = template.displayKind === 'informational';
+  const logId = `q${currentQ}-${startLogId}`;
+  const outletPrefix = template.outlet ? `${template.outlet}: ` : '';
+
+  if (isInformational) {
+    return {
+      state,
+      entries: [
+        {
+          kind: 'event_informational',
+          id: logId,
+          quarter: state.quarter,
+          cause: { kind: 'system', system },
+          eventTemplateId: template.id,
+          ...(template.outlet ? { outlet: template.outlet } : {}),
+          headline: template.headline,
+          body: template.body,
+          summary: `${outletPrefix}${template.headline}`,
+        },
+      ],
+      nextLogId: startLogId + 1,
+    };
+  }
+
+  // decision event — inbox
+  const active: ActiveEvent = {
+    templateId: template.id,
+    firedAt: state.quarter,
+    urgency: template.urgency,
+  };
+  return {
+    state: { ...state, inbox: [...state.inbox, active] },
+    entries: [
+      {
+        kind: 'event_fired',
+        id: logId,
+        quarter: state.quarter,
+        cause: { kind: 'system', system },
+        eventTemplateId: template.id,
+        summary: `${outletPrefix}${template.headline}`,
+      },
+    ],
+    nextLogId: startLogId + 1,
+  };
+}
+
+/** Step 2: emit telegraphs for scheduled events whose target lies `quartersBefore` out. */
+function emitScheduledTelegraphs(state: GameState): {
+  state: GameState;
+  newLogEntries: ActionLogEntry[];
+} {
+  const currentQ = state.quarter as unknown as number;
+  let s = state;
+  const newLogEntries: ActionLogEntry[] = [];
+  let nextLogId = s.nextLogId;
+
+  for (const template of EVENT_TEMPLATES) {
+    if (!template.telegraph) continue;
+    if (template.trigger.kind !== 'scheduled') continue;
+    const lead = template.telegraph.quartersBefore;
+    const targetQ = currentQ + lead;
+    if (!template.trigger.quarters.includes(targetQ)) continue;
+    if (telegraphAlreadyEmitted(s, template.id, targetQ)) continue;
+    const logId = `q${currentQ}-${nextLogId}`;
+    const outlet = template.telegraph.outlet ?? template.outlet;
+    newLogEntries.push({
+      kind: 'event_telegraph',
+      id: logId,
+      quarter: s.quarter,
+      cause: { kind: 'system', system: 'endTurn' },
+      sourceEventTemplateId: template.id,
+      expectedFireQuarter: (targetQ as unknown) as typeof s.quarter,
+      ...(outlet ? { outlet } : {}),
+      headline: template.telegraph.headline,
+      body: template.telegraph.body,
+      summary: `${outlet ? `${outlet}: ` : ''}${template.telegraph.headline}`,
+    });
+    nextLogId++;
+  }
+
+  s = { ...s, nextLogId };
+  return { state: s, newLogEntries };
+}
+
+/** Step 3: select eligible templates and fire (or telegraph) up to the cap. */
 function selectAndFire(state: GameState): {
   state: GameState;
   newLogEntries: ActionLogEntry[];
@@ -160,7 +260,6 @@ function selectAndFire(state: GameState): {
     if (templateEligible(state, t)) eligible.push(t);
   }
 
-  // Sort: mandatory (scheduled/conditional) first, then random by weight desc
   eligible.sort((a, b) => {
     const aMandatory = a.trigger.kind !== 'random';
     const bMandatory = b.trigger.kind !== 'random';
@@ -168,45 +267,68 @@ function selectAndFire(state: GameState): {
     return b.urgency - a.urgency;
   });
 
-  const toFire = eligible.slice(0, MAX_FIRES_PER_QUARTER);
   const currentQ = state.quarter as unknown as number;
   let s = state;
   const newLogEntries: ActionLogEntry[] = [];
   let nextLogId = s.nextLogId;
+  let firesThisQuarter = 0;
 
-  for (const tmpl of toFire) {
-    const active: ActiveEvent = {
-      templateId: tmpl.id,
-      firedAt: s.quarter,
-      urgency: tmpl.urgency,
-    };
-    const logId = `q${currentQ}-${nextLogId}`;
-    s = { ...s, inbox: [...s.inbox, active] };
-    newLogEntries.push({
-      kind: 'event_fired',
-      id: logId,
-      quarter: s.quarter,
-      cause: { kind: 'system', system: 'endTurn' },
-      eventTemplateId: tmpl.id,
-      summary: `${tmpl.outlet ? `${tmpl.outlet}: ` : ''}${tmpl.headline}`,
-    });
-    nextLogId++;
+  for (const tmpl of eligible) {
+    const isInformational = tmpl.displayKind === 'informational';
+    // Random events with a telegraph: emit telegraph now, schedule actual fire later
+    if (tmpl.trigger.kind === 'random' && tmpl.telegraph) {
+      const lead = tmpl.telegraph.quartersBefore;
+      const targetQ = currentQ + lead;
+      if (!telegraphAlreadyEmitted(s, tmpl.id, targetQ)) {
+        const logId = `q${currentQ}-${nextLogId}`;
+        const outlet = tmpl.telegraph.outlet ?? tmpl.outlet;
+        newLogEntries.push({
+          kind: 'event_telegraph',
+          id: logId,
+          quarter: s.quarter,
+          cause: { kind: 'system', system: 'endTurn' },
+          sourceEventTemplateId: tmpl.id,
+          expectedFireQuarter: (targetQ as unknown) as typeof s.quarter,
+          ...(outlet ? { outlet } : {}),
+          headline: tmpl.telegraph.headline,
+          body: tmpl.telegraph.body,
+          summary: `${outlet ? `${outlet}: ` : ''}${tmpl.telegraph.headline}`,
+        });
+        nextLogId++;
+        // Schedule actual event fire via delayedQueue
+        const dc: DelayedConsequence = {
+          firesAt: (targetQ as unknown) as typeof s.quarter,
+          cause: `Telegraphed at Q${currentQ}`,
+          payload: { kind: 'event', templateId: tmpl.id },
+        };
+        s = { ...s, delayedQueue: [...s.delayedQueue, dc] };
+      }
+      continue;
+    }
+    // Otherwise: fire (or inform) immediately. Count toward cap if it's a decision event.
+    if (!isInformational && firesThisQuarter >= MAX_FIRES_PER_QUARTER) continue;
+    const result = fireOrInform(s, tmpl, nextLogId, 'endTurn');
+    s = result.state;
+    newLogEntries.push(...result.entries);
+    nextLogId = result.nextLogId;
+    if (!isInformational) firesThisQuarter++;
   }
 
   s = { ...s, nextLogId };
   return { state: s, newLogEntries };
 }
 
-/** Main entry: process queue, then fire new events. */
+/** Main entry: drain queue, emit scheduled telegraphs, then fire new events. */
 export function processEventsForQuarter(state: GameState): {
   state: GameState;
   newLogEntries: ActionLogEntry[];
 } {
   const a = drainDelayedQueue(state);
-  const b = selectAndFire(a.state);
+  const b = emitScheduledTelegraphs(a.state);
+  const c = selectAndFire(b.state);
   return {
-    state: b.state,
-    newLogEntries: [...a.newLogEntries, ...b.newLogEntries],
+    state: c.state,
+    newLogEntries: [...a.newLogEntries, ...b.newLogEntries, ...c.newLogEntries],
   };
 }
 
@@ -224,19 +346,15 @@ export function resolveEventChoice(
   if (!template) return { state, logEntry: null };
   const choice = template.choices.find((c) => c.id === choiceId);
   if (!choice) return { state, logEntry: null };
-  // Verify the choice is actually available given current state
   if (choice.requires && !evaluatePredicate(state, choice.requires)) {
     return { state, logEntry: null };
   }
 
-  // Remove from inbox first
   const newInbox = state.inbox.filter((e) => e.templateId !== templateId);
   let s: GameState = { ...state, inbox: newInbox };
 
-  // Apply effects
   s = applyEffects(s, choice.effects);
 
-  // Log the decision
   const logId = `q${s.quarter as unknown as number}-${s.nextLogId}`;
   const logEntry: ActionLogEntry = {
     kind: 'player_decision',
@@ -265,5 +383,4 @@ export function visibleChoices(
   );
 }
 
-// Re-exports for convenience
 export { applyEffects, evaluatePredicate };

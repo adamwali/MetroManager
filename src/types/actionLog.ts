@@ -98,6 +98,33 @@ export type ActionLogEntry =
       summary: string;
     }
   | {
+      kind: 'event_telegraph';
+      id: ActionLogId;
+      quarter: QuarterIndex;
+      cause: ActionCause;
+      causedById?: ActionLogId;
+      /** The event this telegraph is foretelling. */
+      sourceEventTemplateId: string;
+      /** Quarter the actual event is expected to fire. */
+      expectedFireQuarter: QuarterIndex;
+      outlet?: string;
+      headline: string;
+      body: string;
+      summary: string;
+    }
+  | {
+      kind: 'event_informational';
+      id: ActionLogId;
+      quarter: QuarterIndex;
+      cause: ActionCause;
+      causedById?: ActionLogId;
+      eventTemplateId: string;
+      outlet?: string;
+      headline: string;
+      body: string;
+      summary: string;
+    }
+  | {
       kind: 'quarter_summary';
       id: ActionLogId;
       quarter: QuarterIndex;

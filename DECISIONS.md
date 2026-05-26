@@ -5,6 +5,120 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 3.2: event catalog expansion + telegraphs + informational + Monte Carlo
+
+Returned to Phase 3.2 after the Phase 5.1 detour. Catalog goes from
+10 → 40 templates. Telegraphs warn players 2-3Q before events fire.
+Informational events surface in news rail without inbox bloat. Time-jump
+preview now shows ranges across parallel runs.
+
+**30 new templates** spread across categories:
+- 5 operations crises (streetcar derailment, GO signal failure, holiday
+  bus shortage, station fire, snowstorm)
+- 5 political (premier pet project, fare freeze pressure, federal
+  minister visit, opposition attack, councillor ward extension)
+- 4 construction (OL design flaw, NIMBY lawsuit, contractor strike,
+  heritage building)
+- 4 media/scandal (wasteful op-ed, whistleblower leak, documentary
+  exposes backlog, transit award)
+- 3 climate (climate funding, flooding, snowstorm shared)
+- 3 elections — all informational (federal, provincial, city)
+- 2 character/internal (engineer poached, board retirement)
+- 2 financial/bond market (credit rating review, BOC rate decision)
+- 1 accessibility lawsuit (no-good-options)
+
+**6 no-good-options events** with all-bad branches:
+- EV014 station fire (rebuild $800M / spot $200M / patch $50M w/ -8 reliability)
+- EV023 contractor strike (accept $600M / partial $250M + risk / hardball + delay)
+- EV026 whistleblower leak (come clean / discredit / change topic — all -PR)
+- EV038 credit rating review (open books / fight / backstop-favor)
+- EV040 accessibility lawsuit (settle $800M / fight + lose later / partial $400M)
+- Implicit: EV017 fare freeze (cap revenue / weak optics / refuse politically)
+
+These trigger the "every option costs you something" feeling per §0 P5.
+
+**Telegraph system (authored per-event):**
+New ActionLogEntry kinds: `event_telegraph` and `event_informational`.
+Both surface in the news rail with distinct visual treatment (amber for
+telegraph, blue for informational, red for fired decision events,
+emerald for player decisions).
+
+Mechanism:
+- **Scheduled events**: at each quarter, check if `nextScheduledQ ==
+  currentQ + telegraphQuartersBefore`. If yes, emit telegraph.
+- **Random events**: when the random roll passes, instead of firing
+  immediately, emit telegraph + schedule actual fire via
+  `delayedQueue` for `quartersBefore` later. Cooldown applied to the
+  telegraph too so the same event can't re-roll while pending.
+- **Conditional events**: no telegraphs (the state crossing the
+  threshold IS the warning).
+
+Telegraphs don't enter inbox. Don't block End Turn. Pure informational.
+
+Sample heartbeat (seed 1, 60Q):
+- Q4: telegraph "Mayor likely to campaign on transit-fare stability" → EV017 fires Q6
+- Q6: telegraph "Minister staff scoping GTHA visit" → EV018 fires Q8
+- Q6: telegraph "Climate Bank signals transit-resilience funding" → EV029 fires Q9
+- Q9: telegraph "Star reporters asking around about maintenance backlog" → EV026 fires later
+- Q10: telegraph "Federal election campaign begins" → EV032 fires Q12
+
+**Informational events (`displayKind: 'informational'`):**
+- Empty `choices` array
+- Never lands in inbox
+- Appears in news rail only
+- Used for: elections (Q8/10/12 results), BOC rate decisions, board
+  member retirements, achievements (transit award)
+- Doesn't count against MAX_FIRES_PER_QUARTER cap
+
+**Monte Carlo time-jump preview:**
+- New `forecastRange(quartersAhead, runs=12)` store action
+- Each run perturbs masterSeed by a prime offset so random events fire
+  differently across runs
+- Aggregates: min / median / max for cash + riders + game-over
+  probability per quarter
+- `TimeJumpPreview` UI now shows ranges instead of single trajectory
+- Wider cash band = more event variance, surfaced in amber text
+
+**News rail enhancements:**
+- Color-coded entries by kind (amber telegraph, blue info, red event-fired,
+  emerald player-decision)
+- Outlet badge shown for telegraph + informational entries
+- Body excerpt shown for telegraphs and informationals (telegraphs are
+  often the headline + body that explains the upcoming pressure)
+- 10 most recent entries (was 8)
+
+**Event density now:**
+- 60Q campaign with auto-resolve: ~83 event-related log entries
+  (vs Phase 3.1's 31). Includes telegraphs and informationals.
+- Decision events alone: ~35-40 over 60Q (~0.6/Q). Below 1.0/Q target
+  but content now has cadence + foreshadowing.
+- Telegraphs add ~25 extra news-rail entries — strategic planning surface.
+
+**Test additions:**
+- 5 telegraph tests (scheduled event triggers warning N quarters early,
+  not in inbox, still fires on target, random with telegraph schedules
+  delayed fire)
+- 2 informational tests (no inbox entry, multiple can fire per quarter)
+- 1 no-good-options invariant test (all variants have ≥2 choices with
+  effects)
+- 7 catalog tests (38+ templates, unique IDs, informational has 0
+  choices, decision has ≥2, ≥4 no-good-options flagged, ≥6 telegraphs)
+
+**141 tests passing total.** Bundle 397KB JS / 123KB gzip (was 365/114
+after Phase 5.1).
+
+**What still doesn't fire:**
+- Conditional events no telegraphs — by design (state is the warning).
+  Could revisit if playtests show specific conditionals feel unfair.
+- BOC rate decisions are informational; they should actually shift
+  floating-rate debt service. Wire in Phase 7.
+- Election informationals fire but party flips don't happen. Wire in
+  Phase 6.1.
+- Board member retirements are informational; replacement market and
+  character flow lands in Phase 6.2.
+
+---
+
 ## 2026-05-26 — Phase 5.1 (detour): operations dashboards + proactive levers
 
 First proactive layer. Player now has ~17 sliders/policies across three

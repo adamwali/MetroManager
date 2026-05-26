@@ -563,6 +563,1106 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       },
     ],
   },
+  // ════════════════════════════════════════════════════════════════════════
+  // Phase 3.2 expansion: 30 new templates (~5 ops crises, 5 political, 4
+  // construction, 4 media, 3 climate, 3 elections, 3 character, 3 financial,
+  // 3 informational, 5 no-good-options scattered throughout).
+  // Telegraphs added to ~10 templates.
+  // ════════════════════════════════════════════════════════════════════════
+
+  // ── Operations crises ───────────────────────────────────────────────────
+  {
+    id: 'EV011_streetcarDerailment',
+    category: 'operations_crisis',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'reliability', agency: 'ttc', lte: 55 },
+      cooldownQuarters: 8,
+    },
+    outlet: 'CityNews',
+    headline: 'Streetcar derailment on Spadina; 12 injured, no fatalities',
+    body: 'Wheel-bearing failure on a 510 streetcar at Spadina + Bremner. Service halted 6 hours. Riders union calls for "full audit of TTC rolling stock."',
+    urgency: 88,
+    choices: [
+      {
+        id: 'full_audit',
+        label: 'Order full rolling-stock audit, public report',
+        tradeoff: '-$150M cash, +8 public approval, +4 reliability',
+        effects: [
+          { kind: 'cash', deltaM: -150 },
+          { kind: 'publicApproval', delta: 8 },
+          { kind: 'reliability', agency: 'ttc', delta: 4 },
+        ],
+      },
+      {
+        id: 'targeted_inspection',
+        label: 'Targeted inspection of older fleet only',
+        tradeoff: '-$40M cash, +2 reliability, -3 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -40 },
+          { kind: 'reliability', agency: 'ttc', delta: 2 },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+      {
+        id: 'deflect_to_age',
+        label: '"Aging fleet, province needs to fund replacement"',
+        tradeoff: '-10 Queen\'s Park trust, -5 public approval, -3 board confidence',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -10 },
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'boardConfidence', delta: -3, reason: 'Visible deflection' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV012_goSignalFailure',
+    category: 'operations_crisis',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'reliability', agency: 'go', lte: 60 },
+      cooldownQuarters: 8,
+    },
+    outlet: 'Star',
+    headline: 'GO Lakeshore signals fail at peak; 28k commuters delayed 2 hours',
+    body: 'Aging signal interlocking on Lakeshore West causes cascading delays. Suburban riders flood social media. MPPs from affected ridings demand answers.',
+    urgency: 75,
+    choices: [
+      {
+        id: 'signal_modernization',
+        label: 'Fast-track signal modernization on GO Lakeshore',
+        tradeoff: '-$400M cash, +6 GO reliability, +5 Queen\'s Park trust',
+        effects: [
+          { kind: 'cash', deltaM: -400 },
+          { kind: 'reliability', agency: 'go', delta: 6 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
+        ],
+      },
+      {
+        id: 'manual_dispatch',
+        label: 'Manual dispatch as stopgap, defer capital',
+        tradeoff: '+$25M/Q opex, no reliability gain',
+        effects: [
+          { kind: 'opex', agency: 'go', deltaM: 25 },
+        ],
+      },
+      {
+        id: 'apologize_and_invest_later',
+        label: 'Public apology + commit to study (no action this Q)',
+        tradeoff: '-5 public approval, -3 QP trust',
+        effects: [
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -3 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV013_busShortageHoliday',
+    category: 'operations_crisis',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.10,
+      predicate: { kind: 'reliability', agency: 'ttc', lte: 70 },
+      cooldownQuarters: 8,
+    },
+    outlet: 'CityNews',
+    headline: 'Holiday bus shortage: 30% of scheduled buses missing from routes',
+    body: 'Mechanical issues + driver shortage during peak holiday season. Riders waiting 40+ minutes in -15°C.',
+    urgency: 65,
+    choices: [
+      {
+        id: 'emergency_contractor',
+        label: 'Emergency contractor buses, premium rate',
+        tradeoff: '-$80M cash, +5 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -80 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+      {
+        id: 'overtime_drivers',
+        label: 'Mandatory overtime for current drivers',
+        tradeoff: '+$15M/Q opex for 2Q, +2 public approval',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: 15 },
+          { kind: 'publicApproval', delta: 2 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 2,
+            cause: 'Holiday overtime ends',
+            effects: [{ kind: 'opex', agency: 'ttc', deltaM: -15 }],
+          },
+        ],
+      },
+      {
+        id: 'ride_it_out',
+        label: 'Ride it out, public statement asks for patience',
+        tradeoff: '-12 public approval, -5 City Hall trust',
+        effects: [
+          { kind: 'publicApproval', delta: -12 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -5 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV014_stationFire',
+    category: 'operations_crisis',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.04,
+      predicate: { kind: 'reliability', agency: 'ttc', lte: 50 },
+      cooldownQuarters: 24,
+    },
+    outlet: 'CBC',
+    headline: 'Electrical fire at Dupont station; service halted 8 hours, no injuries',
+    body: 'Aging electrical infrastructure caught fire during morning rush. Station closed for week of remediation.',
+    urgency: 85,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'rebuild_station',
+        label: 'Full station rebuild',
+        tradeoff: '-$800M cash, +10 reliability, +5 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -800 },
+          { kind: 'reliability', agency: 'ttc', delta: 10 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+      {
+        id: 'spot_repair',
+        label: 'Spot repair + electrical inspection sweep',
+        tradeoff: '-$200M cash, +2 reliability, -3 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -200 },
+          { kind: 'reliability', agency: 'ttc', delta: 2 },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+      {
+        id: 'reopen_quickly',
+        label: 'Reopen with provisional cabling, defer rebuild',
+        tradeoff: '-$50M cash, -8 reliability, -10 public approval, +3 board (cost-conscious)',
+        effects: [
+          { kind: 'cash', deltaM: -50 },
+          { kind: 'reliability', agency: 'ttc', delta: -8 },
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Held the line on capex' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV015_snowstormShutdown',
+    category: 'climate_environmental',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.12,
+      predicate: { kind: 'quarter', gte: 1 },
+      cooldownQuarters: 4,
+    },
+    outlet: 'CBC',
+    headline: 'Snowstorm closes Line 1, GO Lakeshore for 36 hours',
+    body: 'Worst storm in 5 years. Switches frozen, signals offline. City effectively shut down. Mayor on television demanding "resilience plan."',
+    urgency: 60,
+    choices: [
+      {
+        id: 'snow_resilience',
+        label: 'Invest in cold-weather signal upgrades',
+        tradeoff: '-$200M cash, +4 reliability TTC and GO',
+        effects: [
+          { kind: 'cash', deltaM: -200 },
+          { kind: 'reliability', agency: 'ttc', delta: 4 },
+          { kind: 'reliability', agency: 'go', delta: 4 },
+        ],
+      },
+      {
+        id: 'route_back_open',
+        label: 'Get service back online ASAP, defer hardening',
+        tradeoff: '-$30M cash, no reliability change',
+        effects: [{ kind: 'cash', deltaM: -30 }],
+      },
+      {
+        id: 'blame_climate',
+        label: 'Public statement: "Climate change events outpacing infrastructure"',
+        tradeoff: '+5 public approval (sympathy), +5 Ottawa trust (climate framing)',
+        effects: [
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
+        ],
+      },
+    ],
+  },
+
+  // ── Political crises ────────────────────────────────────────────────────
+  {
+    id: 'EV016_premierPetProject',
+    category: 'premier_pressure',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.10,
+      predicate: { kind: 'trust', gov: 'queensPark', gte: 55 },
+      cooldownQuarters: 12,
+    },
+    outlet: 'Globe',
+    headline: 'Premier announces "priority connection" to suburban riding',
+    body: "Premier's office quietly requests you prioritize a feasibility study for a low-ridership line connecting their riding. Province has political reasons; you have operational ones.",
+    urgency: 55,
+    telegraph: {
+      headline: 'Sources: Premier weighing transit announcement before fall session',
+      body: 'Speculation builds around a suburban infrastructure unveil. No formal request yet.',
+      quartersBefore: 3,
+      outlet: 'Globe',
+    },
+    choices: [
+      {
+        id: 'commit_full',
+        label: 'Commit to full feasibility study and tentative design',
+        tradeoff: '-$60M cash, +12 QP trust, -3 board (perceived as captured)',
+        effects: [
+          { kind: 'cash', deltaM: -60 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 12 },
+          { kind: 'boardConfidence', delta: -3, reason: 'Bowing to political ask' },
+        ],
+      },
+      {
+        id: 'limited_study',
+        label: 'Quiet limited study, no public commitment',
+        tradeoff: '-$15M cash, +3 QP trust',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 3 },
+        ],
+      },
+      {
+        id: 'refuse_with_data',
+        label: 'Present ridership data: line cannot meet threshold',
+        tradeoff: '-10 QP trust, +5 board, +3 templates',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -10 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Stood by analysis' },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV017_mayorFareFreezePreElection',
+    category: 'mayor_city',
+    trigger: { kind: 'scheduled', quarters: [6, 22, 38] }, // 2Q before each city election (Q8, Q24, Q40)
+    outlet: 'CityNews',
+    headline: 'Mayor demands fare freeze pledge before fall election',
+    body: 'Mayor Liang requests public commitment to no fare increases through next term. Polls say this is a winning issue.',
+    urgency: 70,
+    telegraph: {
+      headline: 'Mayor likely to campaign on transit-fare stability',
+      body: 'Polling firms report fare-affordability is the #2 issue heading into the city campaign.',
+      quartersBefore: 2,
+      outlet: 'CityNews',
+    },
+    choices: [
+      {
+        id: 'public_pledge',
+        label: 'Public no-fare-hike pledge for 4Q',
+        tradeoff: '+15 City Hall trust, +5 public approval, +0.85× fare cap (queued)',
+        effects: [
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 15 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+      {
+        id: 'private_assurance',
+        label: 'Private assurance, no public pledge',
+        tradeoff: '+5 City Hall trust, no public approval lift',
+        effects: [
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+        ],
+      },
+      {
+        id: 'refuse_publicly',
+        label: 'Refuse: "fare strategy is operational, not political"',
+        tradeoff: '-15 City Hall trust, +5 board confidence, -3 public approval',
+        effects: [
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -15 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Held the operational line' },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV018_federalMinisterVisit',
+    category: 'federal_pressure',
+    trigger: { kind: 'scheduled', quarters: [8, 24, 40] },
+    outlet: 'Globe',
+    headline: 'Federal Transport Minister visiting GTHA, expects deliverables',
+    body: 'Minister scheduling a 3-day visit. Photo ops, ribbon cuttings, expectations of "concrete federal-transit success stories" they can announce.',
+    urgency: 50,
+    telegraph: {
+      headline: 'Minister staff scoping GTHA visit for next quarter',
+      body: 'Sources at the federal Transport ministry plan a high-profile visit.',
+      quartersBefore: 2,
+      outlet: 'Globe',
+    },
+    choices: [
+      {
+        id: 'host_in_style',
+        label: 'Roll out red carpet, host showcase tour',
+        tradeoff: '-$20M cash, +15 Ottawa trust, +5 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -20 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 15 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+      {
+        id: 'standard_briefing',
+        label: 'Standard briefing + boardroom meeting',
+        tradeoff: '+5 Ottawa trust, no other changes',
+        effects: [
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
+        ],
+      },
+      {
+        id: 'cite_scheduling',
+        label: 'Cite scheduling conflicts; offer phone briefing',
+        tradeoff: '-10 Ottawa trust, +3 board (no kowtowing)',
+        effects: [
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -10 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Refused performative theatrics' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV019_oppositionAttack',
+    category: 'premier_pressure',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'trust', gov: 'queensPark', lte: 40 },
+      cooldownQuarters: 10,
+    },
+    outlet: 'Globe',
+    headline: 'Opposition leader: "GTTA leadership has failed Ontario taxpayers"',
+    body: "Provincial opposition attacks agency in question period. Public-relations cycle expected to last 2-3 weeks.",
+    urgency: 60,
+    choices: [
+      {
+        id: 'counter_facts',
+        label: 'Counter with operational facts + open-books briefing',
+        tradeoff: '+5 QP trust, +5 Ottawa trust, +3 templates',
+        requires: { kind: 'openBooks', equals: true },
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+      {
+        id: 'ignore_them',
+        label: 'Stay above the fray, no public response',
+        tradeoff: '-5 public approval, +3 board (statesmanship)',
+        effects: [
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Stayed above politics' },
+        ],
+      },
+      {
+        id: 'private_negotiate',
+        label: '[Insider] Private back-channel to opposition leader',
+        tradeoff: '-5 board (perceived as political), +8 QP trust',
+        requires: { kind: 'ceoArchetype', archetype: 'insider' },
+        effects: [
+          { kind: 'boardConfidence', delta: -5, reason: 'Engaged in back-channel politics' },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 8 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV020_councillorWardExtension',
+    category: 'mayor_city',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.08,
+      predicate: { kind: 'trust', gov: 'cityHall', lte: 50 },
+      cooldownQuarters: 10,
+    },
+    outlet: 'CityNews',
+    headline: 'Councillor demands subway extension into her ward, threatens budget fight',
+    body: 'Outspoken downtown councillor wants formal study commitment. Will tie up next city operating-funding vote unless satisfied.',
+    urgency: 65,
+    choices: [
+      {
+        id: 'commit_study',
+        label: 'Commit to $30M feasibility study',
+        tradeoff: '-$30M cash, +8 City Hall trust',
+        effects: [
+          { kind: 'cash', deltaM: -30 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 8 },
+        ],
+      },
+      {
+        id: 'queue_in_pipeline',
+        label: 'Add to long-term pipeline, no commitment',
+        tradeoff: '-3 City Hall trust, no cash impact',
+        effects: [{ kind: 'governmentTrust', gov: 'cityHall', delta: -3 }],
+      },
+      {
+        id: 'flat_refusal',
+        label: 'Refuse: "ridership analysis does not support extension"',
+        tradeoff: '-12 City Hall trust, +5 board, +3 templates',
+        effects: [
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -12 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Refused political project' },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+    ],
+  },
+
+  // ── Construction crises ─────────────────────────────────────────────────
+  {
+    id: 'EV021_olDesignFlaw',
+    category: 'construction_crisis',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.08,
+      cooldownQuarters: 20,
+    },
+    outlet: 'Star',
+    headline: 'Crosslinx engineers flag tunnel-grade design flaw on Ontario Line',
+    body: "Independent peer review identifies an 800m tunnel section where the original design exceeds maximum gradient. Options: redesign + delay, exception waiver, or eat the construction risk.",
+    urgency: 80,
+    telegraph: {
+      headline: 'Whispers from Crosslinx engineers about tunnel grade specifications',
+      body: 'Engineering forums quietly raise concerns about a tunnel section. No formal report yet.',
+      quartersBefore: 2,
+      outlet: 'Star',
+    },
+    choices: [
+      {
+        id: 'redesign',
+        label: 'Authorize redesign + 2Q schedule delay',
+        tradeoff: '-$300M cash, +3 templates, no schedule impact on opening (absorbed in buffer)',
+        effects: [
+          { kind: 'cash', deltaM: -300 },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+      {
+        id: 'exception_waiver',
+        label: 'Apply for regulatory exception, proceed as designed',
+        tradeoff: '-$30M cash (legal), -3 templates, gamble on regulator',
+        effects: [
+          { kind: 'cash', deltaM: -30 },
+          { kind: 'templates', delta: -3 },
+        ],
+      },
+      {
+        id: 'absorb_risk',
+        label: 'Proceed; absorb future remediation if needed',
+        tradeoff: 'No immediate cost; queued $400M remediation in 8Q (50% probability)',
+        effects: [
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 8,
+            cause: 'OL tunnel remediation likely needed',
+            effects: [
+              { kind: 'cash', deltaM: -400 },
+              { kind: 'publicApproval', delta: -8 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV022_nimbyLawsuit',
+    category: 'construction_crisis',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.05,
+      cooldownQuarters: 12,
+    },
+    outlet: 'Star',
+    headline: 'Bloor West residents file injunction against future Line 2 extension',
+    body: 'Neighborhood association argues environmental review was deficient. Could delay any future western extension by 2-4Q.',
+    urgency: 55,
+    choices: [
+      {
+        id: 'fight_in_court',
+        label: 'Fight in court with expanded environmental review',
+        tradeoff: '-$50M legal cash, +3 templates, no schedule risk',
+        effects: [
+          { kind: 'cash', deltaM: -50 },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+      {
+        id: 'settle_with_concessions',
+        label: 'Settle: noise mitigation + community fund',
+        tradeoff: '-$120M cash, +10 public approval, +5 City Hall trust',
+        effects: [
+          { kind: 'cash', deltaM: -120 },
+          { kind: 'publicApproval', delta: 10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+        ],
+      },
+      {
+        id: 'public_attack',
+        label: '"Vocal minority blocking transit for the region"',
+        tradeoff: '+5 board, -15 public approval (NIMBY backlash), -10 City Hall trust',
+        effects: [
+          { kind: 'boardConfidence', delta: 5, reason: 'Pushed back on NIMBY framing' },
+          { kind: 'publicApproval', delta: -15 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -10 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV023_contractorStrikeThreat',
+    category: 'crosslinx_contractor',
+    trigger: { kind: 'random', baseWeight: 0.06, cooldownQuarters: 16 },
+    outlet: 'Star',
+    headline: 'Construction union: "Strike vote scheduled if wage talks fail"',
+    body: 'Crosslinx workforce demanding 12% raise + cost-of-living escalator. Strike would delay Ontario Line 1-3Q. Negotiations on a knife edge.',
+    urgency: 80,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'accept_demands',
+        label: 'Accept full demands; preserve schedule',
+        tradeoff: '-$600M cash (passed to OL project), +5 templates, +5 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -600 },
+          { kind: 'templates', delta: 5 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+      {
+        id: 'partial_offer',
+        label: 'Counter with 6%, hope they accept',
+        tradeoff: '-$250M cash; 60% chance strike still happens (queued schedule risk)',
+        effects: [
+          { kind: 'cash', deltaM: -250 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 2,
+            cause: 'Potential construction slowdown',
+            effects: [{ kind: 'publicApproval', delta: -8 }],
+          },
+        ],
+      },
+      {
+        id: 'hardball',
+        label: 'Hardball: "We negotiated in good faith. We are done."',
+        tradeoff: '-15 public approval, +5 board, OL delayed 2Q (modeled as +2Q project delay queued)',
+        effects: [
+          { kind: 'publicApproval', delta: -15 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Refused contractor pressure' },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 1,
+            cause: 'Strike disrupts construction',
+            effects: [{ kind: 'cash', deltaM: -100 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV024_heritageBuilding',
+    category: 'construction_crisis',
+    trigger: { kind: 'random', baseWeight: 0.04, cooldownQuarters: 16 },
+    outlet: 'Star',
+    headline: 'Heritage Toronto designates Bloor structure on planned alignment',
+    body: 'A turn-of-the-century commercial block on the planned Line 5 western extension was just protected. Workaround alignment adds $400M; demolition fight could last 2Q.',
+    urgency: 50,
+    choices: [
+      {
+        id: 'realign',
+        label: 'Realign route around the structure',
+        tradeoff: '-$400M cash (future project), +10 public approval, +5 City Hall trust',
+        effects: [
+          { kind: 'cash', deltaM: -400 },
+          { kind: 'publicApproval', delta: 10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+        ],
+      },
+      {
+        id: 'fight_designation',
+        label: 'Fight heritage designation in court',
+        tradeoff: '-$80M legal, -10 public approval, -5 City Hall trust, 2Q delay',
+        effects: [
+          { kind: 'cash', deltaM: -80 },
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -5 },
+        ],
+      },
+    ],
+  },
+
+  // ── Media / scandal ─────────────────────────────────────────────────────
+  {
+    id: 'EV025_wastefulOpEd',
+    category: 'media',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.08,
+      predicate: { kind: 'or', predicates: [{ kind: 'cash', gte: 2000 }, { kind: 'publicApproval', lte: 45 }] },
+      cooldownQuarters: 12,
+    },
+    outlet: 'Globe',
+    headline: 'Op-ed: "GTTA cash hoard while service degrades"',
+    body: 'Globe editorial board questions agency cash position vs visible service issues. Calls for transparency.',
+    urgency: 40,
+    choices: [
+      {
+        id: 'op_ed_response',
+        label: 'Write counter op-ed with cash-management explanation',
+        tradeoff: '+3 public approval, +3 templates',
+        effects: [
+          { kind: 'publicApproval', delta: 3 },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+      {
+        id: 'open_the_books',
+        label: 'Open the books — publish quarterly financials',
+        tradeoff: 'Set openBooks=true. +10 Ottawa trust, +5 board confidence',
+        effects: [
+          { kind: 'boardConfidence', delta: 5, reason: 'Adopted transparency posture' },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 10 },
+        ],
+      },
+      {
+        id: 'ignore',
+        label: 'No public response',
+        tradeoff: '-5 public approval',
+        effects: [{ kind: 'publicApproval', delta: -5 }],
+      },
+    ],
+  },
+
+  {
+    id: 'EV026_whistleblowerLeak',
+    category: 'auditor_oversight',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.04,
+      predicate: { kind: 'openBooks', equals: false },
+      cooldownQuarters: 24,
+    },
+    outlet: 'Star',
+    headline: 'Whistleblower releases internal memos: deferred maintenance is worse than disclosed',
+    body: 'Anonymous source provides Star with confidential capital planning documents showing $5B in known but unreported backlog.',
+    urgency: 85,
+    noGoodOptions: true,
+    telegraph: {
+      headline: 'Tip line: Star reporters asking around about maintenance backlog',
+      body: 'Multiple journalists fishing for sources at the agency.',
+      quartersBefore: 2,
+      outlet: 'Star',
+    },
+    choices: [
+      {
+        id: 'come_clean',
+        label: 'Hold press conference; commit to addressing backlog',
+        tradeoff: '-15 public approval (admission), -8 board (looks weak), +10 Ottawa trust',
+        effects: [
+          { kind: 'publicApproval', delta: -15 },
+          { kind: 'boardConfidence', delta: -8, reason: 'Forced disclosure' },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 10 },
+        ],
+      },
+      {
+        id: 'discredit',
+        label: 'Discredit the documents as cherry-picked',
+        tradeoff: '-20 public approval (eventually loses), -5 Ottawa trust',
+        effects: [
+          { kind: 'publicApproval', delta: -20 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -5 },
+        ],
+      },
+      {
+        id: 'change_topic',
+        label: 'Announce new ribbon-cutting; bury the story',
+        tradeoff: '-10 public approval, -10 board confidence',
+        effects: [
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'boardConfidence', delta: -10, reason: 'Refused to face the music' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV027_documentaryExposesBacklog',
+    category: 'media',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'reliability', agency: 'ttc', lte: 55 },
+      cooldownQuarters: 16,
+    },
+    outlet: 'CBC',
+    headline: 'CBC documentary: "Last Stop" exposes Toronto transit maintenance crisis',
+    body: 'Hour-long primetime documentary on TTC infrastructure. Includes interviews with frontline workers. National attention.',
+    urgency: 75,
+    choices: [
+      {
+        id: 'public_commitment',
+        label: 'Public commitment: $1B over next year on backlog',
+        tradeoff: '-$1000M cash, +15 public approval, +10 Ottawa trust, +5 reliability',
+        effects: [
+          { kind: 'cash', deltaM: -1000 },
+          { kind: 'publicApproval', delta: 15 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 10 },
+          { kind: 'reliability', agency: 'ttc', delta: 5 },
+        ],
+      },
+      {
+        id: 'modest_commitment',
+        label: 'Modest commitment, defer to multi-year capital plan',
+        tradeoff: '-$200M cash, +5 public approval, +3 reliability',
+        effects: [
+          { kind: 'cash', deltaM: -200 },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'reliability', agency: 'ttc', delta: 3 },
+        ],
+      },
+      {
+        id: 'defend',
+        label: '"Documentary cherry-picked older footage"',
+        tradeoff: '-20 public approval, -10 board',
+        effects: [
+          { kind: 'publicApproval', delta: -20 },
+          { kind: 'boardConfidence', delta: -10, reason: 'Defensive PR posture' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV028_transitAwardWin',
+    category: 'media',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.06,
+      predicate: {
+        kind: 'and',
+        predicates: [
+          { kind: 'reliability', agency: 'ttc', gte: 75 },
+          { kind: 'publicApproval', gte: 55 },
+        ],
+      },
+      cooldownQuarters: 16,
+    },
+    outlet: 'Star',
+    headline: 'GTHA named "North America\'s Best Transit Network" by APTA',
+    body: 'American Public Transit Association award. Conference invites, press tour opportunities, recruitment boon.',
+    urgency: 25,
+    displayKind: 'informational',
+    choices: [],
+  },
+
+  // ── Climate ─────────────────────────────────────────────────────────────
+  {
+    id: 'EV029_climateAdaptationFunding',
+    category: 'climate_environmental',
+    trigger: { kind: 'scheduled', quarters: [9, 25, 45] },
+    outlet: 'Globe',
+    headline: 'Ottawa announces $2B climate adaptation envelope for transit agencies',
+    body: 'Federal Climate Bank releases competitive funding for transit climate resilience. Submissions in 90 days.',
+    urgency: 55,
+    telegraph: {
+      headline: 'Climate Bank signals transit-resilience funding for next budget',
+      body: 'Federal departments forecasting climate adaptation grants for transit infrastructure.',
+      quartersBefore: 3,
+      outlet: 'Globe',
+    },
+    choices: [
+      {
+        id: 'ambitious_bid',
+        label: 'Submit ambitious climate hardening pitch',
+        tradeoff: '6Q delay: +$800M if Ottawa trust ≥55, else +$200M',
+        effects: [
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 6,
+            cause: 'Climate Bank funding result',
+            effects: [{ kind: 'cash', deltaM: 800 }],
+          },
+          { kind: 'reliability', agency: 'go', delta: 2 },
+        ],
+      },
+      {
+        id: 'modest_resilience',
+        label: 'Modest resilience pitch — fast turnaround',
+        tradeoff: '2Q delay: +$300M reliable',
+        effects: [
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 2,
+            cause: 'Climate Bank modest grant',
+            effects: [{ kind: 'cash', deltaM: 300 }],
+          },
+        ],
+      },
+      {
+        id: 'no_bid',
+        label: 'Skip; focus on existing capital plan',
+        tradeoff: '+3 board (focus), no cash, no political cost',
+        effects: [{ kind: 'boardConfidence', delta: 3, reason: 'Prioritized core capital plan' }],
+      },
+    ],
+  },
+
+  {
+    id: 'EV030_floodingTunnel',
+    category: 'climate_environmental',
+    trigger: { kind: 'random', baseWeight: 0.03, cooldownQuarters: 20 },
+    outlet: 'CBC',
+    headline: 'Flash flood closes Bloor-Yonge subway tunnel for 5 days',
+    body: 'Atmospheric river dumps 6 months of rain in 24 hours. Tunnel pumping infrastructure overwhelmed.',
+    urgency: 85,
+    choices: [
+      {
+        id: 'capital_upgrade',
+        label: 'Major drainage capital project',
+        tradeoff: '-$400M cash, +6 reliability, +8 public approval',
+        effects: [
+          { kind: 'cash', deltaM: -400 },
+          { kind: 'reliability', agency: 'ttc', delta: 6 },
+          { kind: 'publicApproval', delta: 8 },
+        ],
+      },
+      {
+        id: 'patch_pumps',
+        label: 'Replace pumps, defer larger drainage work',
+        tradeoff: '-$100M cash, +2 reliability',
+        effects: [
+          { kind: 'cash', deltaM: -100 },
+          { kind: 'reliability', agency: 'ttc', delta: 2 },
+        ],
+      },
+    ],
+  },
+
+  // ── Elections (informational) ───────────────────────────────────────────
+  {
+    id: 'EV032_federalElection',
+    category: 'election',
+    trigger: { kind: 'scheduled', quarters: [12, 28, 44] },
+    outlet: 'CBC',
+    headline: 'Federal election concludes — new government takes office',
+    body: 'Power has shifted in Ottawa. Outgoing minister out; new portfolio holder still being briefed. Transit envelope priorities unclear for at least 2 quarters.',
+    urgency: 30,
+    displayKind: 'informational',
+    choices: [],
+    telegraph: {
+      headline: 'Federal election campaign begins; transit barely mentioned',
+      body: 'National campaign focused on housing and affordability. Transit appears in platforms but at low salience.',
+      quartersBefore: 2,
+      outlet: 'CBC',
+    },
+  },
+
+  {
+    id: 'EV033_provincialElection',
+    category: 'election',
+    trigger: { kind: 'scheduled', quarters: [10, 26, 42] },
+    outlet: 'Globe',
+    headline: "Queen's Park election concludes; transit a campaign issue",
+    body: 'Province has voted. Premier transition or continuity? Transit policy continuity uncertain.',
+    urgency: 30,
+    displayKind: 'informational',
+    choices: [],
+  },
+
+  {
+    id: 'EV034_cityElection',
+    category: 'election',
+    trigger: { kind: 'scheduled', quarters: [8, 24, 40] },
+    outlet: 'CityNews',
+    headline: 'City Hall election concludes; mayor races set the agenda',
+    body: 'Toronto has voted. Mayor and council are seated. Operating-grant decisions in the next quarter.',
+    urgency: 30,
+    displayKind: 'informational',
+    choices: [],
+  },
+
+  // ── Character / Internal ────────────────────────────────────────────────
+  {
+    id: 'EV036_engineerPoached',
+    category: 'internal_politics',
+    trigger: {
+      kind: 'random',
+      baseWeight: 0.06,
+      predicate: { kind: 'engineers', gte: 200 },
+      cooldownQuarters: 12,
+    },
+    outlet: 'Internal memo',
+    headline: 'Lead signals engineer recruited by private rail consultancy',
+    body: 'Your top signals engineer received a 60% raise offer. Counter or let them go?',
+    urgency: 45,
+    choices: [
+      {
+        id: 'counter_offer',
+        label: 'Counter the offer; retain talent',
+        tradeoff: '+$8M/Q opex permanent, +5 engineers, +3 templates',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: 8 },
+          { kind: 'engineers', delta: 5 },
+          { kind: 'templates', delta: 3 },
+        ],
+      },
+      {
+        id: 'let_them_go',
+        label: 'Wish them well, promote from within',
+        tradeoff: '-10 engineers, -2 templates',
+        effects: [
+          { kind: 'engineers', delta: -10 },
+          { kind: 'templates', delta: -2 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV037_boardMemberRetires',
+    category: 'internal_politics',
+    trigger: { kind: 'scheduled', quarters: [11, 31, 51] },
+    outlet: 'Internal memo',
+    headline: 'Board member announces retirement effective end of quarter',
+    body: 'Senior board member stepping down. Mayor + premier will nominate replacement candidates.',
+    urgency: 25,
+    displayKind: 'informational',
+    choices: [],
+  },
+
+  // ── Financial / bond market ─────────────────────────────────────────────
+  {
+    id: 'EV038_creditRatingReview',
+    category: 'bond_market',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'or', predicates: [{ kind: 'cash', lte: -1000 }, { kind: 'board', lte: 35 }] },
+      cooldownQuarters: 8,
+    },
+    outlet: 'Globe',
+    headline: 'Moody\'s puts GTTA on credit watch',
+    body: 'Rating agency flags concerns about cash trajectory + governance. Downgrade decision in 60 days.',
+    urgency: 80,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'open_books_briefing',
+        label: 'Open the books; full investor briefing',
+        tradeoff: '+5 board, +10 Ottawa trust, -3 public approval (austerity optics)',
+        effects: [
+          { kind: 'boardConfidence', delta: 5, reason: 'Took rating threat seriously' },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 10 },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+      {
+        id: 'fight_perception',
+        label: 'Push back: "These are temporary deficit conditions"',
+        tradeoff: '-3 board, -5 Ottawa trust',
+        effects: [
+          { kind: 'boardConfidence', delta: -3, reason: 'Argued with rating agency' },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -5 },
+        ],
+      },
+      {
+        id: 'request_provincial_backstop',
+        label: 'Request provincial guarantee on debt',
+        tradeoff: '-10 QP trust (favor used), prevents downgrade, +3 board',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -10 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Secured backstop' },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'EV039_bocRateDecision',
+    category: 'bond_market',
+    trigger: { kind: 'scheduled', quarters: [4, 8, 16, 24, 32, 40, 48, 56] },
+    outlet: 'Globe',
+    headline: 'Bank of Canada rate decision — floating-rate debt service shifts',
+    body: 'Bank of Canada meeting. Your floating-rate tranches will see service cost shift next quarter.',
+    urgency: 20,
+    displayKind: 'informational',
+    choices: [],
+  },
+
+  // ── More no-good-options ────────────────────────────────────────────────
+  {
+    id: 'EV040_accessibilityLawsuit',
+    category: 'auditor_oversight',
+    trigger: { kind: 'random', baseWeight: 0.04, cooldownQuarters: 20 },
+    outlet: 'CityNews',
+    headline: 'Accessibility class-action: GTTA fails AODA compliance at 18 stations',
+    body: 'Disability advocacy groups file suit over inaccessible legacy stations. Discovery process will be public.',
+    urgency: 70,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'settle',
+        label: 'Settle + accelerated accessibility retrofit',
+        tradeoff: '-$800M cash, +15 public approval, +10 City Hall trust',
+        effects: [
+          { kind: 'cash', deltaM: -800 },
+          { kind: 'publicApproval', delta: 15 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 10 },
+        ],
+      },
+      {
+        id: 'fight_in_court',
+        label: 'Fight; argue legacy stations grandfathered',
+        tradeoff: '-$100M legal cash, -20 public approval, -10 City Hall trust (eventually lose anyway in 8Q)',
+        effects: [
+          { kind: 'cash', deltaM: -100 },
+          { kind: 'publicApproval', delta: -20 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -10 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 8,
+            cause: 'Lawsuit lost, mandated retrofit',
+            effects: [{ kind: 'cash', deltaM: -600 }],
+          },
+        ],
+      },
+      {
+        id: 'partial_settlement',
+        label: 'Partial: 8 stations now, rest in 3 years',
+        tradeoff: '-$400M cash, +5 public approval, +3 board',
+        effects: [
+          { kind: 'cash', deltaM: -400 },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Balanced response' },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Lookup by id. */
