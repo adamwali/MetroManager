@@ -1,4 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import { useGameStore } from '@state/gameStore';
+import { quarterLabel } from '@/utils/humanize';
+import { TopStrip } from './components/TopStrip';
+import { EndTurnButton } from './components/EndTurnButton';
 
 interface DashboardLink {
   to: string;
@@ -19,14 +23,18 @@ const dashboards: DashboardLink[] = [
 ];
 
 export function AppLayout() {
+  const quarter = useGameStore((s) => s.state.quarter as unknown as number);
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-neutral-800 bg-neutral-900">
-        <div className="px-4 py-2 flex items-baseline gap-6">
-          <span className="font-semibold tracking-wide text-neutral-100">METRO</span>
-          <span className="num text-xs text-neutral-400">Q1 2026</span>
+    <div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900">
+      <header className="border-b border-neutral-200 bg-white">
+        <div className="px-4 py-2 flex items-center justify-between gap-6">
+          <div className="flex items-baseline gap-4">
+            <span className="text-sm font-semibold tracking-tight text-neutral-900">METRO</span>
+            <span className="num text-xs text-neutral-500">{quarterLabel(quarter)}</span>
+          </div>
+          <EndTurnButton />
         </div>
-        <nav className="px-2 flex flex-wrap gap-x-1 text-xs">
+        <nav className="border-t border-neutral-100 px-2 flex flex-wrap gap-x-1 text-xs">
           {dashboards.map((d) => (
             <NavLink
               key={d.to}
@@ -35,8 +43,8 @@ export function AppLayout() {
               className={({ isActive }) =>
                 `px-3 py-2 border-b-2 transition-colors ${
                   isActive
-                    ? 'border-amber-400 text-neutral-100'
-                    : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                    ? 'border-blue-600 text-neutral-900 font-medium'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-800'
                 }`
               }
             >
@@ -44,6 +52,9 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
+        <div className="border-t border-neutral-100">
+          <TopStrip />
+        </div>
       </header>
       <main className="flex-1 px-4 py-6">
         <Outlet />

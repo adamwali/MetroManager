@@ -5,6 +5,82 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 2.1: Mission Control dashboard (browser UI)
+
+First playable UI. You can open `npm run dev`, see Mission Control, and
+click "End turn" to advance quarters. The engine drives the display via
+Zustand; every endTurn produces a new GameState that propagates to
+selectors.
+
+**Visual style chosen (Mercury / Linear light theme)** per repo owner:
+- Light background (`bg-neutral-50` / `bg-white` cards)
+- Sans-serif (Inter) for chrome; monospace (JetBrains Mono) tabular-nums
+  for numbers
+- Restrained color: blue (#2563eb) for primary actions, neutral grays
+  for hierarchy, status colors (emerald / amber / red) only when a
+  metric crosses a threshold
+- High information density per layout: top-strip with 8 always-visible
+  KPIs spanning the page
+- No shadows, subtle borders, rounded-md corners
+
+**Information density: maximum per spec.** Top strip is always visible
+across all dashboards (lives in AppLayout, not MissionControl) and shows
+8 KPIs: Cash · Daily riders · Board confidence · TTC on-time ·
+Satisfaction · Ottawa trust · Queen's Park trust · City Hall trust.
+Each KPI has number + delta + plain-language caption + tone color +
+sparkline where useful (cash, riders).
+
+**Number humanization implemented (P4).** Every KPI shows a concrete
+comparison alongside the number:
+- Cash: "$1.00B" with caption "~7.5 quarters runway" or "2.5 years runway"
+- Riders: "4.75M" with YoY delta "+360k (~a streetcar line worth)"
+- Trust: "50" with descriptor "cooperative · 3 years to election"
+- Board: "60" with "concerned" / "supportive" / "firing imminent"
+- Reliability descriptor on TTC on-time line
+
+Toronto-calibrated comparison thresholds in `describeRidersDelta`:
+<5k minor · <25k 1 bus route · <100k busy bus route · <250k streetcar
+line · <500k subway extension · 500k+ full subway line. The design
+doc's own example ("85k = busy bus route") falls cleanly in this scale.
+
+**End-turn button: instant, no confirmation** per spec P8. Lives in the
+top-right of the AppLayout brand bar — accessible from every dashboard,
+not just Mission Control. Single click, immediate state advance, no
+animation.
+
+**Zustand store at `src/state/gameStore.ts`** holds `state`,
+`initialState` (for history reconstruction), `endTurn` action, and
+`newGame(seed)` action. `history()` derives sparkline data from the
+action log + initial state on demand. UI components subscribe via
+fine-grained selectors so they only re-render when their slice changes.
+
+**Sparklines hand-rolled SVG**, not Recharts. Recharts (in deps) is
+reserved for full charts in Phase 9. Sparklines are <40 lines of SVG.
+
+**Mission Control content (per §4):**
+- Inbox (priority queue, empty for now — events ship Phase 3.1)
+- "What's coming" (operating-allowance renegotiation, three elections,
+  active project openings, sorted, ≤5 shown, "soon" flag if ≤2 quarters)
+- News rail (recent action-log entries as narrative — real outlet
+  voices land Phase 8.5)
+
+Layout: two-column desktop (lg:grid-cols-3 with main 2/3 + side 1/3),
+collapses to single column on smaller screens. No mobile UI optimization
+beyond responsive grid — out of scope per design doc §12 MVP.
+
+**Per-agency tone-coloring on KPIs:** any trust score below 25 = red
+(critical), below 40 = amber (warning), else neutral. Cash below 0 =
+red, below $500M = amber. On-time below 80% = red, below 90% = amber.
+Visual at-a-glance prioritization.
+
+**No mobile UI tests / RTL setup yet.** Phase 2.2 will add
+@testing-library/react when save/load UI needs DOM-level testing.
+
+**Bundle size:** 309KB JS / 99KB gzip after Phase 2.1 (was 289KB before
+the UI work). Acceptable for a complex dashboard.
+
+---
+
 ## 2026-05-26 — Phase 1.4: action log + save/load + harness polish
 
 **Action log architecture:** one `quarter_summary` entry per `endTurn`,

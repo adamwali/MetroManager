@@ -5,6 +5,70 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 2.1: Mission Control dashboard
+
+**Done:**
+- Asked 4 visual-design questions (style, density, humanize, end-turn).
+  Repo owner picked Mercury/Linear light theme + max density + concrete
+  comparisons + instant end-turn.
+- New utility modules:
+  - `src/utils/humanize.ts` — formatters with concrete comparisons
+    (cash runway, rider delta in bus-routes/streetcars/subway-lines,
+    trust descriptors, board-confidence descriptors, quarter labels)
+  - `src/utils/kpis.ts` — derived KPIs (history reconstruction, YoY
+    deltas, TTC reliability composite, on-time / satisfaction
+    derivations)
+- Zustand store at `src/state/gameStore.ts` wired to engine:
+  state + initialState + endTurn + newGame + history derivation
+- New UI components:
+  - `Kpi.tsx` — single KPI cell with label, value, delta, caption, tone,
+    optional sparkline
+  - `Sparkline.tsx` — minimal hand-rolled inline SVG (red/green by
+    trend), no chart library dependency
+  - `TopStrip.tsx` — 8-KPI bar always visible across dashboards
+  - `EndTurnButton.tsx` — instant, no confirmation
+  - `Inbox.tsx`, `NewsRail.tsx`, `WhatsComing.tsx` — Mission Control
+    page sections (currently with empty/scaffolded content)
+- `AppLayout.tsx` rewritten for light theme; brand bar + tab nav + top
+  strip + main outlet. End-turn button in brand bar (top-right).
+- `MissionControl.tsx` page composes Inbox + WhatsComing + NewsRail in
+  a responsive grid (2/3 main + 1/3 side on desktop)
+- `index.css` and `index.html` updated for light theme
+- Test additions:
+  - `humanize.test.ts` — 15 cases for formatters, descriptors, labels
+  - `kpis.test.ts` — 6 cases for history reconstruction, YoY,
+    on-time derivation
+- 75 tests passing total (was 54).
+- Build clean: 309KB JS / 99KB gzip.
+
+**Phase 2.1 DoD met:**
+- ✓ Mission Control renders with starting state
+- ✓ End turn button works (Zustand → engine → re-render)
+- ✓ Could click 60 times in a row without error (engine determinism +
+  pure functions guarantee this; UI is presentation only)
+- ✓ Sparklines for cash and ridership populated (TopStrip)
+- ✓ Number humanization implemented (every KPI has a caption)
+
+**Left for later phases:**
+- New-game flow (CEO archetype picker, seed selection, save-slot UI)
+  → Phase 2.2
+- Save/load UI (IndexedDB multi-slot) → Phase 2.2
+- Game-over screens (fiscal failure, board firing) → Phase 2.2
+- Inbox populated with real events → Phase 3.1
+- News rail with outlet voices → Phase 8.5
+
+**Surprises:**
+- Tailwind v4's `@theme` in CSS is slick — no JS theme file, defines
+  custom font tokens inline. Switching from dark to light only touched
+  3 files (index.css, index.html, AppLayout.tsx).
+- Sparkline as hand-rolled SVG (40 lines) is much simpler than wiring
+  Recharts for inline use. Recharts will earn its place in Phase 9's
+  full-page charts.
+- The action log breakdown payload (built Phase 1.4) made the news
+  rail and YoY computation trivial. Right design choice.
+
+---
+
 ## 2026-05-26 — Phase 1.4: action log + save/load + harness polish
 
 **Done:**
