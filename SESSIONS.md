@@ -5,7 +5,53 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
-## 2026-05-26 — Phase 0.1: project skeleton
+## 2026-05-26 — Phase 1.1: GameState type definitions
+
+**Done:**
+- Asked the 4 Phase 1.1 question-phase questions (lifecycle, engine vars,
+  character history shape, standing-orders type approach). All locked.
+- Patched spec to v3.2: simplified 3-state project lifecycle and added
+  canonical engine-variables table to §5.
+- Wrote 13 type modules in `src/types/`:
+  - `scalars.ts` (branded primitives + constructors)
+  - `finance.ts` (Cash, Debt, DebtTranche, CouponMode)
+  - `politics.ts` (Government, Politics)
+  - `confidence.ts` (BoardConfidence with weighted factors)
+  - `projects.ts` (Project as 3-state discriminated union, Alignment,
+    LvcConfig, CompletedStudy, ProjectTemplate)
+  - `agency.ts` (Agency, SubsystemCondition, AgencyOperatingParams)
+  - `characters.ts` (Character as role-discriminated union, InteractionRecord,
+    DirectorDoctrine, SeniorStaffDoctrine)
+  - `events.ts` (EventTemplate, ActiveEvent, EventChoice, EventEffect,
+    DelayedConsequence)
+  - `standingOrders.ts` (StandingOrder as kind-discriminated union)
+  - `actionLog.ts` (ActionLogEntry as kind-discriminated union, ActionCause)
+  - `rng.ts` (RngSeeds with 12 subsystems)
+  - `engineVars.ts` (the 7 canonical agency-level vars)
+  - `ceo.ts` (CeoArchetype + Ceo)
+  - `gameState.ts` (the root)
+  - `index.ts` (barrel exports)
+- Example `GameState` in `src/types/example.ts` satisfies all types
+  (Phase 1.1 DoD).
+- All four checks green: typecheck, lint (incl. boundary rules), tests,
+  build. No `any` types anywhere in `src/types/`.
+
+**Left for later phases:**
+- `createInitialGameState(seed)` and `endTurn(state)` → Phase 1.2.
+- Seeded RNG implementation → Phase 1.3 (types ready, engine code TBD).
+- Action log helpers (graph traversal for "why did this happen?") → Phase 8.6.
+- Engine state mutations always go through logged actions → wiring in Phase 1.4.
+
+**Surprises:**
+- Vitest 2 bundled its own Vite 5 which conflicted with our Vite 6 plugins
+  at typecheck time (last session). Upgrade to Vitest 3 fixed.
+- The `exactOptionalPropertyTypes` flag tripped React Router's `NavLink.end`
+  prop. Resolved by making the `end` boolean always-present in our dashboard
+  link config.
+- `Agency.subsystems` is a flat array rather than a `Record<SubsystemId,
+  Subsystem>` because not all agencies have all subsystems (GO has
+  `catenary` instead of `signals`; UP doesn't track signals separately).
+  Iteration is easier than presence-checking.
 
 **Done:**
 - Reviewed all 5 spec docs and surfaced spec issues (see chat for prioritized list).

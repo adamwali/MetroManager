@@ -375,6 +375,30 @@ Political costs scale with capex:
 
 Revenue begins 4-8 quarters after station opens, accumulates over the rest of campaign. A player who spends $300M on LVC for 5 major stations could be generating $80M+/quarter by year 10. Real strategic lever, simple slider.
 
+### Canonical engine variables (v3.2)
+
+These are agency-level variables referenced by events but not previously defined in this document. All canonicalized here.
+
+| Variable | Range | Starts | Meaning |
+|---|---|---|---|
+| `templates` | 0-100 | 30 | Standardization adoption. High = same station design 200x, lower per-km costs. Drives the "Standardization: -30%" cost factor in this section's cost model when above 50. Raised by sticking to templates on events (EV001 refuse); lowered by bespoke commitments. |
+| `crosslinxLeverage` | 0-100 | 55 | Bargaining power of the Crosslinx consortium against you. Grows with awarded contracts, M&A consolidation, time. Decays with settled claims, alternative-contractor work. |
+| `consultantAlignment` | -100 to +100 | 0 | Relationship with the major consulting firms (WSP, AECOM, Hatch). Positive = they cooperate. Negative = op-ed campaigns, poaching waves. Lowered by aggressive in-house engineering (`engineers` growth); raised by awarding specialty contracts. |
+| `nimbyOrganization` | 0-100 | 25 | Aggregate organizing strength of NIMBY coalitions across all affected neighborhoods. Grows with unaddressed projects in high-NIMBY areas, lost tribunal appeals. Decays with community engagement, compromise decisions. |
+| `openBooks` | boolean | false | Whether the player has formally adopted an open-data / transparent-procurement posture. Locks in once toggled (toggling back is a public reversal with political cost). Boosts AG and consulting-pushback event outcomes. |
+| `engineers` | integer ≥0 | 180 | In-house engineering staff headcount. Grows via hiring (Capital Allocation dashboard); shrinks via poaching events / layoffs. Thresholds trigger events (EV009 at >250, EV061 at >300). |
+| `publicApproval` | 0-100 | 50 | Voter sentiment about your agency, distinct from government trust. Driven by operational performance, news cycle, scandals. Feeds the election flip formula in §6 (`approval` parameter — Phase 6.1 will pin down exact formula). |
+
+Per-project engine variables (live on the project record, not at agency level):
+
+| Variable | Range | Meaning |
+|---|---|---|
+| `sitePrep` | 0-100 | Project-specific preparation maturity. Higher = lower cost factor (the "Site prep: -15%" line above). Raised by some event outcomes (EV043). |
+| `megaContract` | boolean | Whether procurement uses single mega-contract. Adds +15% to cost; correlated with `crosslinxLeverage` growth. |
+| `settlementPremium` | 0-100 | Per-project counter for past claim settlements. Drives the "Settlement premium: +5%" cost factor in this section's model. |
+
+The cost-factor table earlier in this section refers to these as derived rates. Engine multiplies their values into the per-line cost formula at the appropriate phase.
+
 ---
 
 ## 6. The political model
@@ -544,16 +568,17 @@ GO and UP work similarly with different numbers (catenary instead of signals for
 
 Bigger projects = wider uncertainty bands, higher political capital, higher impact, higher failure risk.
 
-### Project lifecycle
+### Project lifecycle (v3.2 — simplified)
 
-1. **Concept** — exists in catalogue, free to consider
-2. **Studies** — optional, cash + 1-2Q narrows uncertainty (env survey, ridership, geotech, community consultation)
-3. **Lobbying** — optional, quarters cultivating political support
-4. **Greenlight** — formal commitment, funding allocated, scope mostly locked, LVC slider set
-5. **Planning → Design → Tender → Construction** — standard phases
-6. **Operations** — joins operating network
+Three states: **proposed → under_construction → operating.**
 
-Killing before greenlight: study costs sunk. After greenlight: severe political capital cost, may trigger litigation.
+1. **proposed** — player has initiated the project from the catalogue. Picks alignment, mode, station count, LVC slider. Minimum 2 quarters before break-ground is permitted. During this buffer the player can commission studies (each one costs cash and 1-2Q, narrows cost / demand / risk uncertainty). At any point after the 2Q minimum, the player decides: **break ground** → `under_construction`, or **abandon** → project removed, study costs sunk, no political capital penalty (no public commitment yet).
+
+2. **under_construction** — ticks down toward opening per build duration. Construction crises (EV043, EV044, EV045, EV047, EV048, etc.) fire. Cancellation here = severe political capital cost across governments + possible contractor litigation.
+
+3. **operating** — joins the operating network. Adds ridership per the demand model, opens up further LVC revenue per the formula in §5.
+
+Bigger projects = wider initial uncertainty bands, higher political capital required to break ground, higher impact and failure risk during construction. Studies are the strategic lever that converts time + money into clarity before commitment.
 
 ---
 
@@ -655,3 +680,5 @@ MVP successful if:
 *v3.0 — incorporates design principles, lobbying cooldowns, simplified LVC, decision density management, telegraph signals for surprises, debt fixed/floating split, action log, action-traceable consequences.*
 
 *v3.1 — director tolerance normalized to 0-100 (was 0-12), board confidence weights spelled out, stagnated-ridership threshold defined (Y15 < Y1 × 1.05), trust drift clarified as bidirectional mean-reversion to 40, lobbying cooldown clarified as per-politician global / 3Q / independent across politicians, doctrine scope clarified (5 operating-director doctrines vs role-specific senior-staff doctrines), P03 Downtown Relief south removed (made redundant by Ontario Line in construction), EV079 rate-spike scope moved from Phase 3.2 to Phase 7.1.*
+
+*v3.2 — project lifecycle simplified to three states (proposed → under_construction → operating) with a 2-quarter minimum buffer during `proposed` for studies; canonical engine-variables table added to §5 (templates, crosslinxLeverage, consultantAlignment, nimbyOrganization, openBooks, engineers, publicApproval + per-project sitePrep / megaContract / settlementPremium).*

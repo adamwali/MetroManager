@@ -6,9 +6,9 @@
 
 ## How projects work
 
-Every project moves through phases: **Concept → Studies → Planning → Design → Tender → Construction → Operations.**
+Three states: **proposed → under_construction → operating.** See design doc §9 for the full lifecycle definition.
 
-At Concept, the project exists in the catalogue but costs nothing to evaluate. Each subsequent phase commits the player further. Studies are optional and narrow uncertainty. Lobbying is optional and shifts political support. Greenlight is the commitment moment.
+A project sits free in the catalogue at no cost. Player initiates it to enter `proposed`. During `proposed` (minimum 2 quarters), the player picks alignment / mode / station count / LVC slider and may commission studies that cost cash + 1-2 quarters to narrow cost, demand, and risk uncertainty bands. At any point after the 2Q minimum, the player **breaks ground** (→ `under_construction`) or **abandons** (project removed; study costs sunk; no public-commitment penalty since break-ground hadn't happened). Cancellation after break-ground carries severe political capital costs and possible contractor litigation.
 
 ### Trait categories
 

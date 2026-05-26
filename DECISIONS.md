@@ -5,6 +5,80 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 1.1: GameState type definitions
+
+**Project lifecycle simplified to 3 states** (per repo owner): `proposed` →
+`under_construction` → `operating`. The `proposed` state has a 2-quarter
+minimum buffer during which studies narrow uncertainty. The spec's prior
+Concept → Studies → Lobbying → Greenlight → Planning → Design → Tender →
+Construction → Operations chain is collapsed. Reflected in `docs/01-design-doc-v3.md`
+§9 and `docs/02-project-catalogue-v3.md` intro. Spec footer bumped to v3.2.
+
+**Canonical engine variables locked** (per repo owner, deferred issue #5).
+Added to `docs/01-design-doc-v3.md` §5. Seven agency-level scalars
+(`templates`, `crosslinxLeverage`, `consultantAlignment`,
+`nimbyOrganization`, `openBooks`, `engineers`, `publicApproval`) plus three
+per-project (`sitePrep`, `megaContract`, `settlementPremium`). Each
+variable's range, starting value, and source events documented. The
+`EngineVars` interface in `src/types/engineVars.ts` mirrors this exactly.
+
+**Branded scalar types.** `src/types/scalars.ts` introduces `Brand<T, B>`
+wrappers — `QuarterIndex`, `CashMillions`, `DailyRiders`, `Score100`,
+`SignedScore`, `Percent`, `BasisPoints`, `DateISO`. They're erased at
+runtime (zero overhead) but enforce nominal typing at the boundary. Lets us
+catch e.g. accidentally passing a `RelationshipScore` where a
+`QuarterIndex` is expected. Compromise: callers use helper functions
+(`cash(5000)`, `score(60)`) to construct values. Doesn't replace runtime
+validation at save/load boundary.
+
+**Discriminated unions for state-machined types.** `Project` is a discriminated
+union by `state` ('proposed' | 'under_construction' | 'operating') so each
+state has its own fields. `ProposedProject` has `completedStudies`,
+`chosenAlignment?`, `studiesInFlight`; `ConstructingProject` has
+`totalBudget`, `spent`, `forecastOpenAt`; `OperatingProject` has `openedAt`,
+`finalCost`, `currentDailyRiders`. Same pattern for `Character` (by role),
+`ActionLogEntry` (by kind), `StandingOrder` (by kind), `EventEffect` (by
+kind), `CouponMode` (fixed/floating).
+
+**Character interaction history = structured records.** `InteractionRecord[]`
+on each character with `{ quarter, kind, eventId?, choiceLabel?, delta,
+note? }`. Aggregates (favorsGranted count, last contact quarter, longest
+silence) computed on demand by engine helpers — not denormalized in state.
+Keeps save size bounded; recomputation is cheap (max 60 quarters × ~10
+characters × few interactions each).
+
+**Standing orders = discriminated union per rule kind.** Five kinds for MVP:
+`autoApproveMaintenanceBelow`, `autoDeclineLowDemandStudies`,
+`capQuarterlyCapexGrowthPct`, `autoTriageInboxBelowUrgency`,
+`autoRefiFloatingAboveSpread`. Each has typed parameters. Adding a new rule
+means adding a kind + handler. Rejected: free-form predicate DSL (too much
+rope, harder to save/load).
+
+**Action log = discriminated union by entry kind** (`player_decision`,
+`player_action`, `event_fired`, `quarter_summary`). Each entry has
+`causedById?` for backward-pointer traversal (the "why did this happen?"
+UI affordance in Phase 8.6). Granularity confirmed: every player decision,
+every player action, every event firing, one quarter-summary roll-up per
+endTurn. Per-quarter subsystem decay ticks fold into the quarter_summary.
+
+**RNG sub-seeds enumerated.** 12 subsystems: `events`, `characterMoods`,
+`contractorBehavior`, `economic`, `elections`, `demographicDrift`,
+`projectCostRealization`, `climate`, `technology`, `media`,
+`nimbyOrganizing`, `gaffe`. Each has its own `RngState` (`{ seed,
+callCount }`). New event types don't shift the random sequence of other
+systems — Phase 1.3 requirement holds. Adding a subsystem later means
+adding a key (state schemaVersion bump if needed).
+
+**Schema version field on `GameState`.** Numeric, currently `1`. Save loader
+will migrate older saves forward when this bumps. Type is literal `1` so
+the compiler enforces it at construction sites.
+
+**Example GameState committed in `src/types/example.ts`.** Serves three
+purposes: (1) Phase 1.1 DoD requirement, (2) compile-time check that types
+are mutually consistent, (3) seed for `createInitialGameState` in Phase 1.2.
+
+---
+
 ## 2026-05-26 — Spec patches (v3.0 → v3.1)
 
 Repo owner reviewed Tier 1 / Tier 2 spec issues from initial review. Decisions:
