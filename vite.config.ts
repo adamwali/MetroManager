@@ -5,6 +5,9 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // GitHub Pages serves from /MetroManager/ subpath. Set BASE_URL via env in
+  // local dev so it stays at root; CI deploy sets it to /MetroManager/.
+  base: process.env.VITE_BASE_PATH ?? '/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

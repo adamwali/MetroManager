@@ -29,19 +29,30 @@ function PerformanceRoute() {
   );
 }
 
-export const router = createBrowserRouter([
-  {
-    path: '/',
-    Component: AppLayout,
-    children: [
-      { index: true, Component: MissionControl },
-      { path: 'performance', Component: PerformanceRoute },
-      { path: 'ttc', Component: TtcOperations },
-      { path: 'go', Component: GoOperations },
-      { path: 'up', Component: UpOperations },
-      { path: 'capital', Component: CapitalProjects },
-      { path: 'treasury', Component: Treasury },
-      { path: 'political', Component: PoliticalAffairs },
-    ],
-  },
-]);
+// Vite injects BASE_URL at build time. Locally it's '/'; on GitHub Pages
+// it's '/MetroManager/'. createBrowserRouter needs basename without trailing
+// slash for proper routing under a subpath.
+const BASENAME =
+  import.meta.env.BASE_URL.length > 1
+    ? import.meta.env.BASE_URL.replace(/\/$/, '')
+    : undefined;
+
+export const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      Component: AppLayout,
+      children: [
+        { index: true, Component: MissionControl },
+        { path: 'performance', Component: PerformanceRoute },
+        { path: 'ttc', Component: TtcOperations },
+        { path: 'go', Component: GoOperations },
+        { path: 'up', Component: UpOperations },
+        { path: 'capital', Component: CapitalProjects },
+        { path: 'treasury', Component: Treasury },
+        { path: 'political', Component: PoliticalAffairs },
+      ],
+    },
+  ],
+  BASENAME ? { basename: BASENAME } : undefined,
+);
