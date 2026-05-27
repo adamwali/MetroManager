@@ -79,6 +79,21 @@ function applyOne(state: GameState, e: EventEffect): GameState {
       );
       return { ...state, engineVars: { ...state.engineVars, nimbyOrganization: score(next) } };
     }
+    case 'crosslinxLeverage': {
+      const next = clampScore(
+        (state.engineVars.crosslinxLeverage as unknown as number) + e.delta,
+      );
+      return { ...state, engineVars: { ...state.engineVars, crosslinxLeverage: score(next) } };
+    }
+    case 'consultantAlignment': {
+      // SignedScore: -100 to +100
+      const cur = state.engineVars.consultantAlignment as unknown as number;
+      const next = Math.max(-100, Math.min(100, cur + e.delta));
+      return {
+        ...state,
+        engineVars: { ...state.engineVars, consultantAlignment: next as unknown as typeof state.engineVars.consultantAlignment },
+      };
+    }
     case 'opex':
       return {
         ...state,

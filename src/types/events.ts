@@ -69,6 +69,8 @@ export type EventEffect =
   | { kind: 'engineers'; delta: number }
   | { kind: 'templates'; delta: number }
   | { kind: 'nimbyOrganization'; delta: number }
+  | { kind: 'crosslinxLeverage'; delta: number }
+  | { kind: 'consultantAlignment'; delta: number }
   | { kind: 'opex'; agency: AgencyId; deltaM: number }
   | { kind: 'fareRevenue'; agency: AgencyId; deltaM: number }
   | { kind: 'reliability'; agency: AgencyId; delta: number }

@@ -1844,6 +1844,280 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       },
     ],
   },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Phase 3.3 content expansion — 6 more events to thicken the campaign
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // EV044 — Climate disclosure pressure
+  {
+    id: 'EV044_climateDisclosurePressure',
+    category: 'federal_pressure',
+    trigger: {
+      kind: 'random',
+      baseWeight: 6,
+      cooldownQuarters: 14,
+    },
+    outlet: 'Globe',
+    actorCharacterId: 'c_tremblay',
+    headline: 'Federal Transport Minister demands net-zero commitment for funding',
+    body: "Tremblay won't sign next year's transit fund disbursement without a public net-zero pledge tied to GO + UP electrification. The pension funds also want to see it before increasing positions.",
+    urgency: 65,
+    choices: [
+      {
+        id: 'sign_pledge',
+        label: 'Sign the pledge publicly',
+        tradeoff: '+8 Ottawa trust, +5 board, -$200M opex committed/Q to climate retrofit',
+        effects: [
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 8 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Signed federal climate pledge' },
+          { kind: 'opex', agency: 'go', deltaM: 200 },
+        ],
+      },
+      {
+        id: 'negotiate_terms',
+        label: 'Negotiate watered-down terms',
+        tradeoff: '+3 Ottawa trust, neutral on cash, -3 approval (looks weak)',
+        effects: [
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 3 },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+      {
+        id: 'refuse',
+        label: 'Refuse — won\'t commit without funding certainty',
+        tradeoff: '-10 Ottawa trust, federal disbursement deferred (-$300M cash next Q)',
+        effects: [
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -10 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 1,
+            cause: 'Federal funding withheld over pledge dispute',
+            effects: [{ kind: 'cash', deltaM: -300 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  // EV045 — Crosslinx leverage shift (contractor relationship)
+  {
+    id: 'EV045_crosslinxRenegotiation',
+    category: 'crosslinx_contractor',
+    trigger: {
+      kind: 'random',
+      baseWeight: 5,
+      cooldownQuarters: 16,
+    },
+    outlet: 'Star',
+    headline: 'Crosslinx demands contract renegotiation on cost escalators',
+    body: 'The prime contractor for Ontario Line + future megaprojects is seeking a 12% cost escalator citing inflation + labor. Refusing risks contractor walk-out mid-project.',
+    urgency: 75,
+    choices: [
+      {
+        id: 'accept_escalator',
+        label: 'Accept the 12% escalator',
+        tradeoff: '+15 Crosslinx leverage (you kept the relationship), -5 board, projects get more expensive',
+        effects: [
+          { kind: 'crosslinxLeverage', delta: 15 },
+          { kind: 'boardConfidence', delta: -5, reason: 'Accepted contractor cost escalator' },
+        ],
+      },
+      {
+        id: 'hardball',
+        label: 'Hardball — call their bluff',
+        tradeoff: '-20 Crosslinx leverage, +4 board (looking tough), risk: future project delays',
+        effects: [
+          { kind: 'crosslinxLeverage', delta: -20 },
+          { kind: 'boardConfidence', delta: 4, reason: 'Stood firm against contractor' },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 4,
+            cause: 'Crosslinx slow-walks deliverables after hardball',
+            effects: [{ kind: 'engineers', delta: -20 }],
+          },
+        ],
+      },
+      {
+        id: 'split_difference',
+        label: 'Negotiate 6% escalator',
+        tradeoff: 'Neutral leverage, -2 board',
+        effects: [{ kind: 'boardConfidence', delta: -2, reason: 'Split-the-difference on contractor escalator' }],
+      },
+    ],
+  },
+
+  // EV046 — Consultant rent-seek
+  {
+    id: 'EV046_consultantAlignment',
+    category: 'consulting_pressure',
+    trigger: {
+      kind: 'random',
+      baseWeight: 5,
+      cooldownQuarters: 12,
+    },
+    outlet: 'Internal memo',
+    headline: 'Strategic consultants pitch $30M follow-on engagement',
+    body: 'The consulting firm advising on operations modernization is pitching a follow-on engagement: $30M for "implementation support." They\'re extracting rents, but firing them costs you institutional knowledge.',
+    urgency: 50,
+    choices: [
+      {
+        id: 'sign_extension',
+        label: 'Sign the extension',
+        tradeoff: '-$30M cash, -15 consultant alignment (they keep extracting)',
+        effects: [
+          { kind: 'cash', deltaM: -30 },
+          { kind: 'consultantAlignment', delta: -15 },
+        ],
+      },
+      {
+        id: 'demand_value',
+        label: 'Demand defined scope + outcomes',
+        tradeoff: '-$15M cash, +10 consultant alignment (they\'re now accountable)',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+          { kind: 'consultantAlignment', delta: 10 },
+        ],
+      },
+      {
+        id: 'fire_them',
+        label: 'End the engagement',
+        tradeoff: '+15 consultant alignment, -10 templates (lost institutional knowledge), -5 board',
+        effects: [
+          { kind: 'consultantAlignment', delta: 15 },
+          { kind: 'templates', delta: -10 },
+          { kind: 'boardConfidence', delta: -5, reason: 'Fired strategic consultants mid-engagement' },
+        ],
+      },
+    ],
+  },
+
+  // EV047 — TTC driver labor action
+  {
+    id: 'EV047_ttcLaborAction',
+    category: 'operations_crisis',
+    trigger: {
+      kind: 'random',
+      baseWeight: 5,
+      cooldownQuarters: 20,
+    },
+    outlet: 'CityNews',
+    actorCharacterId: 'c_ttc_director',
+    headline: 'TTC operators threaten strike over pay + safety',
+    body: "Director Ramanathan says the union won't budge: 8% raise + reformed safety protocol or walkout. A strike would hit ridership for weeks. Concessions cost opex forever.",
+    urgency: 88,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'meet_demands',
+        label: 'Meet demands — 8% raise',
+        tradeoff: 'TTC opex +$80M/Q forever, +5 City Hall trust, +5 approval',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: 80 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+      {
+        id: 'split_4pct',
+        label: 'Negotiate 4% + safety reforms',
+        tradeoff: 'TTC opex +$40M/Q, neutral elsewhere, residual risk',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: 40 },
+          { kind: 'publicApproval', delta: 2 },
+        ],
+      },
+      {
+        id: 'force_strike',
+        label: "Hold the line — accept strike risk",
+        tradeoff: 'TTC ridership -250k for 2Q (strike), -10 approval, -8 City Hall trust',
+        effects: [
+          { kind: 'ridership', agency: 'ttc', delta: -250_000 },
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -8 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 2,
+            cause: 'Strike resolved, ridership returns',
+            effects: [{ kind: 'ridership', agency: 'ttc', delta: 250_000 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  // EV048 — Pension fund relationship building
+  {
+    id: 'EV048_pensionRelationshipBuild',
+    category: 'bond_market',
+    trigger: {
+      kind: 'random',
+      baseWeight: 5,
+      cooldownQuarters: 14,
+    },
+    outlet: 'Globe',
+    headline: 'Pension fund consortium offers preferential financing terms',
+    body: 'A consortium of Canadian pension funds (CPPIB, OTPP, OMERS) offers to underwrite future project bonds at -25bp to market — IF you commit to a five-year preferred-partner agreement.',
+    urgency: 60,
+    choices: [
+      {
+        id: 'sign_partnership',
+        label: 'Sign the partnership',
+        tradeoff: '+5 board (financial discipline signal), future project bonds priced 25bp lower',
+        effects: [
+          { kind: 'boardConfidence', delta: 5, reason: 'Signed pension consortium partnership' },
+          { kind: 'templates', delta: 8 },
+        ],
+      },
+      {
+        id: 'decline',
+        label: "Decline — preserve flexibility",
+        tradeoff: 'Neutral. Foreign + retail markets still available for variety.',
+        effects: [],
+      },
+      {
+        id: 'counter_terms',
+        label: 'Counter — demand -40bp + no exclusivity',
+        tradeoff: '-3 templates (consortium walks if you push too hard), but if they accept (50% chance based on alignment)...',
+        requires: { kind: 'templates', gte: 50 },
+        effects: [{ kind: 'templates', delta: -3 }],
+      },
+    ],
+  },
+
+  // EV049 — Mayor pre-election photo op
+  {
+    id: 'EV049_mayorPhotoOp',
+    category: 'mayor_city',
+    trigger: {
+      kind: 'random',
+      baseWeight: 5,
+      cooldownQuarters: 8,
+    },
+    outlet: 'Star',
+    actorCharacterId: 'c_liang',
+    headline: 'Mayor Liang requests joint ribbon-cutting at busiest station',
+    body: 'Liang wants a photo op announcing accessibility upgrades + free transit week. Costs $20M, but the optics help both of you. Mayor\'s asking, not demanding.',
+    urgency: 35,
+    choices: [
+      {
+        id: 'partner',
+        label: 'Partner on the announcement',
+        tradeoff: '-$20M cash, +6 City Hall trust, +4 approval, +6 Liang relationship',
+        effects: [
+          { kind: 'cash', deltaM: -20 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 6 },
+          { kind: 'publicApproval', delta: 4 },
+        ],
+      },
+      {
+        id: 'decline_politely',
+        label: 'Decline — focus on delivery',
+        tradeoff: '-3 City Hall trust, neutral else',
+        effects: [{ kind: 'governmentTrust', gov: 'cityHall', delta: -3 }],
+      },
+    ],
+  },
 ];
 
 /** Lookup by id. */

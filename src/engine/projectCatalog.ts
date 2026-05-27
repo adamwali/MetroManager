@@ -274,6 +274,136 @@ export const PROJECT_CATALOG: ProjectCatalogEntry[] = [
     ],
     blurb: 'Workhorse BRT. Low cost, fast delivery, no glory.',
   },
+
+  // Phase 4.2 expansion — 4 more catalog entries:
+
+  // Mega subway (alternative to P06 Don Mills)
+  {
+    id: 'P02',
+    name: 'Sheppard West subway extension',
+    description: 'Extends Line 4 Sheppard from Yonge to the Allen, adding 5 stations.',
+    tier: 'mega',
+    mode: 'subway',
+    primaryAgency: 'ttc',
+    baseCostM: 9_500,
+    buildDurationQuarters: 28,
+    startingPoliticalSupport: { ottawa: 8, queensPark: 12, cityHall: 10 },
+    alignments: [
+      {
+        id: 'A',
+        label: 'Standard 5-station alignment',
+        kilometers: 7.8,
+        stations: 5,
+        fullRidership: 165_000,
+        openingRidership: 130_000,
+        costMultiplier: 1.0,
+        cannibalization: { ttc: -45_000 },
+        nimbyImpact: 'low',
+        lvcPotential: 'medium',
+        blurb: 'Cabinet-favored alignment, connects job centres.',
+      },
+      {
+        id: 'B',
+        label: 'Premium 7-station with TOD',
+        kilometers: 9.5,
+        stations: 7,
+        fullRidership: 220_000,
+        openingRidership: 170_000,
+        costMultiplier: 1.35,
+        cannibalization: { ttc: -55_000 },
+        nimbyImpact: 'medium',
+        lvcPotential: 'high',
+        blurb: 'Adds 2 stations for transit-oriented development. LVC upside.',
+      },
+    ],
+    blurb: 'High-profile subway extension. Provincial caucus loves it.',
+  },
+
+  // Large LRT (regional connection)
+  {
+    id: 'P09',
+    name: 'Hurontario LRT (Brampton-Mississauga)',
+    description: 'Surface light rail along Hurontario Street, Port Credit to downtown Brampton.',
+    tier: 'large',
+    mode: 'lrt',
+    primaryAgency: 'go',
+    baseCostM: 4_800,
+    buildDurationQuarters: 20,
+    startingPoliticalSupport: { ottawa: 6, queensPark: 10, cityHall: -2 },
+    alignments: [
+      {
+        id: 'A',
+        label: 'Port Credit to Brampton (24km)',
+        kilometers: 24.0,
+        stations: 22,
+        fullRidership: 95_000,
+        openingRidership: 72_000,
+        costMultiplier: 1.0,
+        cannibalization: { go: -18_000 },
+        nimbyImpact: 'medium',
+        lvcPotential: 'medium',
+        blurb: 'Politically straightforward — outside Toronto, no City Hall friction.',
+      },
+    ],
+    blurb: 'Regional LRT, suburban-friendly. Queen\'s Park priority.',
+  },
+
+  // Medium LRT (waterfront)
+  {
+    id: 'P14',
+    name: 'Waterfront West LRT extension',
+    description: 'Extends the Queens Quay streetcar west to Park Lawn.',
+    tier: 'medium',
+    mode: 'lrt',
+    primaryAgency: 'ttc',
+    baseCostM: 1_400,
+    buildDurationQuarters: 14,
+    startingPoliticalSupport: { ottawa: 2, queensPark: 4, cityHall: 12 },
+    alignments: [
+      {
+        id: 'A',
+        label: 'Surface alignment along the lake',
+        kilometers: 7.0,
+        stations: 10,
+        fullRidership: 45_000,
+        openingRidership: 35_000,
+        costMultiplier: 1.0,
+        cannibalization: { ttc: -8_000 },
+        nimbyImpact: 'medium',
+        lvcPotential: 'high',
+        blurb: 'Waterfront condo growth driver. Mayor loves it; tower lobby loves it more.',
+      },
+    ],
+    blurb: 'City Hall priority. High LVC potential from waterfront condo boom.',
+  },
+
+  // Small subway (single station infill)
+  {
+    id: 'P17',
+    name: 'Liberty Village infill station',
+    description: 'New TTC station on existing Line 2 at the Liberty Village rail corridor.',
+    tier: 'small',
+    mode: 'subway',
+    primaryAgency: 'ttc',
+    baseCostM: 750,
+    buildDurationQuarters: 10,
+    startingPoliticalSupport: { ottawa: 0, queensPark: 2, cityHall: 8 },
+    alignments: [
+      {
+        id: 'A',
+        label: 'Infill station + pedestrian connections',
+        kilometers: 0.0,
+        stations: 1,
+        fullRidership: 28_000,
+        openingRidership: 22_000,
+        costMultiplier: 1.0,
+        nimbyImpact: 'low',
+        lvcPotential: 'high',
+        blurb: 'One station, dense catchment. Cheap, fast, locally popular.',
+      },
+    ],
+    blurb: 'High return on investment. The kind of project no one fights you on.',
+  },
 ];
 
 export function catalogEntry(projectId: string): ProjectCatalogEntry | undefined {
