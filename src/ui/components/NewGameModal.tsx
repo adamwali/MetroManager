@@ -4,6 +4,23 @@ import { archetypeOptions } from '@engine/archetypes';
 import type { CeoArchetype } from '@/types/ceo';
 import { formatMoney } from '@/utils/humanize';
 
+/**
+ * Plain-language description of how each archetype actually plays.
+ * Helps the picker feel like "pick your strategy" not "pick your stats."
+ */
+const ARCHETYPE_PLAYSTYLE: Record<CeoArchetype, string> = {
+  steadyOperator:
+    'Lean on the financial cushion ($1.4B cash) and disciplined opex. Best for first-time players — you have margin for error and time to learn.',
+  internationalTechnocrat:
+    'Bond-market favored (open books = -20bp on every new bond). Templates >50 unlocks data-driven branches and -5% project cost. Pays off late.',
+  insider:
+    'Use your political relationships ($400M favor available Q1, premium quiet-pitch access). Build trust fast, but watch Hartwell will eventually want something back.',
+  coalitionBuilder:
+    'Tri-government trust at 55+ from Q1 — financing offers come in at preferential rates. Vulnerable to events that crash one government\'s trust below the threshold.',
+  disruptor:
+    'High variance. Lower starting cash + trust, but every event leans more disruptive. Gaffe events trigger; you can also pivot moves that other archetypes can\'t. Veteran mode.',
+};
+
 interface NewGameModalProps {
   onClose: () => void;
   /** If true, modal is dismissible (player already has a campaign). */
@@ -80,6 +97,7 @@ export function NewGameModal({ onClose, dismissible = false }: NewGameModalProps
           <div className="grid gap-3 sm:grid-cols-2">
             {options.map((opt) => {
               const isSelected = opt.id === archetype;
+              const playstyle = ARCHETYPE_PLAYSTYLE[opt.id] ?? 'Balanced general approach.';
               return (
                 <button
                   key={opt.id}
@@ -99,6 +117,10 @@ export function NewGameModal({ onClose, dismissible = false }: NewGameModalProps
                   </div>
                   <p className="mt-1 text-[12px] text-neutral-600 leading-snug">
                     {opt.config.blurb}
+                  </p>
+                  <p className="mt-1.5 text-[11px] italic text-neutral-500 leading-snug">
+                    <span className="font-semibold not-italic text-blue-700">Style: </span>
+                    {playstyle}
                   </p>
                   <div className="mt-2 flex gap-2 text-[10px]">
                     <span className="rounded bg-emerald-100 text-emerald-800 px-1.5 py-0.5 font-semibold">

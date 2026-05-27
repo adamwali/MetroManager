@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 
-const TOUR_STORAGE_KEY = 'metro-tour-completed-v1';
+const TOUR_STORAGE_KEY = 'metro-tour-completed-v2';
 
 interface TourStep {
   title: string;
