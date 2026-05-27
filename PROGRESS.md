@@ -90,9 +90,10 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
   shows actor + relationship). Election campaign mechanics, lobby
   outcome variance, character tolerance regen → Phase 6.2.1.
 - **Phase 5.x** — Maintenance + fare + frequency shipped (5.1).
-  Replacement events when reliability ≤30 shipped (5.3 — EV042 with
-  emergency capex / defer / federal relief). Security / cleanliness /
-  accessibility per-agency sliders → Phase 5.2.
+  Security + cleanliness per-agency budgets shipped (5.2 — sliders with
+  inline forecast, debounced). Replacement events when reliability ≤30
+  shipped (5.3 — EV042). Accessibility per-agency slider + AODA gating
+  → Phase 5.4.
 
 ## ⏳ Not started
 
