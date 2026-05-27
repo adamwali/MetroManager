@@ -354,14 +354,7 @@ export function reduceProjectScope(
             ...project,
             forecastOpenAt: quarter(Math.max((state.quarter as unknown as number) + 1, oldOpen - 2)),
             remainingFunding: cash(remaining - refund),
-            perProject: {
-              ...project.perProject,
-              settlementPremium: score(
-                Math.min(100, (project.perProject.settlementPremium as unknown as number) + 30),
-              ),
-              // Repurposing settlementPremium as a generic "scope-cut indicator"
-              // so existing perProject schema absorbs the flag without new fields.
-            },
+            scopeReduced: true,
           }
         : p,
     ),

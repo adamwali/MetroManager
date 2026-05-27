@@ -113,7 +113,12 @@ function CashFlowTable({ cols }: { cols: QuarterCol[] }) {
         </tr>
       </thead>
       <tbody>
+        <SubtotalRow label="OPERATING" cols={cols} pick={() => NaN} hideValue />
         <Row label="Cash from operations" cols={cols} pick={(c) => c.cashFromOperations} />
+        <SubtotalRow label="INVESTING" cols={cols} pick={() => NaN} hideValue />
+        <Row label="Capital project draws" cols={cols} pick={(c) => -c.capexDraws} />
+        <SubtotalRow label="FINANCING" cols={cols} pick={() => NaN} hideValue />
+        <Row label="Bond proceeds" cols={cols} pick={(c) => c.financingProceeds} />
         <Row label="Refi fees paid" cols={cols} pick={(c) => -c.refiFee} />
         <SubtotalRow label="Net cash flow / Q" cols={cols} pick={(c) => c.netCashFlow} />
         <TotalRow label="Ending cash" cols={cols} pick={(c) => c.endingCash} />

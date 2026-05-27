@@ -45,18 +45,43 @@ function quarterLabel(q: number): string {
 export function buildFinancialStatements(state: GameState, lastNQuarters = 8): QuarterCol[] {
   const cols: QuarterCol[] = [];
   const summaries = state.actionLog.filter((e) => e.kind === 'quarter_summary');
+  // Phase 10 fix: walk player_action entries to attribute bond proceeds + refi
+  // fees per quarter (capex draws come straight from quarter_summary breakdown).
+  // Bond issuance and refi were the only player_actions that move cash on the
+  // financing side. Lobby actions (favor, ad-hoc) move cash too — treat those
+  // as operating cash for simplicity.
+  const financingByQuarter = new Map<number, { proceeds: number }>();
+  for (const e of state.actionLog) {
+    if (e.kind !== 'player_action') continue;
+    const q = e.quarter as unknown as number;
+    if (e.action.startsWith('issueOperatingBond:') || e.action.startsWith('autoIssueBond:')) {
+      // Parse "+$XM cash" out of the summary
+      const match = e.summary.match(/\+\$([\d,]+)M/);
+      if (match) {
+        const amount = Number(match[1]!.replace(/,/g, ''));
+        const cur = financingByQuarter.get(q) ?? { proceeds: 0 };
+        financingByQuarter.set(q, { proceeds: cur.proceeds + amount });
+      }
+    }
+  }
   for (const entry of summaries) {
     if (entry.kind !== 'quarter_summary') continue;
     const b = entry.breakdown;
     const cf = b.cashFlow;
     const m = b.endOfQuarterMetrics;
     if (!m) continue;
+    const q = entry.quarter as unknown as number;
     const totalRevenue = cf.operatingAllowance + cf.fareRevenue;
     const operatingIncome = totalRevenue - cf.operatingExpense - cf.maintenance;
     const netIncome = operatingIncome - cf.debtService - cf.refiFee;
+    const capexDraws = b.projects.constructionDraws.reduce(
+      (acc, d) => acc + (d.drawn ?? 0),
+      0,
+    );
+    const financingProceeds = financingByQuarter.get(q)?.proceeds ?? 0;
     cols.push({
-      quarter: entry.quarter as unknown as number,
-      label: quarterLabel(entry.quarter as unknown as number),
+      quarter: q,
+      label: quarterLabel(q),
       operatingAllowance: cf.operatingAllowance,
       fareRevenue: cf.fareRevenue,
       totalRevenue,
@@ -66,12 +91,12 @@ export function buildFinancialStatements(state: GameState, lastNQuarters = 8): Q
       interestExpense: cf.debtService,
       netIncome,
       cashFromOperations: operatingIncome - cf.debtService,
-      capexDraws: 0, // approximated — construction draws hit cash but per-Q breakdown isn't separately stored
-      financingProceeds: 0,
+      capexDraws,
+      financingProceeds,
       refiFee: cf.refiFee,
       netCashFlow: cf.netDelta,
       endingCash: m.cashM,
-      totalDebt: 0, // computed live below
+      totalDebt: 0,
       projectsInFlightBookValue: 0,
     });
   }

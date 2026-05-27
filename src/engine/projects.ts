@@ -57,6 +57,8 @@ export function tickConstructingProject(
       finalCost: cash(spentSoFar),
       currentDailyRiders: riders(0),
       financing: p.financing,
+      // Phase 10: carry the scope-cut flag through to operating state.
+      ...(p.scopeReduced ? { scopeReduced: true } : {}),
     };
     return { project: opening, drawFromFunding: cash(burnPerQuarter) };
   }
@@ -81,7 +83,12 @@ export function tickOperatingProject(
   const openedQ = p.openedAt as unknown as number;
   const elapsedSinceOpen = (currentQuarter as unknown as number) - openedQ;
   const rampPct = Math.min(1, Math.max(0, elapsedSinceOpen / 8));
-  const target = openingRidership + (fullRidership - openingRidership) * rampPct;
+  // Phase 10: scope-cut projects deliver 70% of forecasted ridership (per
+  // the lever's promise in the UI). This applies on opening day AND through
+  // the ramp.
+  const scopeMul = p.scopeReduced ? 0.7 : 1;
+  const target =
+    (openingRidership + (fullRidership - openingRidership) * rampPct) * scopeMul;
   return { ...p, currentDailyRiders: riders(Math.floor(target)) };
 }
 

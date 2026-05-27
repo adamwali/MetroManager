@@ -242,6 +242,8 @@ export interface ConstructingProject {
   perProject: PerProjectVars;
   /** Phase 10: project pause flag. Paused projects don't draw funding or advance opening. */
   paused?: boolean;
+  /** Phase 10: set true when player invoked Cut Scope mid-construction. Carries to OperatingProject. Applies -30% ridership on opening + full ramp. */
+  scopeReduced?: boolean;
 }
 
 /** A project that has opened. Contributes ridership and LVC revenue. */
@@ -260,6 +262,8 @@ export interface OperatingProject {
   currentDailyRiders: DailyRiders;
   /** Financing accepted to fund this project. Debt servicing happens via tranches. */
   financing: AcceptedFinancing[];
+  /** Phase 10: carried over from ConstructingProject if Cut Scope was used. Applies -30% to opening + full ramp. */
+  scopeReduced?: boolean;
 }
 
 export type Project = ProposedProject | ConstructingProject | OperatingProject;

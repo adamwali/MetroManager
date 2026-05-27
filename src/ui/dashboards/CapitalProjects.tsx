@@ -116,6 +116,11 @@ function ProjectRow({
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600">
           {style.label}
+          {project.state !== 'proposed' && project.scopeReduced && (
+            <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] text-amber-800">
+              SCOPE CUT
+            </span>
+          )}
         </span>
       </div>
 
