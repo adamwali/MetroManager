@@ -76,10 +76,12 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 - **Phase 3.x** — 51 events shipped (of ~75 in
   `docs/03-event-catalogue.md`). 16 events tagged with character actors.
   Remaining content + actor sweep → Phase 3.3 follow-up.
-- **Phase 4.x** — 14 projects shipped (of ~30 in
-  `docs/02-project-catalogue-v3.md`). Studies during proposed (uncertainty
-  narrowing), LVC slider, project-specific events, cost-overrun
-  mechanics → Phase 4.2.
+- **Phase 4.x** — 15 projects shipped (P00 Ontario Line + 14 others).
+  Studies during proposed shipped (uncertainty narrows 12%/Q in proposed
+  state). LVC slider shipped (Phase 10 — capex×stations×1.5%/Q ROI).
+  Project levers: accelerate / cut scope / pause/resume shipped.
+  Operating project detail card shipped (ramp progress, cost vs forecast).
+  Project-specific events + cost-overrun mechanics → Phase 4.3.
 - **Phase 5.x** — Maintenance + fare + frequency shipped. Security /
   cleanliness / accessibility per-agency sliders → Phase 5.2.
 - **Phase 6.x** — Lobby + ad-hoc + favor shipped (6.1). Allowance
@@ -90,10 +92,10 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
   shows actor + relationship). Election campaign mechanics, lobby
   outcome variance, character tolerance regen → Phase 6.2.1.
 - **Phase 5.x** — Maintenance + fare + frequency shipped (5.1).
-  Security + cleanliness per-agency budgets shipped (5.2 — sliders with
-  inline forecast, debounced). Replacement events when reliability ≤30
-  shipped (5.3 — EV042). Accessibility per-agency slider + AODA gating
-  → Phase 5.4.
+  Security + cleanliness per-agency budgets shipped (5.2).
+  Replacement events when reliability ≤30 shipped (5.3).
+  Accessibility per-agency slider + AODA gating shipped (5.4 — below
+  baseline drags City Hall trust per Q).
 
 ## ⏳ Not started
 
