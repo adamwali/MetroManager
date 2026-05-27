@@ -19,6 +19,13 @@ import {
   issueOperatingBond,
   refinanceTranche,
 } from '@engine/treasuryActions';
+import {
+  addStandingOrder,
+  removeStandingOrder,
+  toggleStandingOrder,
+  updateStandingOrder,
+} from '@engine/standingOrderActions';
+import type { StandingOrder } from '@/types/standingOrders';
 import type { StationQualityTier } from '@engine/projectCatalog';
 import type { FrequencyPolicy } from '@engine/policies';
 import type { FinancingApproach } from '@/types/projects';
@@ -99,6 +106,11 @@ export interface GameStore {
   /** Treasury actions (Phase 7). */
   issueOperatingBond: (creditor: CreditorType, amountM: number) => void;
   refinanceTranche: (trancheId: string) => void;
+  /** Standing orders (Phase 8.1). */
+  addStandingOrder: (order: Omit<StandingOrder, 'id'>) => void;
+  removeStandingOrder: (orderId: string) => void;
+  toggleStandingOrder: (orderId: string) => void;
+  updateStandingOrder: (orderId: string, patch: Partial<StandingOrder>) => void;
 }
 
 const DEFAULT_SEED = 1;
@@ -302,6 +314,34 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (result.state === get().state) return;
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    addStandingOrder: (order) => {
+      const next = addStandingOrder(get().state, order);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    removeStandingOrder: (orderId) => {
+      const next = removeStandingOrder(get().state, orderId);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    toggleStandingOrder: (orderId) => {
+      const next = toggleStandingOrder(get().state, orderId);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    updateStandingOrder: (orderId, patch) => {
+      const next = updateStandingOrder(get().state, orderId, patch);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))
         .catch(() => set({ autosaveStatus: 'error' }));
     },

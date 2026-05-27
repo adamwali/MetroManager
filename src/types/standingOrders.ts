@@ -1,13 +1,27 @@
 import type { CashMillions } from './scalars';
+import type { GovernmentId, PoliticalActionKind } from './politics';
+import type { CreditorType } from './finance';
 
 /**
  * Standing orders. Per design doc §0 (P8 — decision density management).
  *
  * Each standing order is a discriminated union by `kind`. The engine
- * iterates active orders at the start of each quarter and applies the
- * matching auto-actions before the inbox is surfaced to the player.
+ * iterates enabled orders at endTurn and applies the matching auto-actions
+ * BEFORE the inbox is surfaced to the player. Auto-actions log
+ * `player_action` entries with cause=`standingOrder` so the trace UI can
+ * surface them.
  *
- * New rule = new kind + new handler in the engine. No predicate DSL.
+ * Phase 8.1 ships 5 rule types per repo-owner decision:
+ *   1. autoApproveMaintenanceBelow — bumps any subsystem at <required
+ *      tier up to required if maintenance budget below threshold
+ *   2. autoTriageInboxBelowUrgency — events with urgency below the
+ *      threshold get auto-resolved with their FIRST visible branch
+ *   3. autoLobbyOnTrustDrop — when a gov's trust falls below threshold,
+ *      run the chosen lobby action on the cooldown
+ *   4. autoIssueOperatingBondsBelowCash — if cash falls below threshold,
+ *      issue up to N $M of operating bonds from chosen creditor
+ *   5. autoResolveEvent — for any inbox event matching templateId, pick
+ *      the chosen branch automatically (skips inbox entirely)
  */
 
 export type StandingOrderId = string;
@@ -16,35 +30,44 @@ export type StandingOrder =
   | {
       id: StandingOrderId;
       kind: 'autoApproveMaintenanceBelow';
+      /** Subsystems with budget below this $M get bumped to required tier. */
       thresholdMillions: CashMillions;
       enabled: boolean;
     }
   | {
       id: StandingOrderId;
-      kind: 'autoDeclineLowDemandStudies';
-      /** Skip ridership studies on projects with median forecast below this many daily riders. */
-      threshold: number;
-      enabled: boolean;
-    }
-  | {
-      id: StandingOrderId;
-      kind: 'capQuarterlyCapexGrowthPct';
-      /** Cap how much capex outflow grows quarter-over-quarter. 0.05 = 5%. */
-      maxPct: number;
-      enabled: boolean;
-    }
-  | {
-      id: StandingOrderId;
       kind: 'autoTriageInboxBelowUrgency';
-      /** Events with urgency below this number bypass the inbox. */
+      /** Events with urgency below this number auto-resolve with first branch. */
       minUrgency: number;
       enabled: boolean;
     }
   | {
       id: StandingOrderId;
-      kind: 'autoRefiFloatingAboveSpread';
-      /** Refi floating-rate debt when spread over BOC exceeds this many bp. */
-      spreadBpThreshold: number;
+      kind: 'autoLobbyOnTrustDrop';
+      governmentId: GovernmentId;
+      /** Trigger when trust falls below this. */
+      trustThreshold: number;
+      /** Which lobby action to run. */
+      actionKind: PoliticalActionKind;
+      enabled: boolean;
+    }
+  | {
+      id: StandingOrderId;
+      kind: 'autoIssueOperatingBondsBelowCash';
+      /** Trigger when cash falls below this ($M). */
+      cashThresholdM: CashMillions;
+      /** How much to issue when triggered ($M). */
+      amountM: CashMillions;
+      creditor: CreditorType;
+      enabled: boolean;
+    }
+  | {
+      id: StandingOrderId;
+      kind: 'autoResolveEvent';
+      /** Event template id (e.g. 'EV017_mayorFareFreezePreElection'). */
+      eventTemplateId: string;
+      /** Branch id to auto-pick. */
+      choiceId: string;
       enabled: boolean;
     };
 

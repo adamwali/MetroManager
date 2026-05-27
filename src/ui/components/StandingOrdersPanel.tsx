@@ -1,0 +1,349 @@
+import { useState } from 'react';
+import { useGameStore } from '@state/gameStore';
+import type { StandingOrder } from '@/types/standingOrders';
+import type { GovernmentId, PoliticalActionKind } from '@/types/politics';
+import type { CreditorType } from '@/types/finance';
+import { eventTemplateById } from '@engine/events/templates';
+import { cash } from '@/types/scalars';
+
+/**
+ * Standing orders panel for Mission Control. Phase 8.1.
+ *
+ * Player creates rules; engine applies them automatically each endTurn.
+ * Each rule is on/off-toggleable + removable. Add-rule UI is collapsed
+ * by default to keep the panel compact.
+ */
+
+const KIND_LABEL: Record<StandingOrder['kind'], string> = {
+  autoApproveMaintenanceBelow: 'Auto-approve maintenance',
+  autoTriageInboxBelowUrgency: 'Auto-triage low-urgency events',
+  autoLobbyOnTrustDrop: 'Auto-lobby on trust drop',
+  autoIssueOperatingBondsBelowCash: 'Auto-issue bonds on cash crunch',
+  autoResolveEvent: 'Auto-resolve specific event',
+};
+
+export function StandingOrdersPanel() {
+  const orders = useGameStore((s) => s.state.standingOrders);
+  const remove = useGameStore((s) => s.removeStandingOrder);
+  const toggle = useGameStore((s) => s.toggleStandingOrder);
+  const [showAdd, setShowAdd] = useState(false);
+
+  return (
+    <section className="rounded-md border border-neutral-200 bg-white p-4">
+      <header className="flex items-baseline justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+          Standing orders {orders.length > 0 && `(${orders.length})`}
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowAdd((v) => !v)}
+          className="rounded-md border border-neutral-300 px-2 py-0.5 text-[11px] text-neutral-700 hover:bg-neutral-50"
+        >
+          {showAdd ? 'Close' : '+ Add rule'}
+        </button>
+      </header>
+      <p className="mt-1 text-[11px] text-neutral-500">
+        Auto-actions applied each end-turn. Toggle off to pause without deleting.
+      </p>
+
+      {orders.length === 0 ? (
+        <p className="mt-3 text-sm text-neutral-500">
+          No standing orders. Add one to automate routine decisions.
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {orders.map((o) => (
+            <li
+              key={o.id}
+              className={`rounded-md border p-2.5 ${
+                o.enabled ? 'border-blue-200 bg-blue-50/30' : 'border-neutral-200 bg-neutral-50/40 opacity-60'
+              }`}
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-semibold">{KIND_LABEL[o.kind]}</span>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => toggle(o.id)}
+                    className="rounded px-2 py-0.5 text-[10px] font-medium text-neutral-700 hover:bg-neutral-100"
+                  >
+                    {o.enabled ? 'Pause' : 'Enable'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(o.id)}
+                    className="rounded px-2 py-0.5 text-[10px] font-medium text-red-700 hover:bg-red-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <div className="mt-1 text-[11px] text-neutral-600">{describeOrder(o)}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {showAdd && <AddRuleForm onClose={() => setShowAdd(false)} />}
+    </section>
+  );
+}
+
+function describeOrder(o: StandingOrder): string {
+  switch (o.kind) {
+    case 'autoApproveMaintenanceBelow':
+      return `Bump subsystems below $${o.thresholdMillions as unknown as number}M up to required tier`;
+    case 'autoTriageInboxBelowUrgency':
+      return `Auto-resolve events with urgency < ${o.minUrgency} (first available branch)`;
+    case 'autoLobbyOnTrustDrop':
+      return `Run ${o.actionKind} on ${o.governmentId} when trust < ${o.trustThreshold}`;
+    case 'autoIssueOperatingBondsBelowCash':
+      return `Issue $${o.amountM as unknown as number}M ${o.creditor} operating bond when cash < $${o.cashThresholdM as unknown as number}M`;
+    case 'autoResolveEvent': {
+      const tmpl = eventTemplateById(o.eventTemplateId);
+      return `Pick "${o.choiceId}" on ${tmpl?.headline ?? o.eventTemplateId}`;
+    }
+  }
+}
+
+// ============================================================================
+// Add rule form (collapsed by default)
+// ============================================================================
+
+type RuleKind = StandingOrder['kind'];
+
+function AddRuleForm({ onClose }: { onClose: () => void }) {
+  const add = useGameStore((s) => s.addStandingOrder);
+  const [kind, setKind] = useState<RuleKind>('autoApproveMaintenanceBelow');
+  const [threshold, setThreshold] = useState(50);
+  const [urgency, setUrgency] = useState(40);
+  const [govId, setGovId] = useState<GovernmentId>('ottawa');
+  const [trustDrop, setTrustDrop] = useState(40);
+  const [lobbyAction, setLobbyAction] = useState<PoliticalActionKind>('quietPitch');
+  const [cashThreshold, setCashThreshold] = useState(0);
+  const [bondAmount, setBondAmount] = useState(500);
+  const [creditor, setCreditor] = useState<CreditorType>('pension');
+  const [eventTemplateId, setEventTemplateId] = useState('EV017_mayorFareFreezePreElection');
+  const [choiceId, setChoiceId] = useState('public_pledge');
+
+  const handleAdd = () => {
+    // TS limitation: Omit<UnionType, 'id'> doesn't distribute cleanly.
+    // Build the order then cast — runtime shape matches one variant.
+    let order: Omit<StandingOrder, 'id'>;
+    switch (kind) {
+      case 'autoApproveMaintenanceBelow':
+        order = {
+          kind: 'autoApproveMaintenanceBelow',
+          thresholdMillions: cash(threshold),
+          enabled: true,
+        } as Omit<StandingOrder, 'id'>;
+        break;
+      case 'autoTriageInboxBelowUrgency':
+        order = {
+          kind: 'autoTriageInboxBelowUrgency',
+          minUrgency: urgency,
+          enabled: true,
+        } as Omit<StandingOrder, 'id'>;
+        break;
+      case 'autoLobbyOnTrustDrop':
+        order = {
+          kind: 'autoLobbyOnTrustDrop',
+          governmentId: govId,
+          trustThreshold: trustDrop,
+          actionKind: lobbyAction,
+          enabled: true,
+        } as Omit<StandingOrder, 'id'>;
+        break;
+      case 'autoIssueOperatingBondsBelowCash':
+        order = {
+          kind: 'autoIssueOperatingBondsBelowCash',
+          cashThresholdM: cash(cashThreshold),
+          amountM: cash(bondAmount),
+          creditor,
+          enabled: true,
+        } as Omit<StandingOrder, 'id'>;
+        break;
+      case 'autoResolveEvent':
+        order = {
+          kind: 'autoResolveEvent',
+          eventTemplateId,
+          choiceId,
+          enabled: true,
+        } as Omit<StandingOrder, 'id'>;
+        break;
+    }
+    add(order);
+    onClose();
+  };
+
+  return (
+    <div className="mt-3 rounded-md border border-blue-200 bg-blue-50/30 p-3 space-y-3">
+      <div>
+        <label className="text-[10px] uppercase tracking-wider text-neutral-500">Rule type</label>
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as RuleKind)}
+          className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+        >
+          {(Object.keys(KIND_LABEL) as RuleKind[]).map((k) => (
+            <option key={k} value={k}>
+              {KIND_LABEL[k]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {kind === 'autoApproveMaintenanceBelow' && (
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+            Threshold ($M/Q per subsystem)
+          </label>
+          <input
+            type="number"
+            value={threshold}
+            onChange={(e) => setThreshold(Number(e.target.value) || 0)}
+            className="num mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          />
+        </div>
+      )}
+
+      {kind === 'autoTriageInboxBelowUrgency' && (
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+            Min urgency (events below auto-resolve)
+          </label>
+          <input
+            type="number"
+            value={urgency}
+            onChange={(e) => setUrgency(Number(e.target.value) || 0)}
+            className="num mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          />
+        </div>
+      )}
+
+      {kind === 'autoLobbyOnTrustDrop' && (
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">Gov</label>
+            <select
+              value={govId}
+              onChange={(e) => setGovId(e.target.value as GovernmentId)}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            >
+              <option value="ottawa">Ottawa</option>
+              <option value="queensPark">Queen's Park</option>
+              <option value="cityHall">City Hall</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+              Trust below
+            </label>
+            <input
+              type="number"
+              value={trustDrop}
+              onChange={(e) => setTrustDrop(Number(e.target.value) || 0)}
+              className="num mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">Action</label>
+            <select
+              value={lobbyAction}
+              onChange={(e) => setLobbyAction(e.target.value as PoliticalActionKind)}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            >
+              <option value="publicLobby">Public lobby</option>
+              <option value="quietPitch">Quiet pitch</option>
+              <option value="adHocFunding">Ad-hoc funding</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {kind === 'autoIssueOperatingBondsBelowCash' && (
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+              Cash below ($M)
+            </label>
+            <input
+              type="number"
+              value={cashThreshold}
+              onChange={(e) => setCashThreshold(Number(e.target.value) || 0)}
+              className="num mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+              Issue ($M)
+            </label>
+            <input
+              type="number"
+              value={bondAmount}
+              onChange={(e) => setBondAmount(Number(e.target.value) || 0)}
+              className="num mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">Creditor</label>
+            <select
+              value={creditor}
+              onChange={(e) => setCreditor(e.target.value as CreditorType)}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-sm"
+            >
+              <option value="pension">Pension</option>
+              <option value="institutional">Institutional</option>
+              <option value="retail">Retail</option>
+              <option value="foreign">Foreign</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {kind === 'autoResolveEvent' && (
+        <div className="space-y-2">
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+              Event template id
+            </label>
+            <input
+              type="text"
+              value={eventTemplateId}
+              onChange={(e) => setEventTemplateId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs font-mono"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider text-neutral-500">
+              Choice id
+            </label>
+            <input
+              type="text"
+              value={choiceId}
+              onChange={(e) => setChoiceId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-1 text-xs font-mono"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-md border border-neutral-300 px-3 py-1 text-xs text-neutral-700 hover:bg-neutral-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="rounded-md bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+        >
+          Add rule
+        </button>
+      </div>
+    </div>
+  );
+}

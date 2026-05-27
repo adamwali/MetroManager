@@ -45,6 +45,11 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 - **Phase 4 follow-up** — Stacked financing: assemble project package
   from multiple offers; each layer becomes own debt tranche at own rate;
   sovereign optics applied once; political support applied once.
+- **Phase 8.1** — Standing orders (5 rule types: auto-approve
+  maintenance, auto-triage low-urgency events, auto-lobby on trust drop,
+  auto-issue operating bonds on cash crunch, auto-resolve specific event)
+  + quarter recap inline panel on Mission Control. Auto-actions logged
+  with cause=standingOrder for the trace UI.
 
 ## 🟡 Partial (more sub-phases to come)
 
@@ -64,8 +69,7 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 
 ## ⏳ Not started
 
-- **Phase 8** — Standing orders + decision-density management +
-  "why did this happen?" trace UI (8.6)
+- **Phase 8.6** — Trace UI ("why did this happen?" drawer on KPI click)
 - **Phase 9** — Full charts (Recharts), analytics polish
 - **Phase 10** — Onboarding briefing, polish, accessibility audit
 

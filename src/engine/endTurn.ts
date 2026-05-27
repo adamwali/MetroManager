@@ -30,6 +30,7 @@ import {
 import { tickProject } from './projects';
 import { ridershipModelFor } from './data';
 import { processEventsForQuarter } from './events/firing';
+import { applyStandingOrders } from './standingOrderActions';
 
 /**
  * Advance one quarter. Pure function — does not mutate input.
@@ -249,10 +250,16 @@ export function endTurn(state: GameState): GameState {
   // Process events AFTER tick (so triggers see new state). Skip if game ended.
   if (gameOver) return postTick;
   const eventsResult = processEventsForQuarter(postTick);
-  return {
+  const afterEvents: GameState = {
     ...eventsResult.state,
     actionLog: [...eventsResult.state.actionLog, ...eventsResult.newLogEntries],
   };
+
+  // Apply standing orders AFTER events fire — auto-actions can react to
+  // newly-fired events (e.g., autoTriageInboxBelowUrgency drains low-urgency
+  // events) and to current state metrics (cash/trust).
+  const ordersResult = applyStandingOrders(afterEvents);
+  return ordersResult.state;
 }
 
 /**

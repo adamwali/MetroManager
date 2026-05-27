@@ -5,6 +5,105 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 8.1: standing orders + quarter recap
+
+Player can now create rules that auto-resolve routine decisions, freeing
+attention for the events that actually need judgment. Mission Control
+gets an inline "what just changed" recap panel.
+
+**5 standing-order rule types per repo-owner decision:**
+
+| Rule | Trigger | Action |
+|---|---|---|
+| `autoApproveMaintenanceBelow` | Subsystem budget < $X | Bump to required tier |
+| `autoTriageInboxBelowUrgency` | Event urgency < N | Auto-resolve with first visible branch |
+| `autoLobbyOnTrustDrop` | Gov trust < threshold | Run chosen lobby action (subject to cooldown) |
+| `autoIssueOperatingBondsBelowCash` | Cash < $X | Issue $Y operating bond from chosen creditor |
+| `autoResolveEvent` | Inbox contains template id | Pick chosen branch |
+
+Each rule is on/off-toggleable + removable. Engine applies all enabled
+rules in order at endTurn (after event firing, before quarter_summary
+composes — so auto-actions are reflected in that quarter's recap).
+
+**Engine (`src/engine/standingOrderActions.ts`):**
+- `applyStandingOrders(state)` → iterates rules, returns updated state
+- Each rule type has its own handler
+- Auto-actions emit `player_action` log entries with
+  `cause: { kind: 'system', system: 'standingOrder' }` so the trace UI
+  (Phase 8.6) can identify them
+- CRUD helpers: `addStandingOrder`, `removeStandingOrder`,
+  `toggleStandingOrder`, `updateStandingOrder`
+
+**Wired into endTurn**: standing orders apply AFTER events fire. So if
+EV001 signal failure lands in inbox AND a `autoTriageInboxBelowUrgency`
+rule exists with min 90 and the event has urgency 80 — the order
+auto-resolves it before the player sees it.
+
+**Order of operations per endTurn:**
+1. Quarter advance
+2. Debt service / BOC drift / rating recompute
+3. Cash flow tick (allowance + fare in, opex/maint/debt service out)
+4. Subsystem decay
+5. Ridership shifts
+6. Project ticks (construction draws, transitions, ramp)
+7. Quarter summary log entry composed
+8. Game-over check (early return if triggered)
+9. Event firing + telegraph emit
+10. **Standing orders apply** ← Phase 8.1
+
+**Quarter recap component (`QuarterRecap.tsx`):**
+
+Inline on Mission Control. Reads the most recent `quarter_summary` entry
+and surfaces:
+- Top 5 changes ranked by absolute impact (cash flow, ridership, project
+  transitions, refi events)
+- All player_decision + player_action entries from that quarter
+- Tone-colored deltas (red negative, emerald positive, neutral gray)
+
+Standing-order auto-actions appear in the "Decisions + automations"
+section labeled `[Standing order]` so the player sees exactly what was
+automated.
+
+**UI (`StandingOrdersPanel.tsx`):**
+- Lives on Mission Control's right rail above the news rail
+- Toggle/remove buttons per rule
+- "+ Add rule" expands a form with rule-kind-specific inputs:
+  - Threshold sliders/inputs for maintenance + cash + trust + urgency
+  - Gov + action selects for lobby rules
+  - Creditor + amount selects for bond rules
+  - Event template id + choice id text inputs for resolve rules
+
+**Trace UI (Phase 8.6) deferred** — repo owner unsure on placement.
+Options listed in next session's question set:
+- Drawer-on-KPI-click (proposed, most contextual)
+- Dedicated /trace timeline page
+- Right-click "why?" context menu
+
+**14 new tests** cover:
+- Each rule type's trigger + action
+- Disabled rules are skipped
+- endTurn integration logs auto-actions with `cause.system='standingOrder'`
+- CRUD helpers (add/remove/toggle)
+
+**238 tests passing total.** Bundle 464KB JS / 139KB gzip (+13KB for
+standing orders + recap).
+
+**Strategic implications:**
+- Player can set "auto-issue $500M pension bond when cash < $0" to
+  ensure they never hit fiscal failure trigger
+- Insider sets "auto-lobby Ottawa with quietPitch when trust < 50" to
+  passively maintain the political ATM
+- Coalition Builder sets the same on all three govs
+- Auto-resolve-event lets player set "always lean-in on Crosslinx
+  construction inflation" without seeing the event each time
+
+**Risk of automation**: rules don't have variance, so the same rule
+firing the same way every quarter can create monotonous outcomes. Phase
+8.6 trace UI will help players debug "why did my agency die?" by walking
+back through auto-actions.
+
+---
+
 ## 2026-05-26 — Phase 7: Treasury (operating bonds + refi + dynamic rating)
 
 Treasury dashboard shipped with three new mechanics: operating bond
