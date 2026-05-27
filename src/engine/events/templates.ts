@@ -159,8 +159,8 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     },
     outlet: 'CityNews',
     actorCharacterId: 'c_liang',
-    headline: 'Mayor Liang demands "immediate action" on Eglinton overcrowding',
-    body: 'Photos of packed Line 5 platforms blanket the morning shows. Liang holds press conference outside Yonge-Eglinton; calls for "more cars, more often, now."',
+    headline: 'Mayor {actorFirstName} demands "immediate action" on Eglinton overcrowding',
+    body: 'Photos of packed Line 5 platforms blanket the morning shows. {actorName} holds press conference outside Yonge-Eglinton: "{ceoName} promised better. Riders deserve more cars, more often, now."',
     urgency: 65,
     choices: [
       {
@@ -822,8 +822,8 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     },
     outlet: 'Globe',
     actorCharacterId: 'c_hartwell',
-    headline: 'Premier announces "priority connection" to suburban riding',
-    body: "Premier's office quietly requests you prioritize a feasibility study for a low-ridership line connecting their riding. Province has political reasons; you have operational ones.",
+    headline: '{actorFirstName} announces "priority connection" to suburban riding',
+    body: "{actorName}'s office quietly calls. \"{ceoName}, I need you to prioritize a feasibility study for a low-ridership line connecting my caucus colleague's riding. Pal, you scratch my back, I scratch yours.\" Province has political reasons; you have operational ones.",
     urgency: 55,
     choices: [
       {
@@ -925,8 +925,8 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     trigger: { kind: 'scheduled', quarters: [8, 24, 40] },
     outlet: 'Globe',
     actorCharacterId: 'c_tremblay',
-    headline: 'Federal Transport Minister visiting GTHA, expects deliverables',
-    body: 'Minister scheduling a 3-day visit. Photo ops, ribbon cuttings, expectations of "concrete federal-transit success stories" they can announce.',
+    headline: '{actorName} visiting GTHA, expects deliverables',
+    body: '{actorFirstName} is scheduling a 3-day visit. She wants photo ops, ribbon cuttings, expectations of "concrete federal-transit success stories" she can announce. Her briefing book will be heavy on cost-per-rider and climate metrics — typical Tremblay.',
     urgency: 50,
     telegraph: {
       headline: 'Minister staff scoping GTHA visit for next quarter',

@@ -75,9 +75,17 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
     template.actorCharacterId !== undefined
       ? state.characters[template.actorCharacterId]
       : undefined;
-  // CEO name interpolation: replace {ceoName} with the player's chosen name
-  const interpolate = (text: string): string =>
-    text.replace(/\{ceoName\}/g, state.ceo.name);
+  // CEO name + actor name interpolation. Player feedback: events should
+  // feel personal. Replaces {ceoName}, {actorName}, and {actorFirstName}.
+  const interpolate = (text: string): string => {
+    let result = text.replace(/\{ceoName\}/g, state.ceo.name);
+    if (actor) {
+      result = result.replace(/\{actorName\}/g, actor.name);
+      const first = actor.name.split(' ')[0] ?? actor.name;
+      result = result.replace(/\{actorFirstName\}/g, first);
+    }
+    return result;
+  };
   const headline = interpolate(template.headline);
   const body = interpolate(template.body);
 

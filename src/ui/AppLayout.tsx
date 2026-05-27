@@ -132,14 +132,14 @@ export function AppLayout() {
             {!gameOver && <EndTurnButton />}
           </div>
         </div>
-        <nav className="border-t border-neutral-100 px-2 flex flex-wrap gap-x-1 text-xs">
+        <nav className="border-t border-neutral-100 px-2 flex flex-wrap gap-x-1 text-xs overflow-x-auto">
           {dashboards.map((d) => (
             <NavLink
               key={d.to}
               to={d.to}
               end={d.end}
               className={({ isActive }) =>
-                `px-3 py-2 border-b-2 transition-colors inline-flex items-center gap-2 ${
+                `px-2 sm:px-3 py-2 border-b-2 transition-colors inline-flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
                   isActive
                     ? 'border-neutral-800 text-neutral-900 font-medium'
                     : 'border-transparent text-neutral-500 hover:text-neutral-800'

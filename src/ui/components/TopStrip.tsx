@@ -45,7 +45,7 @@ export function TopStrip() {
     cashBalance < 0 ? 'critical' : cashBalance < 500 ? 'warning' : 'neutral';
 
   return (
-    <div className="flex flex-wrap items-stretch gap-4 px-4 py-3">
+    <div className="flex flex-wrap items-stretch gap-3 sm:gap-4 px-3 sm:px-4 py-3">
       {/* GROUP 1: Financial */}
       <Section label="Financial">
         <Kpi
@@ -170,11 +170,15 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex-1 min-w-fit">
+    <div className="flex-1 min-w-full sm:min-w-fit">
       <div className="text-[9px] uppercase tracking-wider text-neutral-400 font-semibold mb-1 px-0.5">
         {label}
       </div>
-      <div className={`grid gap-2 ${cols === 1 ? '' : cols === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'}`}>
+      <div
+        className={`grid gap-2 ${
+          cols === 1 ? '' : cols === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'
+        }`}
+      >
         {children}
       </div>
     </div>
