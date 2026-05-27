@@ -140,6 +140,16 @@ export function tickProject(
     };
   }
   if (p.state === 'under_construction') {
+    // Phase 10: paused projects don't tick. Forecast opening shifts +1Q each
+    // paused quarter (you lose the time anyway). Funding stays committed.
+    if (p.paused === true) {
+      return {
+        project: { ...p, forecastOpenAt: quarter((p.forecastOpenAt as unknown as number) + 1) },
+        drawFromFunding: cash(0),
+        primaryAgencyDelta: 0,
+        cannibalizationDeltas: {},
+      };
+    }
     const result = tickConstructingProject(p, currentQuarter, engineers, crosslinxLeverage);
     return {
       project: result.project,

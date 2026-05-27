@@ -368,6 +368,26 @@ export function reduceProjectScope(
   };
 }
 
+/**
+ * Phase 10: pause / resume a project mid-construction.
+ * Paused projects don't burn cash or advance, but forecastOpenAt slips +1Q
+ * per paused quarter. Use for cash-crunch breathing room without cancelling.
+ */
+export function toggleProjectPause(state: GameState, catalogProjectId: string): GameState {
+  const idx = state.projects.findIndex(
+    (p) => p.state === 'under_construction' && p.templateId === catalogProjectId,
+  );
+  if (idx === -1) return state;
+  const project = state.projects[idx]!;
+  if (project.state !== 'under_construction') return state;
+  return {
+    ...state,
+    projects: state.projects.map((p, i) =>
+      i === idx ? { ...project, paused: !project.paused } : p,
+    ),
+  };
+}
+
 export function rejectProject(state: GameState, catalogProjectId: string): GameState {
   return {
     ...state,

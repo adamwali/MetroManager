@@ -17,6 +17,7 @@ import {
   type FinancingApproach,
   type FinancingOffer,
   type ConstructingProject,
+  type OperatingProject,
   type Project,
 } from '@/types/projects';
 import {
@@ -168,17 +169,7 @@ function ProjectRow({
       )}
 
       {project.state === 'operating' && (
-        <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-          <Stat label="Opened" value={quarterLabel(project.openedAt as unknown as number)} />
-          <Stat
-            label="Daily riders (current)"
-            value={formatRiders(project.currentDailyRiders as unknown as number)}
-          />
-          <Stat
-            label="Final cost"
-            value={formatMoney(project.finalCost as unknown as number)}
-          />
-        </div>
+        <OperatingDetail project={project} currentQ={currentQ} />
       )}
     </div>
   );
@@ -193,6 +184,7 @@ function UnderConstructionDetail({
 }) {
   const accelerate = useGameStore((s) => s.accelerateProject);
   const reduceScope = useGameStore((s) => s.reduceProjectScope);
+  const togglePause = useGameStore((s) => s.toggleProjectPause);
   const cashOnHand = useGameStore((s) => s.state.cash.balance as unknown as number);
   const spent = project.spent as unknown as number;
   const budget = project.totalBudget as unknown as number;
@@ -257,13 +249,34 @@ function UnderConstructionDetail({
       </div>
 
       {/* Levers */}
+      {project.paused && (
+        <div className="rounded border-2 border-neutral-400 bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700">
+          ⏸ Paused — no cash burn, no progress. Opening date slips each quarter. Resume below.
+        </div>
+      )}
       <div className="flex flex-wrap gap-2 text-xs">
         <button
           type="button"
-          onClick={() => accelerate(project.templateId, 2)}
-          disabled={!canAccelerate}
+          onClick={() => togglePause(project.templateId)}
           className={`rounded-md border px-3 py-1.5 font-medium ${
-            canAccelerate
+            project.paused
+              ? 'border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+              : 'border-neutral-400 bg-neutral-50 text-neutral-700 hover:bg-neutral-100'
+          }`}
+          title={
+            project.paused
+              ? 'Resume the project. Funding draws restart next quarter.'
+              : 'Pause the project. No cash burn this quarter, but opening date slips.'
+          }
+        >
+          {project.paused ? '▶ Resume' : '⏸ Pause'}
+        </button>
+        <button
+          type="button"
+          onClick={() => accelerate(project.templateId, 2)}
+          disabled={!canAccelerate || project.paused === true}
+          className={`rounded-md border px-3 py-1.5 font-medium ${
+            canAccelerate && !project.paused
               ? 'border-blue-600 bg-blue-50 text-blue-800 hover:bg-blue-100'
               : 'border-neutral-300 bg-neutral-50 text-neutral-400 cursor-not-allowed'
           }`}
@@ -274,7 +287,12 @@ function UnderConstructionDetail({
         <button
           type="button"
           onClick={() => reduceScope(project.templateId)}
-          className="rounded-md border border-amber-600 bg-amber-50 px-3 py-1.5 font-medium text-amber-800 hover:bg-amber-100"
+          disabled={project.paused === true}
+          className={`rounded-md border px-3 py-1.5 font-medium ${
+            project.paused
+              ? 'border-neutral-300 bg-neutral-50 text-neutral-400 cursor-not-allowed'
+              : 'border-amber-600 bg-amber-50 text-amber-800 hover:bg-amber-100'
+          }`}
           title={`Cut scope: refund ${formatMoney(scopeRefund)} cash, opening 2Q earlier, ridership impact -30%`}
         >
           ✂ Cut scope (refund {formatMoney(scopeRefund)}, -30% riders)
@@ -284,11 +302,74 @@ function UnderConstructionDetail({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function OperatingDetail({
+  project,
+  currentQ,
+}: {
+  project: OperatingProject;
+  currentQ: number;
+}) {
+  const entry = catalogEntry(project.templateId);
+  const alignment = entry?.alignments.find((a) => a.id === project.chosenAlignment);
+  const openedAt = project.openedAt as unknown as number;
+  const quartersOpen = currentQ - openedAt;
+  const fullRamp = alignment?.fullRidership ?? 0;
+  const currentRiders = project.currentDailyRiders as unknown as number;
+  const rampPct = fullRamp > 0 ? Math.min(100, (currentRiders / fullRamp) * 100) : 0;
+  const finalCost = project.finalCost as unknown as number;
+  const baseCost = entry?.baseCostM ?? finalCost;
+  const costVariancePct = baseCost > 0 ? ((finalCost - baseCost) / baseCost) * 100 : 0;
+  const costTone = costVariancePct > 10 ? 'text-red-700' : costVariancePct < -5 ? 'text-emerald-700' : 'text-neutral-700';
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+        <Stat
+          label="Opened"
+          value={`${quarterLabel(openedAt)} · ${quartersOpen}Q ago`}
+        />
+        <Stat
+          label="Daily riders"
+          value={formatRiders(currentRiders)}
+          {...(fullRamp > 0 ? { caption: `of ${formatRiders(fullRamp)} full ramp` } : {})}
+        />
+        <Stat label="Final cost" value={formatMoney(finalCost)} />
+        <Stat
+          label="vs forecast"
+          value={`${costVariancePct > 0 ? '+' : ''}${costVariancePct.toFixed(0)}%`}
+          tone={costTone}
+        />
+      </div>
+      {fullRamp > 0 && (
+        <div>
+          <div className="flex justify-between text-[10px] text-neutral-500 mb-1">
+            <span>Ramp progress</span>
+            <span>{rampPct.toFixed(0)}% of full ramp</span>
+          </div>
+          <div className="h-2 rounded bg-neutral-100 overflow-hidden">
+            <div className="h-full bg-emerald-500/70" style={{ width: `${rampPct}%` }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  caption,
+  tone,
+}: {
+  label: string;
+  value: string;
+  caption?: string;
+  tone?: string;
+}) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
-      <div className="num mt-0.5 text-sm font-semibold">{value}</div>
+      <div className={`num mt-0.5 text-sm font-semibold ${tone ?? 'text-neutral-900'}`}>{value}</div>
+      {caption && <div className="text-[10px] text-neutral-400 mt-0.5">{caption}</div>}
     </div>
   );
 }

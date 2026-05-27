@@ -16,6 +16,7 @@ import {
   proposeProject,
   reduceProjectScope,
   rejectProject,
+  toggleProjectPause,
   type FinancingSelection,
 } from '@engine/projectActions';
 import { executePoliticalAction } from '@engine/politicalActions';
@@ -110,6 +111,7 @@ export interface GameStore {
   rejectProject: (catalogProjectId: string) => void;
   accelerateProject: (catalogProjectId: string, quartersFaster: number) => void;
   reduceProjectScope: (catalogProjectId: string) => void;
+  toggleProjectPause: (catalogProjectId: string) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
   /** Treasury actions (Phase 7). */
@@ -328,6 +330,14 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     reduceProjectScope: (catalogProjectId) => {
       const next = reduceProjectScope(get().state, catalogProjectId);
+      if (next === get().state) return;
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    toggleProjectPause: (catalogProjectId) => {
+      const next = toggleProjectPause(get().state, catalogProjectId);
       if (next === get().state) return;
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)

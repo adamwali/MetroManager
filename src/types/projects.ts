@@ -240,6 +240,8 @@ export interface ConstructingProject {
   /** Capital financing accepted at break-ground. Inherited projects get a synthetic record. */
   financing: AcceptedFinancing[];
   perProject: PerProjectVars;
+  /** Phase 10: project pause flag. Paused projects don't draw funding or advance opening. */
+  paused?: boolean;
 }
 
 /** A project that has opened. Contributes ridership and LVC revenue. */
