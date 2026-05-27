@@ -2092,6 +2092,231 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     ],
   },
 
+  // EV050 — TTC director quits (fires when c_ttc_director.tolerance reaches 0)
+  // Deferred to Phase 6.2.3 — currently tolerance just bottoms out.
+
+  // EV051 — Whistleblower disclosure on internal practices
+  {
+    id: 'EV051_whistleblower',
+    category: 'auditor_oversight',
+    trigger: {
+      kind: 'random',
+      baseWeight: 3,
+      cooldownQuarters: 24,
+    },
+    outlet: 'Globe',
+    headline: 'Anonymous staff complaint claims "{ceoName} hides budget overruns"',
+    body: 'A senior staffer has filed a complaint with the Auditor General citing budget reporting irregularities. The Globe wants comment by 6PM. Public denial protects reputation but invites scrutiny. Admission is honest but costly.',
+    urgency: 92,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'deny',
+        label: 'Deny categorically; demand retraction',
+        tradeoff: '+3 board (firmness), -8 templates (auditor scrutiny), -5 approval',
+        effects: [
+          { kind: 'boardConfidence', delta: 3, reason: 'Strong denial of whistleblower' },
+          { kind: 'templates', delta: -8 },
+          { kind: 'publicApproval', delta: -5 },
+        ],
+      },
+      {
+        id: 'commission_audit',
+        label: 'Commission third-party audit; commit to disclosure',
+        tradeoff: '-$15M cash, -3 board short-term, +8 approval, +5 each gov trust',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+          { kind: 'boardConfidence', delta: -3, reason: 'Self-initiated audit signals weakness' },
+          { kind: 'publicApproval', delta: 8 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+        ],
+      },
+      {
+        id: 'admit_partial',
+        label: 'Admit some issues; promise reforms',
+        tradeoff: '-5 board, +3 approval, neutral else',
+        effects: [
+          { kind: 'boardConfidence', delta: -5, reason: 'Admitted partial mismanagement' },
+          { kind: 'publicApproval', delta: 3 },
+        ],
+      },
+    ],
+  },
+
+  // EV052 — Climate disaster (heat dome triggers infra issues)
+  {
+    id: 'EV052_extremeWeatherTrack',
+    category: 'climate_environmental',
+    trigger: {
+      kind: 'random',
+      baseWeight: 4,
+      cooldownQuarters: 12,
+    },
+    outlet: 'CBC',
+    headline: 'Atmospheric river damages subway tunnel ventilation',
+    body: '24-hour deluge overwhelms drainage at three downtown stations. Tunnels are flooded; ventilation electrical damaged. Service restored after 5 days but ridership trust hits.',
+    urgency: 80,
+    choices: [
+      {
+        id: 'emergency_climate_capex',
+        label: 'Commit $300M to climate-resilience capex',
+        tradeoff: '-$300M cash, +6 board (foresight), +6 approval, +5 reliability',
+        effects: [
+          { kind: 'cash', deltaM: -300 },
+          { kind: 'boardConfidence', delta: 6, reason: 'Committed to climate resilience' },
+          { kind: 'publicApproval', delta: 6 },
+          { kind: 'reliability', agency: 'ttc', delta: 5 },
+        ],
+      },
+      {
+        id: 'patch_critical',
+        label: 'Patch the critical systems only',
+        tradeoff: '-$50M cash, neutral elsewhere, recurrence risk queued',
+        effects: [
+          { kind: 'cash', deltaM: -50 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 6,
+            cause: 'Patched climate damage breaks down again',
+            effects: [{ kind: 'reliability', agency: 'ttc', delta: -8 }],
+          },
+        ],
+      },
+    ],
+  },
+
+  // EV053 — Disruptor archetype gaffe
+  {
+    id: 'EV053_disruptorGaffe',
+    category: 'internal_politics',
+    trigger: {
+      kind: 'random',
+      baseWeight: 5,
+      predicate: { kind: 'ceoArchetype', archetype: 'disruptor' },
+      cooldownQuarters: 16,
+    },
+    outlet: 'CityNews',
+    headline: '"{ceoName}" caught on hot mic mocking provincial caucus',
+    body: 'Audio leaks of you in a closed-door meeting calling Queen\'s Park "performative theater." Hartwell\'s office wants an apology. Disruptor instincts say lean in.',
+    urgency: 78,
+    choices: [
+      {
+        id: 'apologize',
+        label: 'Apologize publicly',
+        tradeoff: '+5 QP trust, -3 approval (looks weak)',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+      {
+        id: 'double_down',
+        label: 'Double down — "I stand by every word"',
+        tradeoff: '-10 QP trust, +8 approval (authenticity), +3 board',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -10 },
+          { kind: 'publicApproval', delta: 8 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Disruptor authentic moment' },
+        ],
+      },
+      {
+        id: 'pivot_to_substance',
+        label: 'Pivot to substantive critique',
+        tradeoff: '-2 QP trust, +4 approval, neutral else',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -2 },
+          { kind: 'publicApproval', delta: 4 },
+        ],
+      },
+    ],
+  },
+
+  // EV054 — Award win (positive narrative)
+  {
+    id: 'EV054_internationalAward',
+    category: 'internal_politics',
+    trigger: {
+      kind: 'conditional',
+      predicate: {
+        kind: 'and',
+        predicates: [
+          { kind: 'reliability', agency: 'ttc', gte: 75 },
+          { kind: 'board', gte: 65 },
+        ],
+      },
+      cooldownQuarters: 20,
+    },
+    outlet: 'Globe',
+    headline: 'GTTA named "Most Improved Transit Authority" at international conference',
+    body: 'UITP recognized your reliability gains. The board\'s thrilled. The talent pipeline notices. The pension funds notice.',
+    urgency: 30,
+    choices: [
+      {
+        id: 'accept_graciously',
+        label: 'Accept; speak about team',
+        tradeoff: '+8 board, +5 approval, +5 templates (talent flows in)',
+        effects: [
+          { kind: 'boardConfidence', delta: 8, reason: 'International award won' },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'templates', delta: 5 },
+        ],
+      },
+    ],
+  },
+
+  // EV055 — Equity pressure for Scarborough/equity-deserving areas
+  {
+    id: 'EV055_equityPressure',
+    category: 'demographics_community',
+    trigger: {
+      kind: 'random',
+      baseWeight: 4,
+      cooldownQuarters: 18,
+    },
+    outlet: 'CBC',
+    headline: 'Equity advocates: "GTTA prioritizes wealthy ridings"',
+    body: 'A coalition of equity-deserving community groups has produced a study showing 73% of capital spend goes to median-income-above-average wards. They want a public commitment to balance.',
+    urgency: 60,
+    choices: [
+      {
+        id: 'commit_equity',
+        label: 'Public equity commitment + dedicated funding',
+        tradeoff: '+10 approval, +5 board, -$50M/yr to equity-deserving services',
+        effects: [
+          { kind: 'publicApproval', delta: 10 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Equity commitment well received' },
+          { kind: 'opex', agency: 'ttc', deltaM: 12 },
+        ],
+      },
+      {
+        id: 'data_response',
+        label: 'Counter with own data; offer dialogue',
+        tradeoff: '+2 approval, -3 templates (no real change)',
+        effects: [
+          { kind: 'publicApproval', delta: 2 },
+          { kind: 'templates', delta: -3 },
+        ],
+      },
+      {
+        id: 'dismiss',
+        label: 'Dismiss as misunderstanding priorities',
+        tradeoff: '-10 approval, -5 City Hall trust, queued advocacy backlash',
+        effects: [
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -5 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 3,
+            cause: 'Equity advocacy mobilizes',
+            effects: [{ kind: 'publicApproval', delta: -5 }],
+          },
+        ],
+      },
+    ],
+  },
+
   // EV049 — Mayor pre-election photo op
   {
     id: 'EV049_mayorPhotoOp',
