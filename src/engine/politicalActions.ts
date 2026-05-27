@@ -161,12 +161,49 @@ const GOV_LABEL: Record<GovernmentId, string> = {
 // Actions
 // ============================================================================
 
+/**
+ * Phase 6.2.1: shift the relationship score on the first cabinet character
+ * for a government. Mirrors the gov-level trust shift so lobby actions feel
+ * personal — "you helped Hartwell" not "Queen's Park warmed up."
+ */
+function shiftCabinetRelationship(state: GameState, gov: GovernmentId, delta: number): GameState {
+  const cabinetIds = state.politics[gov].cabinetCharacterIds;
+  if (cabinetIds.length === 0) return state;
+  const targetId = cabinetIds[0]!;
+  const character = state.characters[targetId];
+  if (!character) return state;
+  const newRel = Math.max(
+    0,
+    Math.min(100, (character.relationship as unknown as number) + delta),
+  );
+  return {
+    ...state,
+    characters: {
+      ...state.characters,
+      [targetId]: {
+        ...character,
+        relationship: score(newRel),
+        interactions: [
+          ...character.interactions,
+          {
+            quarter: state.quarter,
+            kind: 'lobby_privateMeeting',
+            delta,
+            note: `lobby action shifted relationship by ${delta}`,
+          },
+        ],
+      },
+    },
+  };
+}
+
 export function publicLobby(state: GameState, gov: GovernmentId): PoliticalActionResult {
   if (!isActionEligible(state, gov, 'publicLobby')) {
     return { state, logEntry: null, outcomeSummary: 'Action unavailable' };
   }
   let s = shiftTrust(state, gov, 6);
   s = shiftPublicApproval(s, -5);
+  s = shiftCabinetRelationship(s, gov, 4); // public lobbying is showier
   s = setCooldown(s, gov, 'publicLobby');
   const summary = `Public lobby ${GOV_LABEL[gov]} → +6 trust, -5 public approval`;
   const r = appendLog(s, 'publicLobby', gov, summary);
@@ -178,6 +215,7 @@ export function quietPitch(state: GameState, gov: GovernmentId): PoliticalAction
     return { state, logEntry: null, outcomeSummary: 'Action unavailable' };
   }
   let s = shiftTrust(state, gov, 3);
+  s = shiftCabinetRelationship(s, gov, 6); // private = builds personal relationship more
   s = setCooldown(s, gov, 'quietPitch');
   const summary = `Quiet pitch ${GOV_LABEL[gov]} → +3 trust (no public optics)`;
   const r = appendLog(s, 'quietPitch', gov, summary);
@@ -199,6 +237,7 @@ export function adHocFunding(state: GameState, gov: GovernmentId): PoliticalActi
     },
   };
   s = shiftTrust(s, gov, -8);
+  s = shiftCabinetRelationship(s, gov, -6); // burning the contact for cash
   s = setCooldown(s, gov, 'adHocFunding');
   const summary = `Ad-hoc funding ${GOV_LABEL[gov]} → +$${cashM}M cash, -8 trust`;
   const r = appendLog(s, 'adHocFunding', gov, summary);
@@ -217,6 +256,7 @@ export function callInFavor(state: GameState, gov: GovernmentId): PoliticalActio
     },
   };
   s = shiftTrust(s, gov, 5);
+  s = shiftCabinetRelationship(s, gov, 8); // favor is intimate — big relationship boost
   s = setCooldown(s, gov, 'callInFavor');
   const summary = `Called in favor with ${GOV_LABEL[gov]} → +$400M cash, +5 trust (limited use)`;
   const r = appendLog(s, 'callInFavor', gov, summary);
