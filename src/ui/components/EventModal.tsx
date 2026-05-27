@@ -30,6 +30,10 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
   if (!template) return null;
 
   const choices = visibleChoices(state, template);
+  const actor =
+    template.actorCharacterId !== undefined
+      ? state.characters[template.actorCharacterId]
+      : undefined;
 
   const handleChoice = (choiceId: string) => {
     applyEventChoice(templateId, choiceId);
@@ -48,6 +52,17 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
             )}
             <h1 className="text-lg font-semibold leading-tight">{template.headline}</h1>
           </div>
+          {actor && (
+            <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50/40 px-2.5 py-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-blue-700 font-semibold">
+                Via
+              </span>
+              <span className="text-xs font-semibold text-neutral-800">{actor.name}</span>
+              <span className="text-[10px] text-neutral-500">
+                relationship {(actor.relationship as unknown as number).toFixed(0)}/100
+              </span>
+            </div>
+          )}
           <p className="mt-2 text-sm text-neutral-600 leading-relaxed">{template.body}</p>
         </header>
         <div className="px-6 py-4">

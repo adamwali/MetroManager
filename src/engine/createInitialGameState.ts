@@ -4,6 +4,7 @@ import { INITIAL_GAME_OVER_COUNTERS } from '@/types/gameOver';
 import { bp, cash, quarter, riders, score, signed } from '@/types/scalars';
 import { createRngSeeds } from './rng';
 import { ARCHETYPE_CONFIGS } from './archetypes';
+import { INITIAL_CHARACTERS } from './characterRoster';
 import { ARCHETYPE_OPEX_MULTIPLIER } from './policies';
 
 /**
@@ -193,7 +194,7 @@ export function createInitialGameState(
         perProject: { sitePrep: score(40), megaContract: true, settlementPremium: score(10) },
       },
     ],
-    characters: {},
+    characters: { ...INITIAL_CHARACTERS },
     inbox: [],
     delayedQueue: [],
     standingOrders: [],

@@ -5,6 +5,86 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 6.2: characters become real (Tremblay / Hartwell / Liang + 3 directors)
+
+Six characters with bios, doctrines, relationship scores. Events tagged
+with actor IDs. PoliticalAffairs dashboard shows "Your contact" panel
+per government; EventModal shows actor name + relationship score.
+
+**Character roster (`src/engine/characterRoster.ts`):**
+
+| ID | Name | Role | Government / Agency | Doctrine | Personality |
+|---|---|---|---|---|---|
+| c_tremblay | Marie-Claude Tremblay | Federal Transport Minister | Ottawa | (n/a — politician) | Technocratic, climate-focused, will grill on cost-per-rider |
+| c_hartwell | David Hartwell | Provincial Transportation Minister | Queen's Park | (n/a) | Deals guy, "pal" energy, wants suburban stations in caucus ridings |
+| c_liang | Kenneth Liang | Mayor | City Hall | (n/a) | Responsive to local pressure, project-driven, easiest to negotiate with on concrete relief |
+| c_ttc_director | Priya Ramanathan | TTC COO | TTC | reliabilityEngineer | 22yr ops, will quit before reliability drops below 50 |
+| c_go_director | James Okafor | GO Director | GO | ridershipMaximizer | Pushes frequency + electrification, frustrated by underinvestment |
+| c_up_director | Sarah Chen | UP Director | UP | costDiscipline | Hired from Madrid airport rail, premium-margin focus |
+
+Each has 2-paragraph bio, role-appropriate doctrine, opening relationship
+score (50 ministers, 60 directors), and 1-2 "wants from you" entries
+(openAsks).
+
+**Event actor binding** — 5 events tagged so EventModal can attribute:
+- EV001 signal failure → c_ttc_director (Ramanathan delivers the news)
+- EV003 mayor crowding → c_liang
+- EV016 premier pet project → c_hartwell
+- EV017 mayor fare freeze → c_liang
+- EV018 federal minister visit → c_tremblay
+
+Other 35+ events stay actor-unbound for now; Phase 3.3 will do a full
+actor sweep.
+
+**UI (`CharacterCard.tsx`):**
+- Compact card: name + role + relationship descriptor chip
+  (aligned / cordial / neutral / frosty / hostile)
+- Full card: bio paragraphs + openAsks list
+- Color-coded by relationship score
+
+**PoliticalAffairs dashboard** now shows a "Your contact" subpanel per
+government — first cabinet character ID is rendered with name + first
+bio paragraph. Players see Hartwell on the Queen's Park card, not just
+"Queen's Park".
+
+**EventModal** shows actor when present: blue badge "Via [Name]
+relationship X/100" between outlet and headline.
+
+**Engine integration:**
+- `createInitialGameState` populates `characters` from INITIAL_CHARACTERS
+- Save/load round-trips characters correctly (existing JSON path)
+- No engine logic on character relationships yet — relationship score
+  doesn't affect anything mechanically (Phase 6.2.1 wires this)
+
+**12 new tests:**
+- Roster has 6 characters, 3 ministers, 3 directors
+- All characters have non-trivial bios
+- Tremblay → ottawa, Hartwell → queensPark, Liang → cityHall
+- Directors have doctrines
+- createInitialGameState populates characters
+- Characters survive endTurn + save/load round-trip
+- Event actor tagging (EV017→Liang etc.)
+
+**271 tests passing total.** Bundle 481KB JS / 144KB gzip (+5KB).
+
+**Strategic implications (mostly narrative for Phase 6.2):**
+- Events feel less anonymous — "Hartwell calls" reads differently than
+  "Queen's Park demands"
+- /political dashboard shows three named contacts you're managing
+- Insider's political ATM has faces now (Hartwell + Tremblay's
+  relationships should grow with positive lobby actions)
+
+**Deferred to Phase 6.2.1:**
+- Relationship score updates when you lobby (currently engine-side
+  trust changes happen but per-character relationships are static)
+- Director tolerance regen / consumption (the type field exists but
+  no mechanic updates it)
+- Character-specific event variants (Hartwell delivers EV016 with
+  different copy than a generic minister)
+- More character actors on remaining 35+ events
+
+---
+
 ## 2026-05-26 — Phase 6.3 + 5.3 + bug-bash (renegotiation + replacement events + polish)
 
 Repo-owner audit found 5 critical empty-calorie or missing-mechanic

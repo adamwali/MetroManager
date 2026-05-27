@@ -5,6 +5,7 @@ import {
   isActionEligible,
 } from '@engine/politicalActions';
 import type { GovernmentId, PoliticalActionKind } from '@/types/politics';
+import type { PoliticalCharacter } from '@/types/characters';
 import {
   describeTrust,
   formatPct,
@@ -62,6 +63,13 @@ export function PoliticalAffairs() {
           const meta = GOV_META[govId];
           const trust = gov.trust as unknown as number;
           const electionIn = (gov.nextElectionAt as unknown as number) - currentQ;
+          // Find the cabinet character for this gov (first cabinet id)
+          const cabinetCharacter =
+            gov.cabinetCharacterIds.length > 0
+              ? (state.characters[gov.cabinetCharacterIds[0]!] as
+                  | PoliticalCharacter
+                  | undefined)
+              : undefined;
           return (
             <article
               key={govId}
@@ -70,6 +78,17 @@ export function PoliticalAffairs() {
               <header className="border-b border-neutral-100 pb-3">
                 <h2 className="text-base font-semibold">{meta.label}</h2>
                 <p className="mt-0.5 text-xs text-neutral-500">{meta.subtitle}</p>
+                {cabinetCharacter && (
+                  <div className="mt-2 rounded-md border border-neutral-100 bg-neutral-50/60 p-2">
+                    <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                      Your contact
+                    </div>
+                    <div className="mt-0.5 text-sm font-semibold">{cabinetCharacter.name}</div>
+                    <p className="mt-1 text-[11px] text-neutral-600 leading-snug">
+                      {cabinetCharacter.bio[0]}
+                    </p>
+                  </div>
+                )}
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <div className="text-[10px] uppercase tracking-wider text-neutral-500">

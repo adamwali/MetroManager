@@ -69,11 +69,12 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 - **Phase 5.x** — Maintenance + fare + frequency shipped. Security /
   cleanliness / accessibility per-agency sliders → Phase 5.2.
 - **Phase 6.x** — Lobby + ad-hoc + favor shipped (6.1). Allowance
-  renegotiation events at Y4/Y8/Y12 shipped (6.3 — EV041 with
-  outcome preview, 4 outcome tiers, strategic branches). Character
-  relationships per gov (cabinet IDs exist as data, no engine logic)
-  → Phase 6.2. Election campaign mechanics, lobby outcome variance →
-  Phase 6.2.
+  renegotiation events at Y4/Y8/Y12 shipped (6.3). Characters shipped
+  (6.2 — Tremblay/Hartwell/Liang ministers + 3 agency directors with
+  bios, doctrines, relationship scores; events tagged with actor IDs;
+  PoliticalAffairs dashboard shows "Your contact" per gov; EventModal
+  shows actor + relationship). Election campaign mechanics, lobby
+  outcome variance, character tolerance regen → Phase 6.2.1.
 - **Phase 5.x** — Maintenance + fare + frequency shipped (5.1).
   Replacement events when reliability ≤30 shipped (5.3 — EV042 with
   emergency capex / defer / federal relief). Security / cleanliness /
@@ -89,7 +90,8 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 These are defined in state/types but don't drive gameplay yet. Each has
 an explicit phase pointer.
 
-- `Characters: {}` — empty, Phase 6.2
+- ~~`Characters: {}`~~ ✅ shipped (Phase 6.2 — 6 starting characters
+  with bios, roles, relationships)
 - ~~`StandingOrders: []`~~ ✅ shipped (Phase 8.1 — 5 rule types)
 - Board `recentComponents`, `warningActive` — Phase 8.7 polish
 - ~~`OperatingAllowance.controls`~~ ✅ populated by Phase 6.3
