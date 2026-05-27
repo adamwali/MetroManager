@@ -76,6 +76,48 @@ function deltaForSubsystem(
   return 1.0; // catch-up
 }
 
+/**
+ * Forecast subsystem condition `quartersOut` quarters into the future given a
+ * proposed maintenance budget. Used by AgencyDashboard sliders to preview
+ * "if I leave this at $X, condition will be Y in 4Q".
+ *
+ * Returns:
+ *   - quarterlyDelta: condition change per quarter at this budget
+ *   - conditionInNQuarters: projected condition (clamped 0-100)
+ *   - tier: spending tier label
+ *   - cashDeltaPerQM: budget delta vs current ($M/Q, signed)
+ */
+export interface MaintenanceForecast {
+  quarterlyDelta: number;
+  conditionInNQuarters: number;
+  tier: 'underspend' | 'required' | 'preventive' | 'catchUp';
+  cashDeltaPerQM: number;
+}
+
+export function forecastMaintenance(
+  subsystemId: SubsystemId,
+  currentCondition: number,
+  currentBudgetM: number,
+  proposedBudgetM: number,
+  agencyId: 'ttc' | 'go' | 'up',
+  archetype: CeoArchetype = 'steadyOperator',
+  quartersOut = 4,
+): MaintenanceForecast {
+  const delta = deltaForSubsystem(
+    subsystemId,
+    proposedBudgetM as unknown as CashMillions,
+    agencyId,
+    archetype,
+  );
+  const projected = Math.max(0, Math.min(100, currentCondition + delta * quartersOut));
+  return {
+    quarterlyDelta: delta,
+    conditionInNQuarters: projected,
+    tier: maintenanceTier(proposedBudgetM, agencyId, archetype),
+    cashDeltaPerQM: proposedBudgetM - currentBudgetM,
+  };
+}
+
 export function decaySubsystems(
   agency: Agency,
   archetype: CeoArchetype = 'steadyOperator',

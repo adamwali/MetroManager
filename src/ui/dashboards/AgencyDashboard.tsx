@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '@state/gameStore';
-import { maintenanceTier, reliabilityScore, requiredMaintenanceFor } from '@engine/agencies';
+import {
+  forecastMaintenance,
+  maintenanceTier,
+  reliabilityScore,
+  requiredMaintenanceFor,
+} from '@engine/agencies';
 import {
   fareFreezeObligationBroken,
   forecastFarePolicy,
@@ -146,6 +151,9 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
               Total / Q
             </div>
             <div className="num text-sm font-semibold">{formatMoney(totalMaintenance)}</div>
+            <div className="num text-[10px] text-neutral-500">
+              {formatMoney(totalMaintenance * 4)}/yr · {formatMoney(required * agency.subsystems.length)} required
+            </div>
           </div>
         </header>
         <ul className="divide-y divide-neutral-200">
@@ -154,6 +162,27 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
             const budgetN = sub.maintenanceBudget as unknown as number;
             const tier = maintenanceTier(budgetN, agencyId, archetype);
             const tierStyle = TIER_STYLES[tier];
+            const forecast = forecastMaintenance(
+              sub.id,
+              conditionN,
+              budgetN,
+              budgetN,
+              agencyId,
+              archetype,
+              4,
+            );
+            const projectedSign =
+              forecast.conditionInNQuarters > conditionN
+                ? '+'
+                : forecast.conditionInNQuarters < conditionN
+                  ? ''
+                  : '';
+            const projectedTone =
+              forecast.conditionInNQuarters > conditionN
+                ? 'text-emerald-700'
+                : forecast.conditionInNQuarters < conditionN
+                  ? 'text-red-700'
+                  : 'text-neutral-500';
             return (
               <li key={sub.id} className="px-4 py-3">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
@@ -183,6 +212,14 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
                       <span>$0</span>
                       <span>{formatMoney(required)} (req)</span>
                       <span>{formatMoney(required * 3)}</span>
+                    </div>
+                    <div className={`mt-1 text-[11px] font-medium num ${projectedTone}`}>
+                      → {projectedSign}
+                      {(forecast.conditionInNQuarters - conditionN).toFixed(1)} condition in 4Q
+                      <span className="ml-1 text-neutral-500 font-normal">
+                        ({forecast.quarterlyDelta >= 0 ? '+' : ''}
+                        {forecast.quarterlyDelta.toFixed(2)}/Q)
+                      </span>
                     </div>
                   </div>
                   <div className="text-right num text-sm font-semibold">

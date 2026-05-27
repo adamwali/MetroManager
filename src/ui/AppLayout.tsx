@@ -11,6 +11,7 @@ import { TimeJumpPreview } from './components/TimeJumpPreview';
 import { NewGameModal } from './components/NewGameModal';
 import { SaveLoadModal } from './components/SaveLoadModal';
 import { GameOverScreen } from './components/GameOverScreen';
+import { SavedToast } from './components/SavedToast';
 
 interface DashboardLink {
   to: string;
@@ -169,6 +170,7 @@ export function AppLayout() {
           onLoad={() => setSaveLoad('load')}
         />
       )}
+      <SavedToast />
     </div>
   );
 }
