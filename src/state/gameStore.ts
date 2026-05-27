@@ -3,6 +3,7 @@ import { createInitialGameState } from '@engine/createInitialGameState';
 import { endTurn } from '@engine/endTurn';
 import { resolveEventChoice } from '@engine/events/firing';
 import {
+  setAccessibilityBudget,
   setCleanlinessBudget,
   setFarePolicy,
   setFrequencyPolicy,
@@ -16,6 +17,7 @@ import {
   proposeProject,
   reduceProjectScope,
   rejectProject,
+  setLvcCapex,
   toggleProjectPause,
   type FinancingSelection,
 } from '@engine/projectActions';
@@ -97,6 +99,7 @@ export interface GameStore {
   setFrequencyPolicy: (agencyId: AgencyId, policy: FrequencyPolicy) => void;
   setSecurityBudget: (agencyId: AgencyId, amountM: number) => void;
   setCleanlinessBudget: (agencyId: AgencyId, amountM: number) => void;
+  setAccessibilityBudget: (agencyId: AgencyId, amountM: number) => void;
   /** Project initiation flow (Phase 4). */
   proposeProject: (
     catalogProjectId: string,
@@ -112,6 +115,7 @@ export interface GameStore {
   accelerateProject: (catalogProjectId: string, quartersFaster: number) => void;
   reduceProjectScope: (catalogProjectId: string) => void;
   toggleProjectPause: (catalogProjectId: string) => void;
+  setLvcCapex: (catalogProjectId: string, capexPerStationM: number) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
   /** Treasury actions (Phase 7). */
@@ -292,6 +296,14 @@ export const useGameStore = create<GameStore>((set, get) => {
         .catch(() => set({ autosaveStatus: 'error' }));
     },
 
+    setAccessibilityBudget: (agencyId, amountM) => {
+      const next = setAccessibilityBudget(get().state, agencyId, amountM);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
     proposeProject: (catalogProjectId, alignmentId, stationQuality) => {
       const next = proposeProject(get().state, catalogProjectId, alignmentId, stationQuality);
       set({ state: next, autosaveStatus: 'saving' });
@@ -338,6 +350,14 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     toggleProjectPause: (catalogProjectId) => {
       const next = toggleProjectPause(get().state, catalogProjectId);
+      if (next === get().state) return;
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    setLvcCapex: (catalogProjectId, capexPerStationM) => {
+      const next = setLvcCapex(get().state, catalogProjectId, capexPerStationM);
       if (next === get().state) return;
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)

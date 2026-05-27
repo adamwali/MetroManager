@@ -373,6 +373,38 @@ export function reduceProjectScope(
  * Paused projects don't burn cash or advance, but forecastOpenAt slips +1Q
  * per paused quarter. Use for cash-crunch breathing room without cancelling.
  */
+/**
+ * Phase 10: set LVC capex per station for a proposed project.
+ * Locked at break-ground (when financing is accepted). LVC capex is added
+ * to project total cost; in return, project pays LVC revenue per quarter
+ * once operating (revenue = capex × stations × 0.015/Q ≈ 6%/yr ROI).
+ */
+export function setLvcCapex(
+  state: GameState,
+  catalogProjectId: string,
+  capexPerStationM: number,
+): GameState {
+  const idx = state.projects.findIndex(
+    (p) => p.state === 'proposed' && p.templateId === catalogProjectId,
+  );
+  if (idx === -1) return state;
+  const project = state.projects[idx]!;
+  if (project.state !== 'proposed') return state;
+  const safe = Math.max(0, Math.min(400, Math.round(capexPerStationM)));
+  const stationsCovered = project.chosenStationCount ?? 0;
+  return {
+    ...state,
+    projects: state.projects.map((p, i) =>
+      i === idx
+        ? {
+            ...project,
+            lvc: { capexPerStation: cash(safe), stationsCovered },
+          }
+        : p,
+    ),
+  };
+}
+
 export function toggleProjectPause(state: GameState, catalogProjectId: string): GameState {
   const idx = state.projects.findIndex(
     (p) => p.state === 'under_construction' && p.templateId === catalogProjectId,

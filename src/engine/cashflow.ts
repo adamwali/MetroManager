@@ -30,14 +30,18 @@ export function quarterlyOperatingExpense(
   agencies: Agencies,
   consultantAlignment = 0,
 ): CashMillions {
-  // Phase 5.2: security + cleanliness budgets now add to per-agency opex
-  const securityCleanliness =
-    (agencies.ttc.operatingParams.securityBudget as unknown as number) +
-    (agencies.ttc.operatingParams.cleanlinessBudget as unknown as number) +
-    (agencies.go.operatingParams.securityBudget as unknown as number) +
-    (agencies.go.operatingParams.cleanlinessBudget as unknown as number) +
-    (agencies.up.operatingParams.securityBudget as unknown as number) +
-    (agencies.up.operatingParams.cleanlinessBudget as unknown as number);
+  // Phase 5.2 + 5.4: security + cleanliness + accessibility budgets all
+  // fold into per-agency opex.
+  const serviceQualityTotal = (['ttc', 'go', 'up'] as const).reduce((acc, id) => {
+    const op = agencies[id].operatingParams;
+    return (
+      acc +
+      ((op.securityBudget as unknown as number) ?? 0) +
+      ((op.cleanlinessBudget as unknown as number) ?? 0) +
+      ((op.accessibilityBudget as unknown as number) ?? 0)
+    );
+  }, 0);
+  const securityCleanliness = serviceQualityTotal;
   const total =
     (agencies.ttc.lastQuarterOpex as unknown as number) +
     (agencies.go.lastQuarterOpex as unknown as number) +
@@ -45,6 +49,25 @@ export function quarterlyOperatingExpense(
     securityCleanliness;
   const alignmentMul = 1 - (consultantAlignment / 100) * 0.05;
   return cash(Math.round(total * alignmentMul));
+}
+
+/**
+ * Phase 10: quarterly LVC revenue from operating projects.
+ * Per spec, LVC capex × stations × 1.5%/Q yields land-value-capture revenue
+ * (ground leases, density bonuses, station-area development payments).
+ */
+export function quarterlyLvcRevenue(
+  projects: ReadonlyArray<{ state: string; lvc?: { capexPerStation: CashMillions; stationsCovered: number } }>,
+): CashMillions {
+  let total = 0;
+  for (const p of projects) {
+    if (p.state !== 'operating') continue;
+    if (!p.lvc) continue;
+    const capex = p.lvc.capexPerStation as unknown as number;
+    const stations = p.lvc.stationsCovered;
+    total += capex * stations * 0.015;
+  }
+  return cash(Math.round(total));
 }
 
 /** Sum of fare revenue this quarter across agencies. */

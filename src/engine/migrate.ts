@@ -3,6 +3,7 @@ import type { Agency } from '@/types/agency';
 import { cash, score, signed } from '@/types/scalars';
 import { INITIAL_CHARACTERS } from './characterRoster';
 import {
+  ACCESSIBILITY_BUDGET_BASELINE,
   CLEANLINESS_BUDGET_BASELINE,
   SECURITY_BUDGET_BASELINE,
 } from './agencies';
@@ -97,6 +98,10 @@ function migrateAgency(agency: Agency | undefined, id: 'ttc' | 'go' | 'up'): Age
         op.cleanlinessBudget !== undefined
           ? op.cleanlinessBudget
           : cash(CLEANLINESS_BUDGET_BASELINE[id]),
+      accessibilityBudget:
+        op.accessibilityBudget !== undefined
+          ? op.accessibilityBudget
+          : cash(ACCESSIBILITY_BUDGET_BASELINE[id]),
     },
   };
 }

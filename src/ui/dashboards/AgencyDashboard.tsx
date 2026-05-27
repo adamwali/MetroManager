@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 import {
+  ACCESSIBILITY_BUDGET_BASELINE,
   CLEANLINESS_BUDGET_BASELINE,
   SECURITY_BUDGET_BASELINE,
+  accessibilityCityHallDrift,
   cleanlinessApprovalDrift,
   forecastMaintenance,
   maintenanceTier,
@@ -57,6 +59,7 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
   const setFrequency = useGameStore((s) => s.setFrequencyPolicy);
   const setSecurity = useGameStore((s) => s.setSecurityBudget);
   const setCleanliness = useGameStore((s) => s.setCleanlinessBudget);
+  const setAccessibility = useGameStore((s) => s.setAccessibilityBudget);
   const agency = state.agencies[agencyId];
   const archetype = state.ceo.archetype;
   const reliability = reliabilityScore(agency);
@@ -234,7 +237,7 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
             </p>
           </div>
         </header>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <ServiceBudgetSlider
             label="Security"
             current={agency.operatingParams.securityBudget as unknown as number}
@@ -250,6 +253,14 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
             forecast={`${cleanlinessApprovalDrift(agency).toFixed(1)} approval/Q`}
             tone={cleanlinessApprovalDrift(agency) >= 0 ? 'positive' : 'negative'}
             onChange={(v) => setCleanliness(agencyId, v)}
+          />
+          <ServiceBudgetSlider
+            label="Accessibility (AODA)"
+            current={(agency.operatingParams.accessibilityBudget as unknown as number) ?? ACCESSIBILITY_BUDGET_BASELINE[agencyId]}
+            baseline={ACCESSIBILITY_BUDGET_BASELINE[agencyId]}
+            forecast={`${accessibilityCityHallDrift(agency).toFixed(1)} City Hall trust/Q`}
+            tone={accessibilityCityHallDrift(agency) >= 0 ? 'positive' : 'negative'}
+            onChange={(v) => setAccessibility(agencyId, v)}
           />
         </div>
       </section>

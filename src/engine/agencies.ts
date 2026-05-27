@@ -242,6 +242,29 @@ export const CLEANLINESS_BUDGET_BASELINE: Record<'ttc' | 'go' | 'up', number> = 
   up: 2,
 };
 
+/**
+ * Phase 5.4: AODA (Accessibility for Ontarians with Disabilities Act)
+ * baseline budgets. Below baseline triggers City Hall trust drag + raises
+ * accessibility pressure events.
+ */
+export const ACCESSIBILITY_BUDGET_BASELINE: Record<'ttc' | 'go' | 'up', number> = {
+  ttc: 30,
+  go: 8,
+  up: 1,
+};
+
+/** Phase 5.4: City Hall trust drift per quarter from accessibility budget. */
+export function accessibilityCityHallDrift(agency: Agency): number {
+  const baseline = ACCESSIBILITY_BUDGET_BASELINE[agency.id];
+  const budget = (agency.operatingParams.accessibilityBudget as unknown as number) ?? baseline;
+  if (baseline === 0) return 0;
+  const ratio = budget / baseline;
+  if (ratio < 0.5) return -1.5;
+  if (ratio < 0.9) return -0.5;
+  if (ratio < 1.3) return 0;
+  return 0.3; // overinvestment = mild positive
+}
+
 export function cleanlinessApprovalDrift(agency: Agency): number {
   const baseline = CLEANLINESS_BUDGET_BASELINE[agency.id];
   const budget = agency.operatingParams.cleanlinessBudget as unknown as number;

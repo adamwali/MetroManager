@@ -31,6 +31,8 @@ export interface AgencyOperatingParams {
   securityBudget: CashMillions;
   /** Phase 5.2: cleanliness/station environment budget per quarter, $M. Affects public approval. */
   cleanlinessBudget: CashMillions;
+  /** Phase 5.4: accessibility (AODA) compliance budget. Below threshold → -City Hall trust + AODA pressure events. */
+  accessibilityBudget: CashMillions;
 }
 
 export interface Agency {

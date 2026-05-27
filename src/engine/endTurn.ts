@@ -16,12 +16,14 @@ import { keyedFloat } from './rng';
 import { bp as bpScalar } from '@/types/scalars';
 import {
   quarterlyFareRevenue,
+  quarterlyLvcRevenue,
   quarterlyMaintenanceExpense,
   quarterlyOperatingAllowance,
   quarterlyOperatingExpense,
 } from './cashflow';
 import {
   approvalRidershipDrift,
+  accessibilityCityHallDrift,
   cleanlinessApprovalDrift,
   securityRidershipDrift,
   catchmentGrowthPerQuarter,
@@ -84,7 +86,9 @@ export function endTurn(state: GameState): GameState {
 
   // 3. Cash flow components
   const allowanceN = quarterlyOperatingAllowance(state.operatingAllowance) as unknown as number;
-  const fareN = quarterlyFareRevenue(state.agencies) as unknown as number;
+  const fareBase = quarterlyFareRevenue(state.agencies) as unknown as number;
+  const lvcN = quarterlyLvcRevenue(state.projects) as unknown as number;
+  const fareN = fareBase + lvcN; // fold LVC into fareRevenue bucket for simplicity
   const opexN = quarterlyOperatingExpense(
     state.agencies,
     state.engineVars.consultantAlignment as unknown as number,
@@ -278,6 +282,26 @@ export function endTurn(state: GameState): GameState {
     cleanlinessApprovalDrift(agenciesFinal.ttc) +
     cleanlinessApprovalDrift(agenciesFinal.go) +
     cleanlinessApprovalDrift(agenciesFinal.up);
+
+  // Phase 5.4: accessibility budget → City Hall trust drift
+  const accessibilityCityHallDelta =
+    accessibilityCityHallDrift(agenciesFinal.ttc) +
+    accessibilityCityHallDrift(agenciesFinal.go) +
+    accessibilityCityHallDrift(agenciesFinal.up);
+  const newCityHallTrust = Math.max(
+    0,
+    Math.min(
+      100,
+      (state.politics.cityHall.trust as unknown as number) + accessibilityCityHallDelta,
+    ),
+  );
+  const politicsWithAccessibility = {
+    ...state.politics,
+    cityHall: {
+      ...state.politics.cityHall,
+      trust: score(newCityHallTrust),
+    },
+  };
   const newPublicApproval = Math.max(
     0,
     Math.min(
@@ -299,6 +323,7 @@ export function endTurn(state: GameState): GameState {
     debt: debtWithRating,
     agencies: agenciesFinal,
     projects: tickedProjects,
+    politics: politicsWithAccessibility,
     cash: { balance: cash(nextBalance), lastQuarterDelta: cash(netCashDelta) },
     actionLog: [...state.actionLog, summaryEntry],
     nextLogId: state.nextLogId + 1,

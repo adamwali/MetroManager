@@ -270,3 +270,24 @@ export function setCleanlinessBudget(
     },
   };
 }
+
+export function setAccessibilityBudget(
+  state: GameState,
+  agencyId: AgencyId,
+  amountM: number,
+): GameState {
+  const safe = Math.max(0, Math.round(amountM));
+  return {
+    ...state,
+    agencies: {
+      ...state.agencies,
+      [agencyId]: {
+        ...state.agencies[agencyId],
+        operatingParams: {
+          ...state.agencies[agencyId].operatingParams,
+          accessibilityBudget: cash(safe),
+        },
+      },
+    },
+  };
+}
