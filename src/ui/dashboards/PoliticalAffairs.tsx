@@ -34,6 +34,18 @@ const GOV_META: Record<
   },
 };
 
+/**
+ * Phase 10: derive a transit-stance label from a government's trust score.
+ * 5 tiers matching player feedback: "positive neutral negative very..."
+ */
+function stanceFromTrust(trust: number): { label: string; bg: string; text: string } {
+  if (trust >= 75) return { label: 'Very Positive', bg: 'bg-emerald-100', text: 'text-emerald-800' };
+  if (trust >= 55) return { label: 'Positive', bg: 'bg-emerald-50', text: 'text-emerald-700' };
+  if (trust >= 40) return { label: 'Neutral', bg: 'bg-neutral-100', text: 'text-neutral-700' };
+  if (trust >= 25) return { label: 'Negative', bg: 'bg-amber-100', text: 'text-amber-800' };
+  return { label: 'Very Negative', bg: 'bg-red-100', text: 'text-red-800' };
+}
+
 const ACTION_ORDER: PoliticalActionKind[] = [
   'publicLobby',
   'quietPitch',
@@ -70,13 +82,22 @@ export function PoliticalAffairs() {
                   | PoliticalCharacter
                   | undefined)
               : undefined;
+          const stance = stanceFromTrust(trust);
           return (
             <article
               key={govId}
               className={`rounded-md border-2 bg-white p-4 ${meta.color}`}
             >
               <header className="border-b border-neutral-100 pb-3">
-                <h2 className="text-base font-semibold">{meta.label}</h2>
+                <div className="flex items-baseline justify-between gap-2">
+                  <h2 className="text-base font-semibold">{meta.label}</h2>
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${stance.bg} ${stance.text}`}
+                    title={`Stance derived from trust score ${trust.toFixed(0)}`}
+                  >
+                    {stance.label}
+                  </span>
+                </div>
                 <p className="mt-0.5 text-xs text-neutral-500">{meta.subtitle}</p>
                 {cabinetCharacter && (
                   <div className="mt-2 rounded-md border border-neutral-100 bg-neutral-50/60 p-2">

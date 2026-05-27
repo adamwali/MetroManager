@@ -11,6 +11,7 @@ import {
   quarterLabel,
   quartersUntilLabel,
 } from '@/utils/humanize';
+import { FinancialStatements } from '@ui/components/FinancialStatements';
 
 const RATING_TONE: Record<CreditRating, { bg: string; text: string }> = {
   AAA: { bg: 'bg-emerald-100', text: 'text-emerald-800' },
@@ -88,6 +89,9 @@ export function Treasury() {
           </div>
         </div>
       </section>
+
+      {/* Financial statements — P&L / Cash flow / Balance sheet, quarters as columns */}
+      <FinancialStatements />
 
       {/* Operating bond issuance */}
       <BondIssuanceCard />

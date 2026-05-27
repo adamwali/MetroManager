@@ -152,18 +152,33 @@ export function generateFinancingOffers(politics: Politics, tier: SizeTier): Fin
     large: 8_000,
     mega: 15_000,
   };
+  // Sovereign Wealth Fund: cheap money, brutal political cost.
+  // Player feedback: previous version was too low-cost; now there are real
+  // negative consequences across three axes — trust, approval, board, AND a
+  // delayed opposition response event 4Q out.
   const sovereign: FinancingOffer = {
     approach: 'sovereignWealth',
     maxAmount: cash(sovereignAppetite[tier]),
-    rateBp: 530, // slightly worse than pension, larger appetite
+    rateBp: 530,
     conditions: [],
     onAcceptEffects: [
-      { kind: 'governmentTrust', gov: 'cityHall', delta: -8 },
-      { kind: 'publicApproval', delta: -5 },
-      { kind: 'boardConfidence', delta: -2, reason: 'Foreign-capital optics' },
+      { kind: 'governmentTrust', gov: 'ottawa', delta: -12 }, // federal cares most about foreign infrastructure
+      { kind: 'governmentTrust', gov: 'queensPark', delta: -8 },
+      { kind: 'governmentTrust', gov: 'cityHall', delta: -10 },
+      { kind: 'publicApproval', delta: -12 },
+      { kind: 'boardConfidence', delta: -6, reason: 'Foreign sovereign-wealth optics' },
+      {
+        kind: 'queueDelayedEffect',
+        quartersOut: 4,
+        cause: 'Opposition mobilizes against SWF financing',
+        effects: [
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'nimbyOrganization', delta: 10 },
+        ],
+      },
     ],
     opticsLabel:
-      "Political cost on accept: -8 City Hall trust, -5 public approval, -2 board (foreign-capital optics)",
+      "⚠ Severe political cost: -12 Ottawa, -10 City Hall, -8 QP, -12 approval, -6 board, NIMBY+approval cascade in 4Q",
   };
 
   return [fed, prov, muni, consortium, pension, bondMarket, sovereign];

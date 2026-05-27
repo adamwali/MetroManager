@@ -12,7 +12,9 @@ import {
 import {
   acceptFinancing,
   acceptFinancingPackage,
+  accelerateProject,
   proposeProject,
+  reduceProjectScope,
   rejectProject,
   type FinancingSelection,
 } from '@engine/projectActions';
@@ -106,6 +108,8 @@ export interface GameStore {
     selections: FinancingSelection[],
   ) => void;
   rejectProject: (catalogProjectId: string) => void;
+  accelerateProject: (catalogProjectId: string, quartersFaster: number) => void;
+  reduceProjectScope: (catalogProjectId: string) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
   /** Treasury actions (Phase 7). */
@@ -309,6 +313,22 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     rejectProject: (catalogProjectId) => {
       const next = rejectProject(get().state, catalogProjectId);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    accelerateProject: (catalogProjectId, quartersFaster) => {
+      const next = accelerateProject(get().state, catalogProjectId, quartersFaster);
+      if (next === get().state) return;
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    reduceProjectScope: (catalogProjectId) => {
+      const next = reduceProjectScope(get().state, catalogProjectId);
+      if (next === get().state) return;
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))

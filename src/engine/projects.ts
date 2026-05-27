@@ -117,8 +117,23 @@ export function tickProject(
   crosslinxLeverage = 50,
 ): ProjectTickResult {
   if (p.state === 'proposed') {
+    // Phase 10: studies narrow uncertainty over time. Each quarter in proposed
+    // state reduces cost + demand uncertainty by ~12% (multiplicative). After
+    // 4Q, uncertainty is ~60% of original. Floor at 5% so it never zeroes.
+    const newCostU = Math.max(
+      0.05,
+      (p.costUncertaintyPct as unknown as number) * 0.88,
+    );
+    const newDemandU = Math.max(
+      0.05,
+      (p.demandUncertaintyPct as unknown as number) * 0.88,
+    );
     return {
-      project: p,
+      project: {
+        ...p,
+        costUncertaintyPct: newCostU as unknown as typeof p.costUncertaintyPct,
+        demandUncertaintyPct: newDemandU as unknown as typeof p.demandUncertaintyPct,
+      },
       drawFromFunding: cash(0),
       primaryAgencyDelta: 0,
       cannibalizationDeltas: {},

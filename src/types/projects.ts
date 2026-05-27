@@ -137,7 +137,14 @@ export interface FinancingOffer {
 export type FinancingOfferEffect =
   | { kind: 'governmentTrust'; gov: 'ottawa' | 'queensPark' | 'cityHall'; delta: number }
   | { kind: 'publicApproval'; delta: number }
-  | { kind: 'boardConfidence'; delta: number; reason: string };
+  | { kind: 'boardConfidence'; delta: number; reason: string }
+  | { kind: 'nimbyOrganization'; delta: number }
+  | {
+      kind: 'queueDelayedEffect';
+      quartersOut: number;
+      cause: string;
+      effects: FinancingOfferEffect[];
+    };
 
 export interface AcceptedFinancing {
   approach: FinancingApproach;

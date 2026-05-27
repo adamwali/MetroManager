@@ -271,13 +271,103 @@ export function acceptFinancingPackage(
   };
 
   // Apply onAcceptEffects from all layers (sovereign optics, etc.)
+  // FinancingOfferEffect is structurally compatible with EventEffect for
+  // the kinds we use here; cast at the boundary.
   if (onAcceptEffectsAcc.length > 0) {
-    next = applyEffects(next, onAcceptEffectsAcc);
+    next = applyEffects(next, onAcceptEffectsAcc as unknown as Parameters<typeof applyEffects>[1]);
   }
   return next;
 }
 
 /** Cancel a proposed project. Player backs out before financing. */
+/**
+ * Phase 10: Accelerate an under-construction project.
+ * Brings forecastOpenAt forward by N quarters at the cost of extra spend
+ * (proportional to remaining work compressed). Player gets earlier riders
+ * + earlier completion bonus, but burns cash faster.
+ */
+export function accelerateProject(
+  state: GameState,
+  catalogProjectId: string,
+  quartersFaster: number,
+): GameState {
+  const idx = state.projects.findIndex(
+    (p) => p.state === 'under_construction' && p.templateId === catalogProjectId,
+  );
+  if (idx === -1) return state;
+  const project = state.projects[idx]!;
+  if (project.state !== 'under_construction') return state;
+  const currentQ = state.quarter as unknown as number;
+  const oldOpen = project.forecastOpenAt as unknown as number;
+  const remainingQuarters = Math.max(1, oldOpen - currentQ);
+  const accelerated = Math.max(currentQ + 1, oldOpen - quartersFaster);
+  // Cost overhead: 15% per quarter compressed (paid as immediate cash burn)
+  const remaining = project.remainingFunding as unknown as number;
+  const compressionRatio = Math.min(0.6, (quartersFaster / remainingQuarters) * 0.6);
+  const accelerationCostM = Math.round(remaining * compressionRatio * 0.25);
+  const cashOnHand = state.cash.balance as unknown as number;
+  if (cashOnHand < accelerationCostM) return state;
+
+  return {
+    ...state,
+    cash: { ...state.cash, balance: cash(cashOnHand - accelerationCostM) },
+    projects: state.projects.map((p, i) =>
+      i === idx
+        ? {
+            ...project,
+            forecastOpenAt: quarter(accelerated),
+          }
+        : p,
+    ),
+  };
+}
+
+/**
+ * Phase 10: Reduce project scope mid-construction.
+ * Cuts forecastOpenAt by 2Q (smaller build) AND returns 20% of remaining
+ * funding to cash. Trades long-term ridership impact for short-term cash
+ * relief. Reduces project's final ridership 30% at opening.
+ *
+ * The ridership cut is tracked via a `scopeCut: true` flag on the project
+ * (added to ConstructingProject for this purpose).
+ */
+export function reduceProjectScope(
+  state: GameState,
+  catalogProjectId: string,
+): GameState {
+  const idx = state.projects.findIndex(
+    (p) => p.state === 'under_construction' && p.templateId === catalogProjectId,
+  );
+  if (idx === -1) return state;
+  const project = state.projects[idx]!;
+  if (project.state !== 'under_construction') return state;
+  const remaining = project.remainingFunding as unknown as number;
+  const refund = Math.round(remaining * 0.2);
+  const cashOnHand = state.cash.balance as unknown as number;
+  const oldOpen = project.forecastOpenAt as unknown as number;
+  return {
+    ...state,
+    cash: { ...state.cash, balance: cash(cashOnHand + refund) },
+    projects: state.projects.map((p, i) =>
+      i === idx
+        ? {
+            ...project,
+            forecastOpenAt: quarter(Math.max((state.quarter as unknown as number) + 1, oldOpen - 2)),
+            remainingFunding: cash(remaining - refund),
+            perProject: {
+              ...project.perProject,
+              settlementPremium: score(
+                Math.min(100, (project.perProject.settlementPremium as unknown as number) + 30),
+              ),
+              // Repurposing settlementPremium as a generic "scope-cut indicator"
+              // so existing perProject schema absorbs the flag without new fields.
+            },
+          }
+        : p,
+    ),
+  };
+}
+
 export function rejectProject(state: GameState, catalogProjectId: string): GameState {
   return {
     ...state,

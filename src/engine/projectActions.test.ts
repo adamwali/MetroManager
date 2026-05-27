@@ -168,11 +168,10 @@ describe('private financing offers', () => {
     const cityHallBefore = s.politics.cityHall.trust as unknown as number;
     const approvalBefore = s.engineVars.publicApproval as unknown as number;
     s = acceptFinancing(s, 'P06', 'sovereignWealth');
-    // Sovereign wealth: -8 City Hall trust, -5 public approval
-    // P06 starting political support: City Hall +10
-    // Net City Hall: +10 - 8 = +2
-    expect(s.politics.cityHall.trust as unknown as number).toBe(cityHallBefore + 10 - 8);
-    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore - 5);
+    // Phase 10: SWF costs much harsher — -10 City Hall trust + project's
+    // +10 starting support = net 0. Approval -12 from SWF.
+    expect(s.politics.cityHall.trust as unknown as number).toBe(cityHallBefore + 10 - 10);
+    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore - 12);
   });
 
   it('accepting pension financing does NOT apply optics cost', () => {
@@ -276,10 +275,9 @@ describe('stacked financing (acceptFinancingPackage)', () => {
       { approach: 'pensionConsortium', amountM: 10_000 },
       { approach: 'sovereignWealth', amountM: 5_000 },
     ]);
-    // Sovereign optics: -8 City Hall (plus +10 from P06 starting support = +2 net)
-    expect(s.politics.cityHall.trust as unknown as number).toBe(cityBefore + 10 - 8);
-    // -5 public approval from sovereign
-    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore - 5);
+    // Phase 10: SWF now -10 City Hall, +10 from P06 = net 0; -12 approval
+    expect(s.politics.cityHall.trust as unknown as number).toBe(cityBefore + 10 - 10);
+    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore - 12);
   });
 
   it('multiple gov layers do not double-apply political support', async () => {

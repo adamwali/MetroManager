@@ -16,6 +16,7 @@ import {
   FINANCING_APPROACH_SOURCE,
   type FinancingApproach,
   type FinancingOffer,
+  type ConstructingProject,
   type Project,
 } from '@/types/projects';
 import {
@@ -125,6 +126,24 @@ function ProjectRow({
               (project.initiatedAt as unknown as number) + PROPOSED_STUDY_BUFFER_QUARTERS,
             )}
           </div>
+          {/* Phase 10: studies in progress — uncertainty narrows each quarter */}
+          <div className="rounded-md border border-amber-200 bg-amber-50/40 px-3 py-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-800">
+              Studies in progress
+            </div>
+            <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-amber-900">
+              <div>
+                Cost uncertainty: ±{((project.costUncertaintyPct as unknown as number) * 100).toFixed(0)}%
+              </div>
+              <div>
+                Demand uncertainty: ±{((project.demandUncertaintyPct as unknown as number) * 100).toFixed(0)}%
+              </div>
+            </div>
+            <div className="mt-1 text-[10px] text-amber-700">
+              Each quarter in proposed state narrows both by ~12%. Better certainty = more
+              accurate financing offers.
+            </div>
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -145,18 +164,7 @@ function ProjectRow({
       )}
 
       {project.state === 'under_construction' && (
-        <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-          <Stat label="Total budget" value={formatMoney(project.totalBudget as unknown as number)} />
-          <Stat label="Spent" value={formatMoney(project.spent as unknown as number)} />
-          <Stat
-            label="Remaining funding"
-            value={formatMoney(project.remainingFunding as unknown as number)}
-          />
-          <Stat
-            label="Opens"
-            value={`${quarterLabel(project.forecastOpenAt as unknown as number)} · ${quartersUntilLabel((project.forecastOpenAt as unknown as number) - currentQ)}`}
-          />
-        </div>
+        <UnderConstructionDetail project={project} currentQ={currentQ} />
       )}
 
       {project.state === 'operating' && (
@@ -172,6 +180,106 @@ function ProjectRow({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function UnderConstructionDetail({
+  project,
+  currentQ,
+}: {
+  project: ConstructingProject;
+  currentQ: number;
+}) {
+  const accelerate = useGameStore((s) => s.accelerateProject);
+  const reduceScope = useGameStore((s) => s.reduceProjectScope);
+  const cashOnHand = useGameStore((s) => s.state.cash.balance as unknown as number);
+  const spent = project.spent as unknown as number;
+  const budget = project.totalBudget as unknown as number;
+  const progressPct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+  const remaining = project.remainingFunding as unknown as number;
+  const brokeGround = project.brokeGroundAt as unknown as number;
+  const forecastOpen = project.forecastOpenAt as unknown as number;
+  const totalQ = Math.max(1, forecastOpen - brokeGround);
+  const elapsedQ = Math.max(0, currentQ - brokeGround);
+  const schedulePct = Math.min(100, (elapsedQ / totalQ) * 100);
+  // Schedule vs spend variance
+  const scheduleVsSpend = progressPct - schedulePct;
+  const onTrack = Math.abs(scheduleVsSpend) < 10;
+  const trackTone = onTrack
+    ? 'text-emerald-700'
+    : scheduleVsSpend > 0
+      ? 'text-red-700' // burning faster than scheduled
+      : 'text-blue-700'; // ahead on schedule, under-spending
+  const trackLabel = onTrack
+    ? '✓ On track'
+    : scheduleVsSpend > 0
+      ? '⚠ Over budget'
+      : '↑ Under budget';
+
+  // Acceleration cost preview (2Q faster as default)
+  const remainingQuarters = Math.max(1, forecastOpen - currentQ);
+  const accelerationCost = Math.round(remaining * Math.min(0.6, (2 / remainingQuarters) * 0.6) * 0.25);
+  const canAccelerate = cashOnHand >= accelerationCost && remainingQuarters > 1;
+  const scopeRefund = Math.round(remaining * 0.2);
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+        <Stat label="Total budget" value={formatMoney(budget)} />
+        <Stat label="Spent" value={formatMoney(spent)} />
+        <Stat label="Remaining funding" value={formatMoney(remaining)} />
+        <Stat
+          label="Opens"
+          value={`${quarterLabel(forecastOpen)} · ${quartersUntilLabel(forecastOpen - currentQ)}`}
+        />
+      </div>
+
+      {/* Progress bar: budget spent vs schedule elapsed */}
+      <div>
+        <div className="flex justify-between text-[10px] text-neutral-500 mb-1">
+          <span>Progress: {progressPct.toFixed(0)}% spent</span>
+          <span className={trackTone}>{trackLabel}</span>
+          <span>Schedule: {schedulePct.toFixed(0)}% elapsed</span>
+        </div>
+        <div className="relative h-3 rounded bg-neutral-100 overflow-hidden">
+          <div
+            className="absolute top-0 left-0 h-full bg-blue-500/70"
+            style={{ width: `${progressPct}%` }}
+            title={`Spent ${formatMoney(spent)} of ${formatMoney(budget)}`}
+          />
+          <div
+            className="absolute top-0 h-full w-0.5 bg-neutral-700"
+            style={{ left: `${schedulePct}%` }}
+            title={`Schedule marker — should be at ${schedulePct.toFixed(0)}% spend`}
+          />
+        </div>
+      </div>
+
+      {/* Levers */}
+      <div className="flex flex-wrap gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => accelerate(project.templateId, 2)}
+          disabled={!canAccelerate}
+          className={`rounded-md border px-3 py-1.5 font-medium ${
+            canAccelerate
+              ? 'border-blue-600 bg-blue-50 text-blue-800 hover:bg-blue-100'
+              : 'border-neutral-300 bg-neutral-50 text-neutral-400 cursor-not-allowed'
+          }`}
+          title={`Bring opening forward 2Q. Costs ${formatMoney(accelerationCost)} immediately.`}
+        >
+          ⚡ Accelerate 2Q (cost {formatMoney(accelerationCost)})
+        </button>
+        <button
+          type="button"
+          onClick={() => reduceScope(project.templateId)}
+          className="rounded-md border border-amber-600 bg-amber-50 px-3 py-1.5 font-medium text-amber-800 hover:bg-amber-100"
+          title={`Cut scope: refund ${formatMoney(scopeRefund)} cash, opening 2Q earlier, ridership impact -30%`}
+        >
+          ✂ Cut scope (refund {formatMoney(scopeRefund)}, -30% riders)
+        </button>
+      </div>
     </div>
   );
 }
