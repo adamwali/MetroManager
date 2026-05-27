@@ -73,10 +73,10 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 
 ## 🟡 Partial (more sub-phases to come)
 
-- **Phase 3.x** — 46 events shipped (of ~75 in
-  `docs/03-event-catalogue.md`). 8 events tagged with character actors.
+- **Phase 3.x** — 51 events shipped (of ~75 in
+  `docs/03-event-catalogue.md`). 16 events tagged with character actors.
   Remaining content + actor sweep → Phase 3.3 follow-up.
-- **Phase 4.x** — 10 projects shipped (of ~30 in
+- **Phase 4.x** — 14 projects shipped (of ~30 in
   `docs/02-project-catalogue-v3.md`). Studies during proposed (uncertainty
   narrowing), LVC slider, project-specific events, cost-overrun
   mechanics → Phase 4.2.
@@ -121,4 +121,11 @@ an explicit phase pointer.
   burn; EV045 shifts it)
 - ~~Consultant alignment~~ ✅ shipped (Phase 6.3.2 — affects opex;
   EV046 shifts it)
-- ~~Disruptor archetype hidden~~ ✅ shipped (Phase 6.3.2 — now in picker)
+- ~~Disruptor archetype hidden~~ ✅ shipped (Phase 6.3.2 — now in picker;
+  EV053 fires for them)
+- ~~Director tolerance~~ ✅ shipped (Phase 6.2.2 — ticked per quarter
+  by doctrine alignment, visible on agency dashboards)
+- ~~Hiring freeze role enforcement~~ ✅ shipped (Phase 6.3.1 — engineer
+  delta blocked when drasticCut allowance outcome adds the control)
+- ~~CEO portraitId~~ — still defined, never used. Low priority.
+- PerProjectVars (sitePrep, megaContract, settlementPremium) — Phase 4.2
