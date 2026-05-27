@@ -282,16 +282,27 @@ export function catalogEntry(projectId: string): ProjectCatalogEntry | undefined
 
 /**
  * Compute the realized total cost for a project given the player's alignment
- * + station quality choices. Phase 4: simple multiplication; Phase 4.2 may
- * add cost-factor adjustments (templates, megacontract premium, etc.).
+ * + station quality choices.
+ *
+ * Phase 6.3 polish: `templates` engineVar (0-100) now provides a project-cost
+ * discount. Each templates point above 30 reduces cost by 0.2%, capped at
+ * -14% (at templates=100). At templates=50, the discount is -4%.
+ *
+ * Technocrat (starts at 55) gets -5% baseline; pushing to 80 yields -10%.
  */
 export function realizedProjectCost(
   entry: ProjectCatalogEntry,
   alignmentId: string,
   stationQuality: StationQualityTier,
+  templates = 30,
 ): number {
   const alignment = entry.alignments.find((a) => a.id === alignmentId) ?? entry.alignments[0]!;
+  const templatesAboveBaseline = Math.max(0, templates - 30);
+  const templatesDiscount = Math.min(0.14, templatesAboveBaseline * 0.002); // 0.2% per pt
   return Math.round(
-    entry.baseCostM * alignment.costMultiplier * STATION_QUALITY_MULTIPLIER[stationQuality],
+    entry.baseCostM *
+      alignment.costMultiplier *
+      STATION_QUALITY_MULTIPLIER[stationQuality] *
+      (1 - templatesDiscount),
   );
 }

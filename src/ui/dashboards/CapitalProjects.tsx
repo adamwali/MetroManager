@@ -257,9 +257,10 @@ function InitiateProjectModal({ onClose }: { onClose: () => void }) {
     );
   }
 
+  const templates = state.engineVars.templates as unknown as number;
   const alignment =
     selected.alignments.find((a) => a.id === alignmentId) ?? selected.alignments[0]!;
-  const cost = realizedProjectCost(selected, alignment.id, stationQuality);
+  const cost = realizedProjectCost(selected, alignment.id, stationQuality, templates);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4">
@@ -475,7 +476,12 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
   );
   const projectCost =
     proposed && proposed.state === 'proposed' && proposed.chosenAlignment
-      ? realizedProjectCost(entry, proposed.chosenAlignment, proposed.stationQuality)
+      ? realizedProjectCost(
+          entry,
+          proposed.chosenAlignment,
+          proposed.stationQuality,
+          state.engineVars.templates as unknown as number,
+        )
       : entry.baseCostM;
   const offers = generateFinancingOffers(state.politics, entry.tier);
   const govOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'government');

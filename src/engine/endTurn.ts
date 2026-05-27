@@ -9,7 +9,7 @@ import {
   FISCAL_FAILURE_CASH_THRESHOLD_M,
   FISCAL_FAILURE_CONSECUTIVE_QUARTERS,
 } from '@/types/gameOver';
-import { cash, quarter, riders } from '@/types/scalars';
+import { cash, quarter, riders, score } from '@/types/scalars';
 import { applyMaturities, driftBocRate, quarterlyDebtService } from './finance';
 import { nextRatingFor } from './rating';
 import { keyedFloat } from './rng';
@@ -232,6 +232,17 @@ export function endTurn(state: GameState): GameState {
     (o) => (o.expiresAt as unknown as number) > nextQuarterN,
   );
 
+  // NIMBY organization decays without new confrontation (-2 per quarter)
+  // Phase 6.3 bug-bash: previously NIMBY only grew, never shrank.
+  const nimbyDecayed = Math.max(
+    0,
+    (state.engineVars.nimbyOrganization as unknown as number) - 2,
+  );
+  const engineVarsDecayed = {
+    ...state.engineVars,
+    nimbyOrganization: score(nimbyDecayed),
+  };
+
   // Compose the post-tick state before event processing
   const postTick: GameState = {
     ...state,
@@ -244,6 +255,7 @@ export function endTurn(state: GameState): GameState {
     nextLogId: state.nextLogId + 1,
     gameOverCounters: nextCounters,
     activeObligations,
+    engineVars: engineVarsDecayed,
     ...(gameOver ? { gameOver } : {}),
   };
 

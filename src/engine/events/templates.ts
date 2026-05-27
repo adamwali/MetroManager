@@ -1666,6 +1666,122 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       },
     ],
   },
+  // ════════════════════════════════════════════════════════════════════════
+  // Phase 6.3 + 5.3 polish: allowance renegotiation + critical subsystem
+  // ════════════════════════════════════════════════════════════════════════
+
+  // ── EV041 — Allowance renegotiation (Y4/Y8/Y12 decision event) ──────────
+  {
+    id: 'EV041_allowanceRenegotiation',
+    category: 'funding_renegotiation',
+    trigger: { kind: 'scheduled', quarters: [16, 32, 48] },
+    outlet: 'Internal memo',
+    headline: 'Tri-government allowance renegotiation: outcome depends on your scorecard',
+    body:
+      "The four-year operating-allowance pact is up. Combined trust, board confidence, and delivery wins set the baseline outcome. You can accept what they offer, lobby aggressively to push for better terms (at political cost), or open the books and let the data speak (if you've maintained transparency).",
+    urgency: 95,
+    choices: [
+      {
+        id: 'accept',
+        label: 'Accept the offered outcome',
+        tradeoff: 'Outcome computed from current trust + board + delivery. See preview before clicking.',
+        effects: [{ kind: 'renegotiateAllowance', strategy: 'accept' }],
+      },
+      {
+        id: 'aggressive',
+        label: 'Lobby all three governments aggressively',
+        tradeoff: '-5 public approval, -3 trust each gov, but pushes outcome up one tier',
+        effects: [
+          { kind: 'renegotiateAllowance', strategy: 'aggressive' },
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -3 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -3 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -3 },
+        ],
+      },
+      {
+        id: 'data-driven',
+        label: 'Open books, present data to all three governments',
+        tradeoff: '[OpenBooks] Pushes outcome up one tier; +5 Ottawa trust, -3 public approval',
+        requires: { kind: 'openBooks', equals: true },
+        effects: [
+          { kind: 'renegotiateAllowance', strategy: 'data-driven' },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
+          { kind: 'publicApproval', delta: -3 },
+        ],
+      },
+    ],
+  },
+
+  // ── EV042 — Critical subsystem failure (auto-fires when avg reliability ≤ 30) ──
+  {
+    id: 'EV042_subsystemReplacement',
+    category: 'operations_crisis',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'reliability', agency: 'ttc', lte: 30 },
+      cooldownQuarters: 16,
+    },
+    outlet: 'CBC',
+    headline: 'TTC infrastructure at critical condition — replacement urgent',
+    body: 'Deferred maintenance has caught up. Engineering review classifies multiple subsystems as "high failure risk." Options: emergency capital replacement, defer (with worsening), or lobby for federal capital relief.',
+    urgency: 90,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'emergency_capex',
+        label: 'Emergency capital replacement program',
+        tradeoff: '-$2B cash, +25 reliability all TTC subsystems, -3% TTC ridership for 2Q (service disruption)',
+        effects: [
+          { kind: 'cash', deltaM: -2_000 },
+          { kind: 'reliability', agency: 'ttc', delta: 25 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 1,
+            cause: 'Service disruption from replacement',
+            effects: [{ kind: 'ridership', agency: 'ttc', delta: -120_000 }],
+          },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 3,
+            cause: 'Service restored after replacement',
+            effects: [{ kind: 'ridership', agency: 'ttc', delta: 120_000 }],
+          },
+        ],
+      },
+      {
+        id: 'defer',
+        label: 'Defer; continue degraded operations',
+        tradeoff: '-10 TTC reliability further, -8 public approval, -3 board, queued bigger event in 6Q',
+        effects: [
+          { kind: 'reliability', agency: 'ttc', delta: -10 },
+          { kind: 'publicApproval', delta: -8 },
+          { kind: 'boardConfidence', delta: -3, reason: 'Deferred critical maintenance' },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 6,
+            cause: 'Cascading subsystem failures from deferred maintenance',
+            effects: [
+              { kind: 'reliability', agency: 'ttc', delta: -15 },
+              { kind: 'cash', deltaM: -1_500 },
+              { kind: 'publicApproval', delta: -10 },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'federal_relief',
+        label: 'Request federal capital-relief grant',
+        tradeoff: '[Ottawa trust ≥55] +$1B cash, -5 Ottawa trust, +18 TTC reliability',
+        requires: { kind: 'trust', gov: 'ottawa', gte: 55 },
+        effects: [
+          { kind: 'cash', deltaM: 1_000 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -5 },
+          { kind: 'reliability', agency: 'ttc', delta: 18 },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Lookup by id. */

@@ -68,10 +68,16 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
   mechanics → Phase 4.2.
 - **Phase 5.x** — Maintenance + fare + frequency shipped. Security /
   cleanliness / accessibility per-agency sliders → Phase 5.2.
-- **Phase 6.x** — Lobby + ad-hoc + favor shipped. Character relationships
-  per gov (cabinet IDs exist as data, no engine logic) → Phase 6.2.
-  Election campaign mechanics, lobby outcome variance → Phase 6.2.
-  Allowance renegotiation events (Y4/Y8/Y12) → Phase 6.3.
+- **Phase 6.x** — Lobby + ad-hoc + favor shipped (6.1). Allowance
+  renegotiation events at Y4/Y8/Y12 shipped (6.3 — EV041 with
+  outcome preview, 4 outcome tiers, strategic branches). Character
+  relationships per gov (cabinet IDs exist as data, no engine logic)
+  → Phase 6.2. Election campaign mechanics, lobby outcome variance →
+  Phase 6.2.
+- **Phase 5.x** — Maintenance + fare + frequency shipped (5.1).
+  Replacement events when reliability ≤30 shipped (5.3 — EV042 with
+  emergency capex / defer / federal relief). Security / cleanliness /
+  accessibility per-agency sliders → Phase 5.2.
 
 ## ⏳ Not started
 
@@ -84,10 +90,14 @@ These are defined in state/types but don't drive gameplay yet. Each has
 an explicit phase pointer.
 
 - `Characters: {}` — empty, Phase 6.2
-- `StandingOrders: []` — empty, Phase 8
-- Board `recentComponents`, `warningActive` — Phase 8.6 trace UI
-- `OperatingAllowance.controls` — Phase 6.3 renegotiation
+- ~~`StandingOrders: []`~~ ✅ shipped (Phase 8.1 — 5 rule types)
+- Board `recentComponents`, `warningActive` — Phase 8.7 polish
+- ~~`OperatingAllowance.controls`~~ ✅ populated by Phase 6.3
+  renegotiation outcomes (decrease + drasticCut tiers add controls);
+  controls aren't yet enforced in engine (Phase 6.3.1)
 - CEO `portraitId` — Phase 6
 - PerProjectVars (sitePrep, megaContract, settlementPremium) — Phase 4.2
-- Templates → project cost reduction → Phase 4.2
+- ~~Templates → project cost reduction~~ ✅ shipped (Phase 6.3 — 0.2%
+  per point above 30, capped at -14%)
 - ~~Stacked financing~~ ✅ shipped (acceptFinancingPackage; package builder UI)
+- ~~NIMBY organization decay~~ ✅ shipped (Phase 6.3 — decays -2/Q)

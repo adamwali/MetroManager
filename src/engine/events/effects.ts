@@ -3,6 +3,7 @@ import type { Agencies, AgencyId } from '@/types/agency';
 import type { DelayedConsequence, EventEffect } from '@/types/events';
 import type { ActiveObligation } from '@/types/obligations';
 import { cash, quarter, riders, score } from '@/types/scalars';
+import { applyRenegotiation } from '../renegotiation';
 
 /**
  * Effect application. Pure function from (state, effects[]) → new state.
@@ -146,6 +147,9 @@ function applyOne(state: GameState, e: EventEffect): GameState {
         breakingDescription: e.breakingDescription,
       };
       return { ...state, activeObligations: [...state.activeObligations, obligation] };
+    }
+    case 'renegotiateAllowance': {
+      return applyRenegotiation(state, e.strategy);
     }
   }
 }

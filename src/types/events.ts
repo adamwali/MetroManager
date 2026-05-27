@@ -74,6 +74,7 @@ export type EventEffect =
   | { kind: 'ridership'; agency: AgencyId; delta: number }
   | { kind: 'queueDelayedEffect'; quartersOut: number; effects: EventEffect[]; cause: string }
   | { kind: 'queueDelayedEvent'; eventId: EventId; quartersOut: number; cause: string }
+  | { kind: 'renegotiateAllowance'; strategy: 'accept' | 'aggressive' | 'data-driven' }
   | {
       kind: 'addObligation';
       obligationId: string;

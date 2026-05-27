@@ -5,6 +5,100 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 6.3 + 5.3 + bug-bash (renegotiation + replacement events + polish)
+
+Repo-owner audit found 5 critical empty-calorie or missing-mechanic
+issues. Fixed all of them in one pass. Renegotiation is the headline
+fix — the §6 political-mechanic payoff was completely missing.
+
+**Phase 6.3 — allowance renegotiation:**
+
+EV041 scheduled at Q16/Q32/Q48 fires as a high-urgency inbox event.
+Three branches:
+
+| Branch | Effect | Requires |
+|---|---|---|
+| Accept | Outcome computed from current state, applied | none |
+| Aggressive | One tier better, -5 approval, -3 trust × 3 govs | none |
+| Open books | One tier better, +5 Ottawa trust, -3 approval | openBooks=true |
+
+Outcome computation (`src/engine/renegotiation.ts`):
+- avg trust < 25 OR board < 25 → **drasticCut** (-50% × controls)
+- avg trust < 40 OR board < 35 → **decrease** (-20% × controls)
+- avg trust ≥ 65 AND board ≥ 60 AND ≥1 delivery win → **increase** (+20%)
+- else → **continuation** (flat)
+
+Controls populated for negative outcomes:
+- decrease: project deprioritization OR cost cap $1.5B/Q
+- drasticCut: cost cap $1B/Q + hiring freeze
+
+New EventEffect kind: `renegotiateAllowance` with strategy parameter.
+Calls `applyRenegotiation(state, strategy)` at apply time so the
+outcome reflects state-at-decision (e.g., if player lobbied between
+EV007 telegraph and EV041 firing, the boost is reflected).
+
+`previewRenegotiation(state, strategy)` helper for UI preview — UI can
+show "Predicted outcome: continuation (flat)" before player commits.
+
+**Phase 5.3 — replacement events (severe maintenance underspend):**
+
+EV042 conditional fires when TTC reliability average ≤ 30, 16Q cooldown.
+3 branches, all bad in different ways (`noGoodOptions: true`):
+- **Emergency capex**: -$2B cash, +25 reliability all TTC subsystems,
+  -120k ridership for 1Q (service disruption), then +120k back at Q+3
+- **Defer**: -10 reliability, -8 approval, -3 board, queued bigger
+  event in 6Q (-15 reliability + -$1.5B + -10 approval)
+- **Federal relief**: requires Ottawa trust ≥55, +$1B cash, -5 Ottawa
+  trust, +18 TTC reliability
+
+The maintenance sliders finally have downside teeth.
+
+**Bug-bash fixes:**
+
+1. **NIMBY organization decays -2/Q** — previously only grew. Now
+   reaches steady state without confrontation.
+2. **Templates → project cost reduction** — 0.2% per templates point
+   above 30, capped at -14% (at templates=100). Technocrat starts at
+   55 → -5% discount. Wiring threaded through:
+   - `realizedProjectCost` accepts `templates` parameter
+   - `estimatedCostOf` in projectActions reads state.engineVars.templates
+   - CapitalProjects UI passes templates from store
+
+**Test additions** (14 new):
+- Renegotiation preview tiers + strategy modifiers
+- applyRenegotiation modifies allowance + advances renegotiatesAt
+- EV041 fires at Q16
+- EV042 fires when TTC reliability ≤ 30
+- Templates discount math
+- NIMBY decay + floor at 0
+
+**259 tests passing total.** Bundle 476KB JS / 142KB gzip.
+
+**Strategic implications:**
+
+- The Y4 (Q16) renegotiation is now the FIRST major political
+  inflection point. Player must build trust + deliver wins before then
+  or face -20%/-50% allowance.
+- Insider's $400M favor at Q1 becomes a long-term play, not just early
+  cash — favors built up by Q12 translate to renegotiation outcomes.
+- Technocrat's openBooks=true unlocks the data-driven branch at
+  renegotiation — strictly upgrades outcome.
+- Coalition Builder's tri-gov 55 trust positions them well for
+  continuation; needs +10 average to reach increase.
+- Maintenance-cutting is no longer a free lunch. Once TTC reliability
+  drops to ~30, EV042 forces a hard choice. Player who has built Ottawa
+  trust ≥55 can lobby for federal relief; player who hasn't faces
+  $2B emergency capex.
+
+**Operating allowance controls populated but not yet enforced.**
+The `decrease` and `drasticCut` outcomes add `OperatingAllowanceControl`
+entries to state, but the engine doesn't yet enforce them (e.g.,
+projectDeprioritization should block new project initiation; costCap
+should reject opex changes above the cap). Wire enforcement in Phase
+6.3.1.
+
+---
+
 ## 2026-05-26 — Phase 8.6: trace UI ("why did this happen?")
 
 Closes Phase 8. Every KPI on the top strip is now clickable; click
