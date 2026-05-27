@@ -107,11 +107,40 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
     0,
   );
 
+  // Phase 6.2.2: surface director with tolerance score
+  const directorId = agencyId === 'ttc' ? 'c_ttc_director' : agencyId === 'go' ? 'c_go_director' : 'c_up_director';
+  const director = state.characters[directorId];
+  const toleranceN =
+    director && director.role === 'director_operating'
+      ? (director.tolerance as unknown as number)
+      : 60;
+  const tolTone =
+    toleranceN < 20 ? 'text-red-700 bg-red-50' : toleranceN < 40 ? 'text-amber-700 bg-amber-50' : 'text-emerald-700 bg-emerald-50';
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <header>
         <h1 className="text-xl font-semibold">{title}</h1>
         <p className="mt-1 text-sm text-neutral-600">{blurb}</p>
+        {director && (
+          <div className="mt-3 flex items-center gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2">
+            <div className="flex-1">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                Director
+              </div>
+              <div className="text-sm font-semibold">{director.name}</div>
+              <div className="text-[11px] text-neutral-600 mt-0.5 leading-snug">
+                {director.bio[0]?.split('. ')[0]}
+              </div>
+            </div>
+            <div className={`rounded px-2 py-1 text-[10px] font-semibold ${tolTone}`}>
+              Tolerance {toleranceN.toFixed(0)}/100
+              {toleranceN < 20 && (
+                <div className="text-[9px] mt-0.5 font-normal">considering quitting</div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Summary panel */}

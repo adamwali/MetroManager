@@ -59,7 +59,15 @@ function applyOne(state: GameState, e: EventEffect): GameState {
       );
       return { ...state, engineVars: { ...state.engineVars, publicApproval: score(next) } };
     }
-    case 'engineers':
+    case 'engineers': {
+      // Phase 6.3.1: hiring freeze control blocks engineer increases.
+      // Decreases still apply (freeze doesn't shield from layoffs).
+      const freezeApplies =
+        e.delta > 0 &&
+        state.operatingAllowance.controls.some(
+          (c) => c.kind === 'hiringFreezeRoles' && c.roles.includes('engineers'),
+        );
+      if (freezeApplies) return state;
       return {
         ...state,
         engineVars: {
@@ -67,6 +75,7 @@ function applyOne(state: GameState, e: EventEffect): GameState {
           engineers: Math.max(0, state.engineVars.engineers + e.delta),
         },
       };
+    }
     case 'templates': {
       const next = clampScore(
         (state.engineVars.templates as unknown as number) + e.delta,

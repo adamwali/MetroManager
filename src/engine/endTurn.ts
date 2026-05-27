@@ -31,6 +31,10 @@ import { tickProject } from './projects';
 import { ridershipModelFor } from './data';
 import { processEventsForQuarter } from './events/firing';
 import { applyStandingOrders } from './standingOrderActions';
+import {
+  snapshotAgenciesForTolerance,
+  tickDirectorTolerance,
+} from './directorTolerance';
 
 /**
  * Advance one quarter. Pure function — does not mutate input.
@@ -293,10 +297,16 @@ export function endTurn(state: GameState): GameState {
     actionLog: [...eventsResult.state.actionLog, ...eventsResult.newLogEntries],
   };
 
+  // Phase 6.2.2: director tolerance tick. Compares this quarter's agency
+  // state against the previous quarter's snapshot to detect doctrine
+  // alignment / violation.
+  const prevSnapshot = snapshotAgenciesForTolerance(state);
+  const afterTolerance = tickDirectorTolerance(afterEvents, prevSnapshot);
+
   // Apply standing orders AFTER events fire — auto-actions can react to
   // newly-fired events (e.g., autoTriageInboxBelowUrgency drains low-urgency
   // events) and to current state metrics (cash/trust).
-  const ordersResult = applyStandingOrders(afterEvents);
+  const ordersResult = applyStandingOrders(afterTolerance);
   return ordersResult.state;
 }
 
