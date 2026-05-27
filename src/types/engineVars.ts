@@ -21,4 +21,12 @@ export interface EngineVars {
   engineers: number;
   /** 0-100. Voter sentiment about your agency, distinct from government trust. Starts 50. */
   publicApproval: Score100;
+  /**
+   * 0-100. Auditor General / regulatory oversight pressure on you.
+   * Phase 10: previously orphan; negative events (whistleblower, scandal,
+   * cost overruns) raise it. Decays slowly (-1/Q) with no incidents.
+   * At ≥50, fires EV056 audit investigation (forced -$M, -board).
+   * Starts 15 (low background level).
+   */
+  auditorScrutiny: Score100;
 }

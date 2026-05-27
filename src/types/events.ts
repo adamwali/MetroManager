@@ -51,6 +51,7 @@ export type EventPredicate =
   | { kind: 'engineers'; gte?: number; lte?: number }
   | { kind: 'templates'; gte?: number; lte?: number }
   | { kind: 'nimbyOrganization'; gte?: number; lte?: number }
+  | { kind: 'auditorScrutiny'; gte?: number; lte?: number }
   | { kind: 'openBooks'; equals: boolean }
   | { kind: 'reliability'; agency: AgencyId; gte?: number; lte?: number }
   | { kind: 'riders'; agency: AgencyId; gte?: number; lte?: number }
@@ -72,6 +73,7 @@ export type EventEffect =
   | { kind: 'nimbyOrganization'; delta: number }
   | { kind: 'crosslinxLeverage'; delta: number }
   | { kind: 'consultantAlignment'; delta: number }
+  | { kind: 'auditorScrutiny'; delta: number }
   | { kind: 'opex'; agency: AgencyId; deltaM: number }
   | { kind: 'fareRevenue'; agency: AgencyId; deltaM: number }
   | { kind: 'reliability'; agency: AgencyId; delta: number }

@@ -103,6 +103,12 @@ function applyOne(state: GameState, e: EventEffect): GameState {
         engineVars: { ...state.engineVars, consultantAlignment: next as unknown as typeof state.engineVars.consultantAlignment },
       };
     }
+    case 'auditorScrutiny': {
+      const next = clampScore(
+        (state.engineVars.auditorScrutiny as unknown as number) + e.delta,
+      );
+      return { ...state, engineVars: { ...state.engineVars, auditorScrutiny: score(next) } };
+    }
     case 'opex':
       return {
         ...state,

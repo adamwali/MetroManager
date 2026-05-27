@@ -247,6 +247,7 @@ export function createInitialGameState(
       openBooks: mods.openBooks,
       engineers: mods.engineers,
       publicApproval: score(clampScore(mods.publicApproval)),
+      auditorScrutiny: score(15),
     },
     rng: createRngSeeds(seed),
     actionLog: [],

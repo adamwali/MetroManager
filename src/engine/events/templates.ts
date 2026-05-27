@@ -195,7 +195,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'technocrat_data_pitch',
         label: 'Brief the mayor with peak-load data + phased capacity model',
-        tradeoff: '[Technocrat / templates ≥50] +10 City Hall trust, -5 public approval (perceived bloodless), no cash',
+        tradeoff: '[Technocrat / Data Systems ≥50] +10 City Hall trust, -5 public approval (perceived bloodless), no cash',
         requires: {
           kind: 'or',
           predicates: [
@@ -488,7 +488,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'accept_full',
         label: 'Accept full claim; preserve relationship',
-        tradeoff: '-$800M cash, +5 future-project pricing (templates +3)',
+        tradeoff: '-$800M cash, +5 future-project pricing (Data Systems +3)',
         effects: [
           { kind: 'cash', deltaM: -800 },
           { kind: 'templates', delta: 3 },
@@ -497,7 +497,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'technocrat_audit',
         label: 'Demand independent cost audit before any settlement',
-        tradeoff: '[Technocrat / templates ≥50] -$30M audit cost, -10 Crosslinx relationship (modelled as +0 to engineers), 50% chance claim drops to $150M',
+        tradeoff: '[Technocrat / Data Systems ≥50] -$30M audit cost, -10 Crosslinx relationship (modelled as +0 to engineers), 50% chance claim drops to $150M',
         requires: {
           kind: 'or',
           predicates: [
@@ -559,7 +559,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'internal_only',
         label: 'Internal celebration only',
-        tradeoff: '+5 board confidence, +5 engineers, +3 templates',
+        tradeoff: '+5 board confidence, +5 engineers, +3 Data Systems',
         effects: [
           { kind: 'boardConfidence', delta: 5, reason: 'Disciplined wins compound' },
           { kind: 'engineers', delta: 5 },
@@ -848,7 +848,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'refuse_with_data',
         label: 'Present ridership data: line cannot meet threshold',
-        tradeoff: '-10 QP trust, +5 board, +3 templates',
+        tradeoff: '-10 QP trust, +5 board, +3 Data Systems',
         effects: [
           { kind: 'governmentTrust', gov: 'queensPark', delta: -10 },
           { kind: 'boardConfidence', delta: 5, reason: 'Stood by analysis' },
@@ -981,7 +981,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'counter_facts',
         label: 'Counter with operational facts + open-books briefing',
-        tradeoff: '+5 QP trust, +5 Ottawa trust, +3 templates',
+        tradeoff: '+5 QP trust, +5 Ottawa trust, +3 Data Systems',
         requires: { kind: 'openBooks', equals: true },
         effects: [
           { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
@@ -1043,7 +1043,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'flat_refusal',
         label: 'Refuse: "ridership analysis does not support extension"',
-        tradeoff: '-12 City Hall trust, +5 board, +3 templates',
+        tradeoff: '-12 City Hall trust, +5 board, +3 Data Systems',
         effects: [
           { kind: 'governmentTrust', gov: 'cityHall', delta: -12 },
           { kind: 'boardConfidence', delta: 5, reason: 'Refused political project' },
@@ -1070,7 +1070,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'redesign',
         label: 'Authorize redesign + 2Q schedule delay',
-        tradeoff: '-$300M cash, +3 templates, no schedule impact on opening (absorbed in buffer)',
+        tradeoff: '-$300M cash, +3 Data Systems, no schedule impact on opening (absorbed in buffer)',
         effects: [
           { kind: 'cash', deltaM: -300 },
           { kind: 'templates', delta: 3 },
@@ -1079,7 +1079,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'exception_waiver',
         label: 'Apply for regulatory exception, proceed as designed',
-        tradeoff: '-$30M cash (legal), -3 templates, gamble on regulator',
+        tradeoff: '-$30M cash (legal), -3 Data Systems, gamble on regulator',
         effects: [
           { kind: 'cash', deltaM: -30 },
           { kind: 'templates', delta: -3 },
@@ -1123,7 +1123,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'fight_in_court',
         label: 'Fight in court with expanded environmental review',
-        tradeoff: '-$50M legal cash, +3 templates, no schedule risk',
+        tradeoff: '-$50M legal cash, +3 Data Systems, no schedule risk',
         effects: [
           { kind: 'cash', deltaM: -50 },
           { kind: 'templates', delta: 3 },
@@ -1167,7 +1167,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'accept_demands',
         label: 'Accept full demands; preserve schedule',
-        tradeoff: '-$600M cash (passed to OL project), +5 templates, +5 public approval',
+        tradeoff: '-$600M cash (passed to OL project), +5 Data Systems, +5 public approval',
         effects: [
           { kind: 'cash', deltaM: -600 },
           { kind: 'templates', delta: 5 },
@@ -1257,7 +1257,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'op_ed_response',
         label: 'Write counter op-ed with cash-management explanation',
-        tradeoff: '+3 public approval, +3 templates',
+        tradeoff: '+3 public approval, +3 Data Systems',
         effects: [
           { kind: 'publicApproval', delta: 3 },
           { kind: 'templates', delta: 3 },
@@ -1540,7 +1540,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'counter_offer',
         label: 'Counter the offer; retain talent',
-        tradeoff: '+$8M/Q opex permanent, +5 engineers, +3 templates',
+        tradeoff: '+$8M/Q opex permanent, +5 engineers, +3 Data Systems',
         effects: [
           { kind: 'opex', agency: 'ttc', deltaM: 8 },
           { kind: 'engineers', delta: 5 },
@@ -1550,7 +1550,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'let_them_go',
         label: 'Wish them well, promote from within',
-        tradeoff: '-10 engineers, -2 templates',
+        tradeoff: '-10 engineers, -2 Data Systems',
         effects: [
           { kind: 'engineers', delta: -10 },
           { kind: 'templates', delta: -2 },
@@ -1989,7 +1989,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'fire_them',
         label: 'End the engagement',
-        tradeoff: '+15 consultant alignment, -10 templates (lost institutional knowledge), -5 board',
+        tradeoff: '+15 consultant alignment, -10 Data Systems (lost institutional knowledge), -5 board',
         effects: [
           { kind: 'consultantAlignment', delta: 15 },
           { kind: 'templates', delta: -10 },
@@ -2085,9 +2085,60 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'counter_terms',
         label: 'Counter — demand -40bp + no exclusivity',
-        tradeoff: '-3 templates (consortium walks if you push too hard), but if they accept (50% chance based on alignment)...',
+        tradeoff: '-3 Data Systems (consortium walks if you push too hard), but if they accept (50% chance based on alignment)...',
         requires: { kind: 'templates', gte: 50 },
         effects: [{ kind: 'templates', delta: -3 }],
+      },
+    ],
+  },
+
+  // ── EV056 Auditor General investigation ─ Phase 10 ─────────────────────
+  {
+    id: 'EV056_auditorInvestigation',
+    category: 'auditor_oversight',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'auditorScrutiny', gte: 50 },
+      cooldownQuarters: 12,
+    },
+    outlet: 'Globe',
+    headline: "Auditor General opens formal investigation of GTTA practices",
+    body: "Months of accumulated scrutiny tips the Office of the Auditor General into a formal investigation. They want documents, depositions, and budget recovery. {ceoName} now has a target on their back.",
+    urgency: 88,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'cooperate_fully',
+        label: 'Cooperate fully; bring in compliance firm',
+        tradeoff: '-$120M cash, -5 board, +5 approval, -25 auditor scrutiny',
+        effects: [
+          { kind: 'cash', deltaM: -120 },
+          { kind: 'boardConfidence', delta: -5, reason: 'Auditor investigation expense' },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'auditorScrutiny', delta: -25 },
+        ],
+      },
+      {
+        id: 'fight_jurisdiction',
+        label: 'Challenge jurisdiction in court',
+        tradeoff: '-$30M legal cash, -10 approval, -8 Ottawa trust, scrutiny stays high',
+        effects: [
+          { kind: 'cash', deltaM: -30 },
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -8 },
+          { kind: 'auditorScrutiny', delta: -5 },
+        ],
+      },
+      {
+        id: 'admit_findings',
+        label: 'Admit specific findings; commit reforms',
+        tradeoff: '-$60M restitution, -10 board (admission), +10 approval, -20 scrutiny',
+        effects: [
+          { kind: 'cash', deltaM: -60 },
+          { kind: 'boardConfidence', delta: -10, reason: 'Admitted to auditor findings' },
+          { kind: 'publicApproval', delta: 10 },
+          { kind: 'auditorScrutiny', delta: -20 },
+        ],
       },
     ],
   },
@@ -2159,17 +2210,17 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'deny',
         label: 'Deny categorically; demand retraction',
-        tradeoff: '+3 board (firmness), -8 templates (auditor scrutiny), -5 approval',
+        tradeoff: '+3 board (firmness), +20 auditor scrutiny, -5 approval',
         effects: [
           { kind: 'boardConfidence', delta: 3, reason: 'Strong denial of whistleblower' },
-          { kind: 'templates', delta: -8 },
+          { kind: 'auditorScrutiny', delta: 20 },
           { kind: 'publicApproval', delta: -5 },
         ],
       },
       {
         id: 'commission_audit',
         label: 'Commission third-party audit; commit to disclosure',
-        tradeoff: '-$15M cash, -3 board short-term, +8 approval, +5 each gov trust',
+        tradeoff: '-$15M cash, -3 board short-term, +8 approval, +5 each gov trust, -10 scrutiny',
         effects: [
           { kind: 'cash', deltaM: -15 },
           { kind: 'boardConfidence', delta: -3, reason: 'Self-initiated audit signals weakness' },
@@ -2177,15 +2228,17 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
           { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
           { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
           { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+          { kind: 'auditorScrutiny', delta: -10 },
         ],
       },
       {
         id: 'admit_partial',
         label: 'Admit some issues; promise reforms',
-        tradeoff: '-5 board, +3 approval, neutral else',
+        tradeoff: '-5 board, +3 approval, +5 scrutiny',
         effects: [
           { kind: 'boardConfidence', delta: -5, reason: 'Admitted partial mismanagement' },
           { kind: 'publicApproval', delta: 3 },
+          { kind: 'auditorScrutiny', delta: 5 },
         ],
       },
     ],
@@ -2302,7 +2355,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'accept_graciously',
         label: 'Accept; speak about team',
-        tradeoff: '+8 board, +5 approval, +5 templates (talent flows in)',
+        tradeoff: '+8 board, +5 approval, +5 Data Systems (talent flows in)',
         effects: [
           { kind: 'boardConfidence', delta: 8, reason: 'International award won' },
           { kind: 'publicApproval', delta: 5 },
@@ -2312,7 +2365,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'decline_humbly',
         label: 'Decline; "team did the work"',
-        tradeoff: '+4 board (humility), +3 approval, no templates boost',
+        tradeoff: '+4 board (humility), +3 approval, no Data Systems boost',
         effects: [
           { kind: 'boardConfidence', delta: 4, reason: 'Humbly declined award' },
           { kind: 'publicApproval', delta: 3 },
@@ -2348,7 +2401,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'data_response',
         label: 'Counter with own data; offer dialogue',
-        tradeoff: '+2 approval, -3 templates (no real change)',
+        tradeoff: '+2 approval, -3 Data Systems (no real change)',
         effects: [
           { kind: 'publicApproval', delta: 2 },
           { kind: 'templates', delta: -3 },

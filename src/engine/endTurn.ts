@@ -276,6 +276,13 @@ export function endTurn(state: GameState): GameState {
     (state.engineVars.nimbyOrganization as unknown as number) - 2,
   );
 
+  // Phase 10: auditor scrutiny decays -1/Q with no new incidents (slow). At
+  // ≥50 the EV056 audit investigation event will fire (handled by predicate).
+  const auditorDecayed = Math.max(
+    0,
+    (state.engineVars.auditorScrutiny as unknown as number) - 1,
+  );
+
   // Phase 5.2: cleanliness budgets drift public approval each quarter.
   // Sum across agencies; clamped 0-100.
   const cleanlinessApprovalDelta =
@@ -313,6 +320,7 @@ export function endTurn(state: GameState): GameState {
   const engineVarsDecayed = {
     ...state.engineVars,
     nimbyOrganization: score(nimbyDecayed),
+    auditorScrutiny: score(auditorDecayed),
     publicApproval: score(newPublicApproval),
   };
 

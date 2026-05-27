@@ -185,6 +185,7 @@ export const exampleGameState: GameState = {
     openBooks: false,
     engineers: 180,
     publicApproval: score(50),
+    auditorScrutiny: score(15),
   },
   rng: {
     masterSeed: 0,

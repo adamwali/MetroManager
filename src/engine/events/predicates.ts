@@ -44,6 +44,8 @@ export function evaluatePredicate(state: GameState, pred: EventPredicate): boole
       return checkRange(state.engineVars.templates as unknown as number, pred);
     case 'nimbyOrganization':
       return checkRange(state.engineVars.nimbyOrganization as unknown as number, pred);
+    case 'auditorScrutiny':
+      return checkRange(state.engineVars.auditorScrutiny as unknown as number, pred);
     case 'openBooks':
       return state.engineVars.openBooks === pred.equals;
     case 'reliability':
