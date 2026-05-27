@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 interface KpiProps {
   label: string;
@@ -34,6 +35,9 @@ const TONE_VALUE: Record<NonNullable<KpiProps['tone']>, string> = {
 /**
  * One KPI cell. Layout: label on top (uppercase, small), big number,
  * optional delta + caption + sparkline. Mercury-light feel.
+ *
+ * Phase 10 polish: ⓘ icon with CSS hover card replaces native `title=`
+ * (faster appearance, consistent styling, mobile-friendly with tap).
  */
 export function Kpi({
   label,
@@ -48,27 +52,34 @@ export function Kpi({
 }: KpiProps) {
   const interactive = onClick !== undefined;
   const Comp: 'button' | 'div' = interactive ? 'button' : 'div';
-  const titleParts: string[] = [];
-  if (helpText) titleParts.push(helpText);
-  if (interactive) titleParts.push(`Click to trace ${label}`);
-  const title = titleParts.length > 0 ? titleParts.join(' — ') : undefined;
+  const [showHelp, setShowHelp] = useState(false);
   return (
     <Comp
       type={interactive ? 'button' : undefined}
       onClick={onClick}
-      className={`flex flex-col gap-1 rounded-md border bg-white px-3 py-2 text-left ${TONE_RING[tone]} ${
+      className={`relative flex flex-col gap-1 rounded-md border bg-white px-3 py-2 text-left ${TONE_RING[tone]} ${
         interactive
           ? 'cursor-pointer hover:border-blue-400 hover:shadow-sm transition-shadow'
           : ''
       } ${className ?? ''}`}
-      title={title}
+      title={interactive ? `Click to trace ${label}` : undefined}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 inline-flex items-center gap-1">
           {label}
           {helpText && (
             <span
-              className="text-neutral-400 cursor-help"
+              role="button"
+              tabIndex={0}
+              className="text-neutral-400 hover:text-blue-600 cursor-help"
+              onMouseEnter={() => setShowHelp(true)}
+              onMouseLeave={() => setShowHelp(false)}
+              onFocus={() => setShowHelp(true)}
+              onBlur={() => setShowHelp(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowHelp((v) => !v);
+              }}
               aria-label={`Help: ${helpText}`}
             >
               ⓘ
@@ -82,6 +93,14 @@ export function Kpi({
         {delta !== undefined && <span className="num font-medium text-neutral-600">{delta}</span>}
         {caption !== undefined && <span className="text-neutral-500">{caption}</span>}
       </div>
+      {helpText && showHelp && (
+        <div
+          className="absolute left-0 right-0 top-full z-30 mt-1 rounded-md border border-neutral-200 bg-neutral-900 text-white px-3 py-2 text-[11px] leading-snug shadow-lg pointer-events-none"
+          role="tooltip"
+        >
+          {helpText}
+        </div>
+      )}
     </Comp>
   );
 }
