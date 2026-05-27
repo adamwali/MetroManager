@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { useGameStore, useHistory } from '@state/gameStore';
+import { TraceDrawer } from './TraceDrawer';
+import type { TraceMetric } from '@/utils/trace';
 import {
   describeBoardConfidence,
   describeCashRunway,
@@ -25,6 +28,7 @@ export function TopStrip() {
   const state = useGameStore((s) => s.state);
   const history = useHistory();
   const k = deriveKpis(state, history);
+  const [traceMetric, setTraceMetric] = useState<TraceMetric | null>(null);
 
   const cashBalance = state.cash.balance as unknown as number;
   const cashDelta = state.cash.lastQuarterDelta as unknown as number;
@@ -44,6 +48,7 @@ export function TopStrip() {
         caption={describeCashRunway(cashBalance, cashDelta)}
         tone={cashTone}
         spark={<Sparkline values={cashSpark} />}
+        onClick={() => setTraceMetric('cash')}
       />
       <Kpi
         label="Daily riders"
@@ -59,6 +64,7 @@ export function TopStrip() {
             : undefined
         }
         spark={<Sparkline values={ridersSpark} />}
+        onClick={() => setTraceMetric('totalRiders')}
       />
       <Kpi
         label="Board confidence"
@@ -71,6 +77,7 @@ export function TopStrip() {
               ? 'warning'
               : 'neutral'
         }
+        onClick={() => setTraceMetric('boardConfidence')}
       />
       <Kpi
         label="TTC on-time"
@@ -93,6 +100,7 @@ export function TopStrip() {
               ? 'warning'
               : 'neutral'
         }
+        onClick={() => setTraceMetric('publicApproval')}
       />
       <Kpi
         label="Ottawa"
@@ -105,6 +113,7 @@ export function TopStrip() {
               ? 'warning'
               : 'neutral'
         }
+        onClick={() => setTraceMetric('trust:ottawa')}
       />
       <Kpi
         label="Queen's Park"
@@ -117,6 +126,7 @@ export function TopStrip() {
               ? 'warning'
               : 'neutral'
         }
+        onClick={() => setTraceMetric('trust:queensPark')}
       />
       <Kpi
         label="City Hall"
@@ -129,7 +139,9 @@ export function TopStrip() {
               ? 'warning'
               : 'neutral'
         }
+        onClick={() => setTraceMetric('trust:cityHall')}
       />
+      <TraceDrawer metric={traceMetric} onClose={() => setTraceMetric(null)} />
     </div>
   );
 }

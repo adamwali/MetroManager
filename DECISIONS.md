@@ -5,6 +5,71 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 8.6: trace UI ("why did this happen?")
+
+Closes Phase 8. Every KPI on the top strip is now clickable; click
+surfaces a right-side drawer with the action-log entries that moved
+that metric, newest first. Implements P2 of the design doc literally:
+"clicking any number shows the chain of causes."
+
+**Trace metrics supported:**
+- cash, totalRiders (from quarter_summary breakdown)
+- trust:ottawa, trust:queensPark, trust:cityHall
+- boardConfidence, publicApproval
+
+**Magnitude derivation** (`src/utils/trace.ts:buildTrace`):
+- `quarter_summary` → pulls cashDelta/ridersDelta from entry
+- `player_decision` → re-reads template + chosen branch via
+  `eventTemplateById`, extracts matching effect from branch.effects
+- `player_action` (direct + standing-order) → parses action label
+  (`publicLobby:ottawa` or `autoLobby:ottawa:publicLobby`), looks up
+  effect from POLITICAL_ACTION_TRUST_EFFECTS table
+- `event_informational` → election entries surfaced for trust trace
+  (no precise magnitude — election outcome was randomized)
+- `event_fired` / `event_telegraph` → skipped (no direct metric impact;
+  the resolution shows up as player_decision)
+
+**UI (`src/ui/components/TraceDrawer.tsx`):**
+- Right-side drawer (~400px), slides in over the page with scrim
+- Per-entry: quarter label + source chip + magnitude (signed) + summary
+- Source-coded border colors: quarter gray, decision emerald, action
+  blue, standing order indigo, event amber
+- Magnitude rendered red/emerald by sign
+- "Some entries lack precise magnitudes" footer for transparency
+
+**Kpi component made clickable:** new `onClick` prop transforms cells
+into `<button>` elements with hover state. KPIs without trace metrics
+(currently TTC on-time, future per-agency cards) stay as `<div>`.
+
+**6 trace tests** in `src/utils/trace.test.ts`:
+- quarter_summary entries with cashDelta as magnitude
+- newest-first ordering
+- publicLobby surfaces with +6 magnitude
+- lobbying ottawa doesn't surface in queensPark trace (isolation)
+- player_decision extracts +15 City Hall trust from EV017 public_pledge
+- standing-order auto-lobby tagged with source=standingOrder
+
+**245 tests total passing.** Bundle 470KB JS / 140KB gzip.
+
+**Phase 8 fully shipped.** PROGRESS.md updated.
+
+**Strategic / UX implications:**
+- "Why did my Ottawa trust drop?" — click cell, see the federal election
+  fired and shifted trust, plus any lobbying since
+- "Why did my cash go negative?" — click cash, walk through the
+  quarter_summary entries with each Q's net delta + the standing-order
+  auto-bond if it triggered
+- Standing-order labels show clearly in trace (source=standingOrder) so
+  player can attribute auto-decisions to specific rules
+
+**Deferred trace polish (Phase 8.7 / Phase 10):**
+- Full effect re-derivation for ALL action kinds (currently best-effort)
+- Aggregate ranges ("over last 4Q, you lost X cash") at top of drawer
+- Filter by source kind
+- Mobile-friendly drawer layout
+
+---
+
 ## 2026-05-26 — Phase 8.1: standing orders + quarter recap
 
 Player can now create rules that auto-resolve routine decisions, freeing

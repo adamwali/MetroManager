@@ -24,6 +24,7 @@ import {
   removeStandingOrder,
   toggleStandingOrder,
   updateStandingOrder,
+  type StandingOrderWithoutId,
 } from '@engine/standingOrderActions';
 import type { StandingOrder } from '@/types/standingOrders';
 import type { StationQualityTier } from '@engine/projectCatalog';
@@ -107,7 +108,7 @@ export interface GameStore {
   issueOperatingBond: (creditor: CreditorType, amountM: number) => void;
   refinanceTranche: (trancheId: string) => void;
   /** Standing orders (Phase 8.1). */
-  addStandingOrder: (order: Omit<StandingOrder, 'id'>) => void;
+  addStandingOrder: (order: StandingOrderWithoutId) => void;
   removeStandingOrder: (orderId: string) => void;
   toggleStandingOrder: (orderId: string) => void;
   updateStandingOrder: (orderId: string, patch: Partial<StandingOrder>) => void;

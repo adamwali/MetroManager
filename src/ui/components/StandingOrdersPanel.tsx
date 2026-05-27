@@ -127,52 +127,44 @@ function AddRuleForm({ onClose }: { onClose: () => void }) {
   const [choiceId, setChoiceId] = useState('public_pledge');
 
   const handleAdd = () => {
-    // TS limitation: Omit<UnionType, 'id'> doesn't distribute cleanly.
-    // Build the order then cast — runtime shape matches one variant.
-    let order: Omit<StandingOrder, 'id'>;
     switch (kind) {
       case 'autoApproveMaintenanceBelow':
-        order = {
+        add({
           kind: 'autoApproveMaintenanceBelow',
           thresholdMillions: cash(threshold),
           enabled: true,
-        } as Omit<StandingOrder, 'id'>;
+        });
         break;
       case 'autoTriageInboxBelowUrgency':
-        order = {
-          kind: 'autoTriageInboxBelowUrgency',
-          minUrgency: urgency,
-          enabled: true,
-        } as Omit<StandingOrder, 'id'>;
+        add({ kind: 'autoTriageInboxBelowUrgency', minUrgency: urgency, enabled: true });
         break;
       case 'autoLobbyOnTrustDrop':
-        order = {
+        add({
           kind: 'autoLobbyOnTrustDrop',
           governmentId: govId,
           trustThreshold: trustDrop,
           actionKind: lobbyAction,
           enabled: true,
-        } as Omit<StandingOrder, 'id'>;
+        });
         break;
       case 'autoIssueOperatingBondsBelowCash':
-        order = {
+        add({
           kind: 'autoIssueOperatingBondsBelowCash',
           cashThresholdM: cash(cashThreshold),
           amountM: cash(bondAmount),
           creditor,
           enabled: true,
-        } as Omit<StandingOrder, 'id'>;
+        });
         break;
       case 'autoResolveEvent':
-        order = {
+        add({
           kind: 'autoResolveEvent',
           eventTemplateId,
           choiceId,
           enabled: true,
-        } as Omit<StandingOrder, 'id'>;
+        });
         break;
     }
-    add(order);
     onClose();
   };
 

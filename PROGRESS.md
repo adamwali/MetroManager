@@ -50,6 +50,12 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
   auto-issue operating bonds on cash crunch, auto-resolve specific event)
   + quarter recap inline panel on Mission Control. Auto-actions logged
   with cause=standingOrder for the trace UI.
+- **Phase 8.6** — Trace UI. Every KPI on the top strip clickable;
+  right-side drawer opens with newest-first list of log entries that
+  moved that metric. Magnitudes derived from quarter_summary breakdown
+  (cash, riders), branch effects (player_decision), and action labels
+  (player_action). Source-coded by kind: quarter (gray), decision
+  (emerald), action (blue), standing order (indigo), event (amber).
 
 ## 🟡 Partial (more sub-phases to come)
 
@@ -69,7 +75,6 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 
 ## ⏳ Not started
 
-- **Phase 8.6** — Trace UI ("why did this happen?" drawer on KPI click)
 - **Phase 9** — Full charts (Recharts), analytics polish
 - **Phase 10** — Onboarding briefing, polish, accessibility audit
 

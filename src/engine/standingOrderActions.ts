@@ -192,9 +192,21 @@ export function applyStandingOrders(state: GameState): StandingOrderResult {
 let nextOrderId = 1;
 const newOrderId = (): string => `so_${Date.now()}_${nextOrderId++}`;
 
+/**
+ * Distributive `Omit<StandingOrder, 'id'>` so callers can pass any specific
+ * variant without TS treating the union as a single shape. Without this,
+ * `Omit<UnionType, 'id'>` collapses the discriminator and TS rejects every
+ * literal that's specific to one branch.
+ */
+export type StandingOrderWithoutId = StandingOrder extends infer T
+  ? T extends StandingOrder
+    ? Omit<T, 'id'>
+    : never
+  : never;
+
 export function addStandingOrder(
   state: GameState,
-  order: Omit<StandingOrder, 'id'>,
+  order: StandingOrderWithoutId,
 ): GameState {
   const withId = { ...order, id: newOrderId() } as StandingOrder;
   return { ...state, standingOrders: [...state.standingOrders, withId] };

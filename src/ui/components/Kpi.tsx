@@ -11,6 +11,8 @@ interface KpiProps {
   /** Optional inline sparkline. */
   spark?: ReactNode;
   className?: string;
+  /** Click handler — wires KPI to the trace drawer (Phase 8.6). */
+  onClick?: () => void;
 }
 
 const TONE_RING: Record<NonNullable<KpiProps['tone']>, string> = {
@@ -31,10 +33,28 @@ const TONE_VALUE: Record<NonNullable<KpiProps['tone']>, string> = {
  * One KPI cell. Layout: label on top (uppercase, small), big number,
  * optional delta + caption + sparkline. Mercury-light feel.
  */
-export function Kpi({ label, value, delta, caption, tone = 'neutral', spark, className }: KpiProps) {
+export function Kpi({
+  label,
+  value,
+  delta,
+  caption,
+  tone = 'neutral',
+  spark,
+  className,
+  onClick,
+}: KpiProps) {
+  const interactive = onClick !== undefined;
+  const Comp: 'button' | 'div' = interactive ? 'button' : 'div';
   return (
-    <div
-      className={`flex flex-col gap-1 rounded-md border bg-white px-3 py-2 ${TONE_RING[tone]} ${className ?? ''}`}
+    <Comp
+      type={interactive ? 'button' : undefined}
+      onClick={onClick}
+      className={`flex flex-col gap-1 rounded-md border bg-white px-3 py-2 text-left ${TONE_RING[tone]} ${
+        interactive
+          ? 'cursor-pointer hover:border-blue-400 hover:shadow-sm transition-shadow'
+          : ''
+      } ${className ?? ''}`}
+      title={interactive ? `Click to trace ${label}` : undefined}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
@@ -47,6 +67,6 @@ export function Kpi({ label, value, delta, caption, tone = 'neutral', spark, cla
         {delta !== undefined && <span className="num font-medium text-neutral-600">{delta}</span>}
         {caption !== undefined && <span className="text-neutral-500">{caption}</span>}
       </div>
-    </div>
+    </Comp>
   );
 }
