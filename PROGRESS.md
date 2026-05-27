@@ -73,10 +73,10 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 
 ## 🟡 Partial (more sub-phases to come)
 
-- **Phase 3.x** — 40 events shipped (of ~75 in `docs/03-event-catalogue.md`).
-  Phase 3.3 will add character actors on events. Other 35 events also
-  deferred to 3.3.
-- **Phase 4.x** — 6 projects shipped (of ~30 in
+- **Phase 3.x** — 46 events shipped (of ~75 in
+  `docs/03-event-catalogue.md`). 8 events tagged with character actors.
+  Remaining content + actor sweep → Phase 3.3 follow-up.
+- **Phase 4.x** — 10 projects shipped (of ~30 in
   `docs/02-project-catalogue-v3.md`). Studies during proposed (uncertainty
   narrowing), LVC slider, project-specific events, cost-overrun
   mechanics → Phase 4.2.
@@ -117,3 +117,8 @@ an explicit phase pointer.
   per point above 30, capped at -14%)
 - ~~Stacked financing~~ ✅ shipped (acceptFinancingPackage; package builder UI)
 - ~~NIMBY organization decay~~ ✅ shipped (Phase 6.3 — decays -2/Q)
+- ~~Crosslinx leverage~~ ✅ shipped (Phase 6.3.2 — affects construction
+  burn; EV045 shifts it)
+- ~~Consultant alignment~~ ✅ shipped (Phase 6.3.2 — affects opex;
+  EV046 shifts it)
+- ~~Disruptor archetype hidden~~ ✅ shipped (Phase 6.3.2 — now in picker)
