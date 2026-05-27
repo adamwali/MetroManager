@@ -1,4 +1,5 @@
 import { useGameStore } from '@state/gameStore';
+import type { ActionLogEntry } from '@/types/actionLog';
 import { quarterLabel } from '@/utils/humanize';
 
 /**
@@ -14,6 +15,7 @@ import { quarterLabel } from '@/utils/humanize';
  */
 export function NewsRail() {
   const log = useGameStore((s) => s.state.actionLog);
+  const quarter = useGameStore((s) => s.state.quarter as unknown as number);
   const recent = log.slice(-10).reverse();
 
   return (
@@ -22,12 +24,35 @@ export function NewsRail() {
         Recent activity
       </h2>
       {recent.length === 0 ? (
-        <p className="mt-3 text-sm text-neutral-500">
-          Campaign just started. After your first turn, this rail tracks each quarter's recap.
-        </p>
+        <div className="mt-3 space-y-2">
+          <p className="text-sm text-neutral-500">
+            Campaign just started. After your first turn, this rail tracks each quarter's recap.
+          </p>
+          <p className="text-[11px] text-neutral-400 italic">
+            ⓘ Most events fire from Q3 onward. The first 2-3 quarters are quiet on purpose
+            — you've got time to set maintenance, plan, and feel out the system.
+          </p>
+        </div>
+      ) : recent.length < 4 && quarter < 4 ? (
+        <>
+          <p className="mt-3 text-[11px] text-neutral-400 italic">
+            ⓘ Event cadence picks up from Q3-4 onward.
+          </p>
+          <ul className="mt-3 space-y-2">{renderRail(recent)}</ul>
+        </>
       ) : (
         <ul className="mt-3 space-y-2">
-          {recent.map((e) => {
+          {renderRail(recent)}
+        </ul>
+      )}
+    </aside>
+  );
+}
+
+function renderRail(recent: ActionLogEntry[]) {
+  return (
+    <>
+      {recent.map((e) => {
             const isTelegraph = e.kind === 'event_telegraph';
             const isInfo = e.kind === 'event_informational';
             const isFired = e.kind === 'event_fired';
@@ -94,8 +119,6 @@ export function NewsRail() {
               </li>
             );
           })}
-        </ul>
-      )}
-    </aside>
+    </>
   );
 }

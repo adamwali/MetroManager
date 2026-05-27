@@ -75,6 +75,11 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
     template.actorCharacterId !== undefined
       ? state.characters[template.actorCharacterId]
       : undefined;
+  // CEO name interpolation: replace {ceoName} with the player's chosen name
+  const interpolate = (text: string): string =>
+    text.replace(/\{ceoName\}/g, state.ceo.name);
+  const headline = interpolate(template.headline);
+  const body = interpolate(template.body);
 
   const handleChoice = (choiceId: string) => {
     applyEventChoice(templateId, choiceId);
@@ -91,7 +96,7 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
                 {template.outlet}
               </span>
             )}
-            <h1 className="text-lg font-semibold leading-tight">{template.headline}</h1>
+            <h1 className="text-lg font-semibold leading-tight">{headline}</h1>
           </div>
           {actor && (
             <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50/40 px-2.5 py-1.5">
@@ -104,7 +109,7 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
               </span>
             </div>
           )}
-          <p className="mt-2 text-sm text-neutral-600 leading-relaxed">{template.body}</p>
+          <p className="mt-2 text-sm text-neutral-600 leading-relaxed">{body}</p>
           {/* Renegotiation outcome preview (EV041 only) */}
           {templateId === 'EV041_allowanceRenegotiation' && (
             <RenegotiationPreviewPanel />
