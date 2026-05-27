@@ -36,11 +36,20 @@ export interface CapitalCol {
   quarter: number;
   label: string;
   isForecast: boolean;
-  capexDraws: number;
+  /** OL draws shown as their own row (P00 inherited mega project). */
+  ontarioLineDraws: number;
+  otherCapexDraws: number;
+  totalCapexDraws: number;
+  /** OL inherited debt service ($M/Q) — pre-existing commitment. */
+  ontarioLineDebtService: number;
+  otherDebtService: number;
   financingProceeds: number;
   refiFee: number;
   netCapitalFlow: number;
   endingCash: number;
+  /** Forecast cash band from Monte Carlo (forecast cols only). */
+  cashMin?: number;
+  cashMax?: number;
 }
 
 function quarterLabel(quarterIndex: number): string {
@@ -200,25 +209,14 @@ export function buildOperatingPnl(
   return [...historical, ...forecast];
 }
 
-/** Capital activity columns (capex + financing flows). */
+/** Capital activity columns (capex + financing flows). Phase 10.1. */
 export function buildCapitalActivity(
   state: GameState,
   pastQuarters = 6,
+  forecastQuarters = 4,
+  forecastCashPoints?: { quarter: number; cashMedian: number; cashMin: number; cashMax: number }[],
 ): CapitalCol[] {
   const cols: CapitalCol[] = [];
-  // Walk player_actions for bond proceeds
-  const financingByQuarter = new Map<number, number>();
-  for (const e of state.actionLog) {
-    if (e.kind !== 'player_action') continue;
-    const q = e.quarter as unknown as number;
-    if (e.action.startsWith('issueOperatingBond:') || e.action.startsWith('autoIssueBond:')) {
-      const match = e.summary.match(/\+\$([\d,]+)M/);
-      if (match) {
-        const amount = Number(match[1]!.replace(/,/g, ''));
-        financingByQuarter.set(q, (financingByQuarter.get(q) ?? 0) + amount);
-      }
-    }
-  }
   const summaries = state.actionLog.filter((e) => e.kind === 'quarter_summary');
   for (const entry of summaries) {
     if (entry.kind !== 'quarter_summary') continue;
@@ -226,20 +224,59 @@ export function buildCapitalActivity(
     const m = b.endOfQuarterMetrics;
     if (!m) continue;
     const q = entry.quarter as unknown as number;
-    const capexDraws = b.projects.constructionDraws.reduce((a, d) => a + (d.drawn ?? 0), 0);
-    const financingProceeds = financingByQuarter.get(q) ?? 0;
+
+    // New cleaner fields with backfill for pre-Phase-10.1 saves
+    const drawsByTpl = m.capexDrawsByTemplate ?? {};
+    const ontarioLineDraws = drawsByTpl['P00'] ?? 0;
+    const totalCapexDraws =
+      m.projectCapexDraws ??
+      b.projects.constructionDraws.reduce((a, d) => a + (d.drawn ?? 0), 0);
+    const otherCapexDraws = totalCapexDraws - ontarioLineDraws;
+    const dsByPurpose = m.debtServiceByPurpose ?? {
+      ontarioLine: 0,
+      general: b.cashFlow.debtService,
+    };
+    const financingProceeds = m.financingProceeds ?? 0;
+
     cols.push({
       quarter: q,
       label: quarterLabel(q),
       isForecast: false,
-      capexDraws,
+      ontarioLineDraws,
+      otherCapexDraws,
+      totalCapexDraws,
+      ontarioLineDebtService: dsByPurpose.ontarioLine,
+      otherDebtService: dsByPurpose.general,
       financingProceeds,
       refiFee: b.cashFlow.refiFee,
-      netCapitalFlow: financingProceeds - capexDraws - b.cashFlow.refiFee,
+      netCapitalFlow: financingProceeds - totalCapexDraws - b.cashFlow.refiFee,
       endingCash: m.cashM,
     });
   }
-  return cols.slice(-pastQuarters);
+  const historical = cols.slice(-pastQuarters);
+
+  if (forecastQuarters > 0 && historical.length > 0 && forecastCashPoints) {
+    const last = historical[historical.length - 1]!;
+    for (const pt of forecastCashPoints.slice(0, forecastQuarters)) {
+      historical.push({
+        quarter: pt.quarter,
+        label: quarterLabel(pt.quarter),
+        isForecast: true,
+        ontarioLineDraws: last.ontarioLineDraws,
+        otherCapexDraws: last.otherCapexDraws,
+        totalCapexDraws: last.totalCapexDraws,
+        ontarioLineDebtService: last.ontarioLineDebtService,
+        otherDebtService: last.otherDebtService,
+        financingProceeds: 0,
+        refiFee: 0,
+        netCapitalFlow: -last.totalCapexDraws - last.ontarioLineDebtService - last.otherDebtService,
+        endingCash: pt.cashMedian,
+        cashMin: pt.cashMin,
+        cashMax: pt.cashMax,
+      });
+    }
+  }
+  return historical;
 }
 
 /** Weighted-average effective interest rate. */

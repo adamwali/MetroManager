@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 import {
   buildCapitalActivity,
@@ -29,11 +29,24 @@ const SCOPE_LABELS: Record<FinancialScope, string> = {
 
 export function FinancialStatements() {
   const state = useGameStore((s) => s.state);
+  const forecastRange = useGameStore((s) => s.forecastRange);
   const [scope, setScope] = useState<FinancialScope>('consolidated');
 
   const isCapital = scope === 'capital';
+  // Monte Carlo cash forecast for Capital Activity (12 runs, next 4Q).
+  // Computed lazily on scope change since it's a sim.
+  const cashForecast = useMemo(() => {
+    if (!isCapital) return undefined;
+    return forecastRange(4, 12).points.map((p) => ({
+      quarter: p.quarter,
+      cashMedian: p.cashMedian,
+      cashMin: p.cashMin,
+      cashMax: p.cashMax,
+    }));
+  }, [isCapital, forecastRange]);
+
   const pnlCols = isCapital ? [] : buildOperatingPnl(state, scope, 6, 4);
-  const capCols = isCapital ? buildCapitalActivity(state, 8) : [];
+  const capCols = isCapital ? buildCapitalActivity(state, 6, 4, cashForecast) : [];
 
   return (
     <section className="rounded-md border border-neutral-200 bg-white p-4">
@@ -148,20 +161,40 @@ function CapitalTable({ cols }: { cols: CapitalCol[] }) {
         <tr className="text-[10px] uppercase tracking-wider text-neutral-500">
           <th className="text-left py-1 pr-4 font-semibold">Line item</th>
           {cols.map((c) => (
-            <th key={c.quarter} className="text-right py-1 px-2 font-semibold">
+            <th
+              key={c.quarter}
+              className={`text-right py-1 px-2 font-semibold ${c.isForecast ? 'bg-neutral-50 text-neutral-400' : ''}`}
+            >
               {c.label}
+              {c.isForecast && <div className="text-[8px] font-normal">forecast</div>}
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        <Subheader label="OUTFLOWS — Capital projects" cols={cols} />
-        <Row label="  Construction draws" cols={cols} pick={(c) => -c.capexDraws} />
+        <Subheader label="OUTFLOWS — Capital project draws" cols={cols} />
+        <Row label="  Ontario Line (inherited mega)" cols={cols} pick={(c) => -c.ontarioLineDraws} />
+        <Row label="  Other projects" cols={cols} pick={(c) => -c.otherCapexDraws} />
+        <Subheader label="OUTFLOWS — Existing debt commitments" cols={cols} />
+        <Row label="  Ontario Line debt service (inherited)" cols={cols} pick={(c) => -c.ontarioLineDebtService} />
+        <Row label="  Other debt service" cols={cols} pick={(c) => -c.otherDebtService} />
         <Row label="  Refi fees paid" cols={cols} pick={(c) => -c.refiFee} />
         <Subheader label="INFLOWS — Financing" cols={cols} />
         <Row label="  Bond proceeds" cols={cols} pick={(c) => c.financingProceeds} positive />
         <SubtotalRow label="Net capital flow" cols={cols} pick={(c) => c.netCapitalFlow} />
         <TotalRow label="Ending cash" cols={cols} pick={(c) => c.endingCash} />
+        {cols.some((c) => c.isForecast && c.cashMin !== undefined) && (
+          <tr className="border-t border-neutral-100 text-[10px] text-neutral-500">
+            <td className="text-left py-1 pr-4 italic">  Forecast cash band (Monte Carlo)</td>
+            {cols.map((c) => (
+              <td key={`band-${c.quarter}`} className="text-right py-1 px-2">
+                {c.isForecast && c.cashMin !== undefined && c.cashMax !== undefined
+                  ? `${formatMoney(c.cashMin)}…${formatMoney(c.cashMax)}`
+                  : '—'}
+              </td>
+            ))}
+          </tr>
+        )}
       </tbody>
     </table>
   );

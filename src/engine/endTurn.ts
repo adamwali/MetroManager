@@ -197,6 +197,13 @@ export function endTurn(state: GameState): GameState {
     (agenciesFinal.up.dailyRiders as unknown as number);
   const ridersDelta = systemAfter - systemBefore;
 
+  // Financing proceeds = tranches issued during this quarter (issuedAt
+  // matches the quarter we're closing). Replaces fragile regex parsing.
+  const currentQ = state.quarter as unknown as number;
+  const financingProceedsThisQuarter = debtWithRating.tranches
+    .filter((t) => (t.issuedAt as unknown as number) === currentQ)
+    .reduce((a, t) => a + (t.principal as unknown as number), 0);
+
   const perAgency = {} as QuarterSummaryBreakdown['ridership']['perAgency'];
   for (const agencyId of ['ttc', 'go', 'up'] as const) {
     const track = organicTracking[agencyId]!;
@@ -234,25 +241,18 @@ export function endTurn(state: GameState): GameState {
         go: agenciesFinal.go.dailyRiders as unknown as number,
         up: agenciesFinal.up.dailyRiders as unknown as number,
       },
-      // Phase 10 financial overhaul: per-agency breakdown for drill-down
+      // Phase 10 financial overhaul: per-agency breakdown for drill-down.
+      // NOTE: lastQuarterOpex already includes service-quality budgets via
+      // cashflow.ts:quarterlyOperatingExpense, so DON'T add them again.
       perAgencyFareRevenue: {
         ttc: agenciesFinal.ttc.lastQuarterFareRevenue as unknown as number,
         go: agenciesFinal.go.lastQuarterFareRevenue as unknown as number,
         up: agenciesFinal.up.lastQuarterFareRevenue as unknown as number,
       },
       perAgencyOpex: {
-        ttc: (agenciesFinal.ttc.lastQuarterOpex as unknown as number) +
-          (agenciesFinal.ttc.operatingParams.securityBudget as unknown as number) +
-          (agenciesFinal.ttc.operatingParams.cleanlinessBudget as unknown as number) +
-          ((agenciesFinal.ttc.operatingParams.accessibilityBudget as unknown as number) ?? 0),
-        go: (agenciesFinal.go.lastQuarterOpex as unknown as number) +
-          (agenciesFinal.go.operatingParams.securityBudget as unknown as number) +
-          (agenciesFinal.go.operatingParams.cleanlinessBudget as unknown as number) +
-          ((agenciesFinal.go.operatingParams.accessibilityBudget as unknown as number) ?? 0),
-        up: (agenciesFinal.up.lastQuarterOpex as unknown as number) +
-          (agenciesFinal.up.operatingParams.securityBudget as unknown as number) +
-          (agenciesFinal.up.operatingParams.cleanlinessBudget as unknown as number) +
-          ((agenciesFinal.up.operatingParams.accessibilityBudget as unknown as number) ?? 0),
+        ttc: agenciesFinal.ttc.lastQuarterOpex as unknown as number,
+        go: agenciesFinal.go.lastQuarterOpex as unknown as number,
+        up: agenciesFinal.up.lastQuarterOpex as unknown as number,
       },
       perAgencyMaintenance: {
         ttc: agenciesFinal.ttc.subsystems.reduce((a, s) => a + (s.maintenanceBudget as unknown as number), 0),
@@ -266,6 +266,32 @@ export function endTurn(state: GameState): GameState {
       },
       projectCapexDraws: constructionDraws.reduce((a, d) => a + (d.drawn ?? 0), 0),
       projectLvcRevenue: lvcN,
+      capexDrawsByTemplate: constructionDraws.reduce<Record<string, number>>(
+        (acc, d) => {
+          acc[d.templateId] = (acc[d.templateId] ?? 0) + (d.drawn ?? 0);
+          return acc;
+        },
+        {},
+      ),
+      debtByPurpose: {
+        ontarioLine: debtWithRating.tranches
+          .filter((t) => t.id.startsWith('t_ol_'))
+          .reduce((a, t) => a + (t.principal as unknown as number), 0),
+        general: debtWithRating.tranches
+          .filter((t) => !t.id.startsWith('t_ol_'))
+          .reduce((a, t) => a + (t.principal as unknown as number), 0),
+      },
+      debtServiceByPurpose: {
+        ontarioLine: quarterlyDebtService(
+          { ...debtWithRating, tranches: debtWithRating.tranches.filter((t) => t.id.startsWith('t_ol_')) },
+          state.engineVars.openBooks,
+        ) as unknown as number,
+        general: quarterlyDebtService(
+          { ...debtWithRating, tranches: debtWithRating.tranches.filter((t) => !t.id.startsWith('t_ol_')) },
+          state.engineVars.openBooks,
+        ) as unknown as number,
+      },
+      financingProceeds: financingProceedsThisQuarter,
       trustOttawa: state.politics.ottawa.trust as unknown as number,
       trustQueensPark: state.politics.queensPark.trust as unknown as number,
       trustCityHall: state.politics.cityHall.trust as unknown as number,

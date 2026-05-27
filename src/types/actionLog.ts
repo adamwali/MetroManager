@@ -88,6 +88,30 @@ export interface QuarterSummaryBreakdown {
     /** Capital project draws + LVC revenue this quarter ($M). */
     projectCapexDraws: number;
     projectLvcRevenue: number;
+    /**
+     * Per-project capex draws keyed by template id (P00=Ontario Line,
+     * etc.). Lets Capital Activity surface OL separately from other megas.
+     */
+    capexDrawsByTemplate: Record<string, number>;
+    /**
+     * Outstanding principal grouped by tranche purpose. Lets the UI call
+     * out "Ontario Line debt" (t_ol_* tranches) vs general agency debt.
+     */
+    debtByPurpose: {
+      ontarioLine: number;
+      general: number;
+    };
+    /**
+     * Quarterly debt service split by purpose ($M) — same grouping as
+     * debtByPurpose so the Capital Activity view can show OL's interest
+     * burden separately.
+     */
+    debtServiceByPurpose: {
+      ontarioLine: number;
+      general: number;
+    };
+    /** Bond proceeds raised this quarter ($M). Replaces fragile regex parsing. */
+    financingProceeds: number;
     trustOttawa: number;
     trustQueensPark: number;
     trustCityHall: number;
