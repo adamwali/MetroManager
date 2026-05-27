@@ -79,7 +79,10 @@ export function endTurn(state: GameState): GameState {
   // 3. Cash flow components
   const allowanceN = quarterlyOperatingAllowance(state.operatingAllowance) as unknown as number;
   const fareN = quarterlyFareRevenue(state.agencies) as unknown as number;
-  const opexN = quarterlyOperatingExpense(state.agencies) as unknown as number;
+  const opexN = quarterlyOperatingExpense(
+    state.agencies,
+    state.engineVars.consultantAlignment as unknown as number,
+  ) as unknown as number;
   const maintN = quarterlyMaintenanceExpense(state.agencies) as unknown as number;
   const debtServiceN = quarterlyDebtService(
     debtWithRating,
@@ -124,7 +127,13 @@ export function endTurn(state: GameState): GameState {
 
   const tickedProjects = state.projects.map((p, idx) => {
     const before = state.projects[idx]!;
-    const r = tickProject(p, nextQuarter, ridershipModelFor, state.engineVars.engineers);
+    const r = tickProject(
+      p,
+      nextQuarter,
+      ridershipModelFor,
+      state.engineVars.engineers,
+      state.engineVars.crosslinxLeverage as unknown as number,
+    );
     if (r.primaryAgency && r.primaryAgencyDelta !== 0) {
       primaryByAgency[r.primaryAgency] += r.primaryAgencyDelta;
     }

@@ -18,13 +18,24 @@ export function quarterlyOperatingAllowance(allowance: OperatingAllowance): Cash
   return cash((allowance.annualAmount as unknown as number) / 4);
 }
 
-/** Annualized opex × 1/4. Sum per agency, this quarter (excludes maintenance). */
-export function quarterlyOperatingExpense(agencies: Agencies): CashMillions {
+/**
+ * Annualized opex × 1/4. Sum per agency, this quarter (excludes maintenance).
+ *
+ * Phase 6.3.2: consultant alignment modifies opex. Range -100 to +100.
+ * Aligned consultants (positive) = efficient = lower opex. Misaligned
+ * (negative) = extractive = higher opex. Maximum swing ±5% at the extremes.
+ * Wires the previously-orphan engineVar.
+ */
+export function quarterlyOperatingExpense(
+  agencies: Agencies,
+  consultantAlignment = 0,
+): CashMillions {
   const total =
     (agencies.ttc.lastQuarterOpex as unknown as number) +
     (agencies.go.lastQuarterOpex as unknown as number) +
     (agencies.up.lastQuarterOpex as unknown as number);
-  return cash(total);
+  const alignmentMul = 1 - (consultantAlignment / 100) * 0.05;
+  return cash(Math.round(total * alignmentMul));
 }
 
 /** Sum of fare revenue this quarter across agencies. */

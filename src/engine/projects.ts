@@ -27,6 +27,7 @@ export function tickConstructingProject(
   p: ConstructingProject,
   currentQuarter: QuarterIndex,
   engineers: number = BASELINE_ENGINEERS,
+  crosslinxLeverage = 50,
 ): { project: ConstructingProject | OperatingProject; drawFromFunding: CashMillions } {
   const currentQ = currentQuarter as unknown as number;
   const brokeGroundQ = p.brokeGroundAt as unknown as number;
@@ -34,7 +35,11 @@ export function tickConstructingProject(
   const buildLength = Math.max(1, forecastOpenQ - brokeGroundQ);
   const baseBurn = (p.totalBudget as unknown as number) / buildLength;
   const engineerMul = Math.max(0.5, Math.min(1.5, engineers / BASELINE_ENGINEERS));
-  const burnPerQuarter = baseBurn * engineerMul;
+  // Phase 6.3.2: Crosslinx leverage affects construction cost. 50 = neutral;
+  // 100 = -10% cost (contractor delivers efficiently); 0 = +10% cost
+  // (contractor extracts rents). Wires the previously-orphan engineVar.
+  const leverageMul = 1 + ((50 - crosslinxLeverage) * 0.002);
+  const burnPerQuarter = baseBurn * engineerMul * leverageMul;
   const spentSoFar = (p.spent as unknown as number) + burnPerQuarter;
   const remainingAfter = Math.max(0, (p.remainingFunding as unknown as number) - burnPerQuarter);
 
@@ -109,6 +114,7 @@ export function tickProject(
   currentQuarter: QuarterIndex,
   ridershipModelFor: (templateId: string) => ProjectRidershipModel | undefined,
   engineers: number = BASELINE_ENGINEERS,
+  crosslinxLeverage = 50,
 ): ProjectTickResult {
   if (p.state === 'proposed') {
     return {
@@ -119,7 +125,7 @@ export function tickProject(
     };
   }
   if (p.state === 'under_construction') {
-    const result = tickConstructingProject(p, currentQuarter, engineers);
+    const result = tickConstructingProject(p, currentQuarter, engineers, crosslinxLeverage);
     return {
       project: result.project,
       drawFromFunding: result.drawFromFunding,

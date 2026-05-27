@@ -148,12 +148,14 @@ export const ARCHETYPE_CONFIGS: Record<CeoArchetype, ArchetypeStartingMods> = {
   },
 };
 
-/** Archetypes exposed in the new-game picker (Phase 2.2). */
+/** Archetypes exposed in the new-game picker. Phase 6.3.2 polish: Disruptor
+ * now selectable for veteran players (high risk, high variance). */
 export const PICKABLE_ARCHETYPES: CeoArchetype[] = [
   'steadyOperator',
   'internationalTechnocrat',
   'insider',
   'coalitionBuilder',
+  'disruptor',
 ];
 
 export function archetypeOptions(): { id: CeoArchetype; config: ArchetypeStartingMods }[] {
