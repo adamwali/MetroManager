@@ -2263,6 +2263,15 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
           { kind: 'templates', delta: 5 },
         ],
       },
+      {
+        id: 'decline_humbly',
+        label: 'Decline; "team did the work"',
+        tradeoff: '+4 board (humility), +3 approval, no templates boost',
+        effects: [
+          { kind: 'boardConfidence', delta: 4, reason: 'Humbly declined award' },
+          { kind: 'publicApproval', delta: 3 },
+        ],
+      },
     ],
   },
 

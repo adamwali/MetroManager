@@ -3,9 +3,11 @@ import { createInitialGameState } from '@engine/createInitialGameState';
 import { endTurn } from '@engine/endTurn';
 import { resolveEventChoice } from '@engine/events/firing';
 import {
+  setCleanlinessBudget,
   setFarePolicy,
   setFrequencyPolicy,
   setMaintenanceBudget,
+  setSecurityBudget,
 } from '@engine/agencyActions';
 import {
   acceptFinancing,
@@ -86,10 +88,12 @@ export interface GameStore {
   forecastRange: (quartersAhead: number, runs?: number) => ForecastRange;
   /** Resolve an inbox event by selecting one of its branches. */
   applyEventChoice: (templateId: string, choiceId: string) => void;
-  /** Operations levers (Phase 5.1). */
+  /** Operations levers (Phase 5.1 + 5.2). */
   setMaintenanceBudget: (agencyId: AgencyId, subsystemId: SubsystemId, amountM: number) => void;
   setFarePolicy: (agencyId: AgencyId, policy: FarePolicyTier) => void;
   setFrequencyPolicy: (agencyId: AgencyId, policy: FrequencyPolicy) => void;
+  setSecurityBudget: (agencyId: AgencyId, amountM: number) => void;
+  setCleanlinessBudget: (agencyId: AgencyId, amountM: number) => void;
   /** Project initiation flow (Phase 4). */
   proposeProject: (
     catalogProjectId: string,
@@ -260,6 +264,22 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     setFrequencyPolicy: (agencyId, policy) => {
       const next = setFrequencyPolicy(get().state, agencyId, policy);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
+    setSecurityBudget: (agencyId, amountM) => {
+      const next = setSecurityBudget(get().state, agencyId, amountM);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+
+    setCleanlinessBudget: (agencyId, amountM) => {
+      const next = setCleanlinessBudget(get().state, agencyId, amountM);
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))

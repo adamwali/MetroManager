@@ -204,9 +204,10 @@ describe('endTurn', () => {
 
     const annualGap = (allowanceQ + fareQ - opexQ - maintQ - debtServiceQ) * 4;
     // Want modest deficit: agency loses money at default settings, player must
-    // make tradeoffs to break even.
+    // make tradeoffs to break even. Phase 5.2 added security + cleanliness
+    // budgets to baseline opex (~$135M/Q = $540M/yr), widening the gap.
     expect(annualGap).toBeLessThan(0);
-    expect(annualGap).toBeGreaterThan(-700);
+    expect(annualGap).toBeGreaterThan(-1200);
   });
 });
 

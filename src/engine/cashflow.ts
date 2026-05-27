@@ -30,10 +30,19 @@ export function quarterlyOperatingExpense(
   agencies: Agencies,
   consultantAlignment = 0,
 ): CashMillions {
+  // Phase 5.2: security + cleanliness budgets now add to per-agency opex
+  const securityCleanliness =
+    (agencies.ttc.operatingParams.securityBudget as unknown as number) +
+    (agencies.ttc.operatingParams.cleanlinessBudget as unknown as number) +
+    (agencies.go.operatingParams.securityBudget as unknown as number) +
+    (agencies.go.operatingParams.cleanlinessBudget as unknown as number) +
+    (agencies.up.operatingParams.securityBudget as unknown as number) +
+    (agencies.up.operatingParams.cleanlinessBudget as unknown as number);
   const total =
     (agencies.ttc.lastQuarterOpex as unknown as number) +
     (agencies.go.lastQuarterOpex as unknown as number) +
-    (agencies.up.lastQuarterOpex as unknown as number);
+    (agencies.up.lastQuarterOpex as unknown as number) +
+    securityCleanliness;
   const alignmentMul = 1 - (consultantAlignment / 100) * 0.05;
   return cash(Math.round(total * alignmentMul));
 }

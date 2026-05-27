@@ -22,6 +22,8 @@ import {
 } from './cashflow';
 import {
   approvalRidershipDrift,
+  cleanlinessApprovalDrift,
+  securityRidershipDrift,
   catchmentGrowthPerQuarter,
   decaySubsystems,
   reliabilityRidershipDrift,
@@ -115,9 +117,10 @@ export function endTurn(state: GameState): GameState {
     const reliability = reliabilityScore(a);
     const dragPct = reliabilityRidershipDrift(reliability);
     const growthPct = catchmentGrowthPerQuarter(a.catchmentGrowthRate);
+    const securityDrift = securityRidershipDrift(a); // Phase 5.2
     // approval drift folded into reliability drag tracking for the breakdown
     const fromGrowth = Math.floor(before * growthPct);
-    const fromReliabilityDrag = Math.floor(before * (dragPct + approvalDriftPct));
+    const fromReliabilityDrag = Math.floor(before * (dragPct + approvalDriftPct + securityDrift));
     const afterOrganic = Math.max(0, before + fromGrowth + fromReliabilityDrag);
     organicTracking[a.id] = { before, fromGrowth, fromReliabilityDrag, afterOrganic };
     return { ...a, dailyRiders: riders(afterOrganic) };
@@ -268,9 +271,25 @@ export function endTurn(state: GameState): GameState {
     0,
     (state.engineVars.nimbyOrganization as unknown as number) - 2,
   );
+
+  // Phase 5.2: cleanliness budgets drift public approval each quarter.
+  // Sum across agencies; clamped 0-100.
+  const cleanlinessApprovalDelta =
+    cleanlinessApprovalDrift(agenciesFinal.ttc) +
+    cleanlinessApprovalDrift(agenciesFinal.go) +
+    cleanlinessApprovalDrift(agenciesFinal.up);
+  const newPublicApproval = Math.max(
+    0,
+    Math.min(
+      100,
+      (state.engineVars.publicApproval as unknown as number) + cleanlinessApprovalDelta,
+    ),
+  );
+
   const engineVarsDecayed = {
     ...state.engineVars,
     nimbyOrganization: score(nimbyDecayed),
+    publicApproval: score(newPublicApproval),
   };
 
   // Compose the post-tick state before event processing

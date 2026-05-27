@@ -222,3 +222,51 @@ export function forecastFrequencyPolicy(
     ridershipChangePct: ridershipRatio - 1,
   };
 }
+
+
+/**
+ * Phase 5.2: set security or cleanliness budget on an agency. These
+ * directly hit opex (added to lastQuarterOpex calculation) and drive
+ * approval/ridership drift each quarter.
+ */
+export function setSecurityBudget(
+  state: GameState,
+  agencyId: AgencyId,
+  amountM: number,
+): GameState {
+  const safe = Math.max(0, Math.round(amountM));
+  return {
+    ...state,
+    agencies: {
+      ...state.agencies,
+      [agencyId]: {
+        ...state.agencies[agencyId],
+        operatingParams: {
+          ...state.agencies[agencyId].operatingParams,
+          securityBudget: cash(safe),
+        },
+      },
+    },
+  };
+}
+
+export function setCleanlinessBudget(
+  state: GameState,
+  agencyId: AgencyId,
+  amountM: number,
+): GameState {
+  const safe = Math.max(0, Math.round(amountM));
+  return {
+    ...state,
+    agencies: {
+      ...state.agencies,
+      [agencyId]: {
+        ...state.agencies[agencyId],
+        operatingParams: {
+          ...state.agencies[agencyId].operatingParams,
+          cleanlinessBudget: cash(safe),
+        },
+      },
+    },
+  };
+}

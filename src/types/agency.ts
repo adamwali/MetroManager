@@ -27,6 +27,10 @@ export interface AgencyOperatingParams {
   /** Frequency policy per line — affects ridership and opex. Phase 5.1 implements specifics. */
   frequencyPolicy: 'reduced' | 'current' | 'enhanced';
   farePolicy: FarePolicyTier;
+  /** Phase 5.2: security/safety budget per quarter, $M. Affects ridership + incident events. */
+  securityBudget: CashMillions;
+  /** Phase 5.2: cleanliness/station environment budget per quarter, $M. Affects public approval. */
+  cleanlinessBudget: CashMillions;
 }
 
 export interface Agency {

@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 import {
+  CLEANLINESS_BUDGET_BASELINE,
+  SECURITY_BUDGET_BASELINE,
+  cleanlinessApprovalDrift,
   forecastMaintenance,
   maintenanceTier,
   reliabilityScore,
   requiredMaintenanceFor,
+  securityRidershipDrift,
 } from '@engine/agencies';
 import {
   fareFreezeObligationBroken,
@@ -51,6 +55,8 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
   const setMaintenance = useGameStore((s) => s.setMaintenanceBudget);
   const setFare = useGameStore((s) => s.setFarePolicy);
   const setFrequency = useGameStore((s) => s.setFrequencyPolicy);
+  const setSecurity = useGameStore((s) => s.setSecurityBudget);
+  const setCleanliness = useGameStore((s) => s.setCleanlinessBudget);
   const agency = state.agencies[agencyId];
   const archetype = state.ceo.archetype;
   const reliability = reliabilityScore(agency);
@@ -213,6 +219,40 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
           </div>
         </div>
       )}
+
+      {/* Phase 5.2: Service quality budgets */}
+      <section className="rounded-md border border-neutral-200 bg-white p-4">
+        <header className="mb-3 flex items-baseline justify-between">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Service quality budgets
+            </h2>
+            <p className="mt-1 text-[11px] text-neutral-500">
+              Security affects ridership (perceived safety). Cleanliness affects public approval.
+              Baselines: security ${SECURITY_BUDGET_BASELINE[agencyId]}M/Q,
+              cleanliness ${CLEANLINESS_BUDGET_BASELINE[agencyId]}M/Q.
+            </p>
+          </div>
+        </header>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ServiceBudgetSlider
+            label="Security"
+            current={agency.operatingParams.securityBudget as unknown as number}
+            baseline={SECURITY_BUDGET_BASELINE[agencyId]}
+            forecast={`${(securityRidershipDrift(agency) * 100).toFixed(2)}% riders/Q`}
+            tone={securityRidershipDrift(agency) >= 0 ? 'positive' : 'negative'}
+            onChange={(v) => setSecurity(agencyId, v)}
+          />
+          <ServiceBudgetSlider
+            label="Cleanliness"
+            current={agency.operatingParams.cleanlinessBudget as unknown as number}
+            baseline={CLEANLINESS_BUDGET_BASELINE[agencyId]}
+            forecast={`${cleanlinessApprovalDrift(agency).toFixed(1)} approval/Q`}
+            tone={cleanlinessApprovalDrift(agency) >= 0 ? 'positive' : 'negative'}
+            onChange={(v) => setCleanliness(agencyId, v)}
+          />
+        </div>
+      </section>
 
       {/* Policies */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -384,6 +424,59 @@ function SubsystemRow({ sub, agencyId, archetype, required, setMaintenance }: Su
         </div>
       </div>
     </li>
+  );
+}
+
+function ServiceBudgetSlider({
+  label,
+  current,
+  baseline,
+  forecast,
+  tone,
+  onChange,
+}: {
+  label: string;
+  current: number;
+  baseline: number;
+  forecast: string;
+  tone: 'positive' | 'negative';
+  onChange: (v: number) => void;
+}) {
+  const [displayed, setDisplayed] = useDebouncedCommit<number>(current, onChange, 250);
+  const ratio = baseline > 0 ? displayed / baseline : 0;
+  const ratioTone =
+    ratio < 0.5 ? 'text-red-700' : ratio > 1.5 ? 'text-emerald-700' : 'text-neutral-600';
+  return (
+    <div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm font-medium">{label}</span>
+        <span className={`num text-sm font-semibold ${ratioTone}`}>
+          ${displayed}M/Q · {ratio.toFixed(1)}×
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(baseline * 2, 1)}
+        step={Math.max(1, Math.round(baseline / 20))}
+        value={displayed}
+        onChange={(e) => setDisplayed(Number(e.target.value))}
+        className="w-full mt-1"
+        aria-label={`${label} budget`}
+      />
+      <div className="mt-0.5 flex justify-between text-[10px] text-neutral-400 num">
+        <span>$0</span>
+        <span>${baseline}M (baseline)</span>
+        <span>${baseline * 2}M</span>
+      </div>
+      <div
+        className={`mt-1 text-[11px] num ${
+          tone === 'positive' ? 'text-emerald-700' : 'text-red-700'
+        }`}
+      >
+        → {forecast}
+      </div>
+    </div>
   );
 }
 

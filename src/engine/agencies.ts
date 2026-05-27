@@ -218,6 +218,56 @@ export function catchmentGrowthPerQuarter(annualRate: number): number {
  *
  * Applied alongside reliability drag and catchment growth.
  */
+/**
+ * Phase 5.2: Security + cleanliness budgets affect approval and ridership.
+ *
+ * Each agency has a baseline budget (TTC: $50M sec / $40M clean;
+ * GO: $15M / $10M; UP: $3M / $2M). Sliders go 0× to 2× baseline.
+ *
+ * Effect per quarter, additive across all 3 agencies:
+ * - Cleanliness at 0× baseline: -2 public approval/Q
+ * - Cleanliness at 2× baseline: +1 public approval/Q
+ * - Security at 0× baseline: -0.3%/Q ridership drag (perceived safety)
+ * - Security at 2× baseline: +0.1%/Q ridership lift
+ */
+export const SECURITY_BUDGET_BASELINE: Record<'ttc' | 'go' | 'up', number> = {
+  ttc: 50,
+  go: 15,
+  up: 3,
+};
+
+export const CLEANLINESS_BUDGET_BASELINE: Record<'ttc' | 'go' | 'up', number> = {
+  ttc: 40,
+  go: 10,
+  up: 2,
+};
+
+export function cleanlinessApprovalDrift(agency: Agency): number {
+  const baseline = CLEANLINESS_BUDGET_BASELINE[agency.id];
+  const budget = agency.operatingParams.cleanlinessBudget as unknown as number;
+  if (baseline === 0) return 0;
+  const ratio = budget / baseline;
+  if (ratio <= 0.1) return -2;
+  if (ratio < 0.5) return -1;
+  if (ratio < 0.9) return -0.3;
+  if (ratio < 1.3) return 0;
+  if (ratio < 1.8) return 0.5;
+  return 1;
+}
+
+export function securityRidershipDrift(agency: Agency): number {
+  const baseline = SECURITY_BUDGET_BASELINE[agency.id];
+  const budget = agency.operatingParams.securityBudget as unknown as number;
+  if (baseline === 0) return 0;
+  const ratio = budget / baseline;
+  if (ratio <= 0.1) return -0.003;
+  if (ratio < 0.5) return -0.0015;
+  if (ratio < 0.9) return -0.0005;
+  if (ratio < 1.3) return 0;
+  if (ratio < 1.8) return 0.0005;
+  return 0.001;
+}
+
 export function approvalRidershipDrift(approval: number): number {
   if (approval >= 70) return 0.001;
   if (approval < 30) return -0.003;
