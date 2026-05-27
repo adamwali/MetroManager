@@ -12,6 +12,7 @@ import { NewGameModal } from './components/NewGameModal';
 import { SaveLoadModal } from './components/SaveLoadModal';
 import { GameOverScreen } from './components/GameOverScreen';
 import { SavedToast } from './components/SavedToast';
+import { WelcomeTour, shouldShowWelcomeTour } from './components/WelcomeTour';
 
 interface DashboardLink {
   to: string;
@@ -49,6 +50,14 @@ export function AppLayout() {
   const [showNewGame, setShowNewGame] = useState(false);
   const [saveLoad, setSaveLoad] = useState<'save' | 'load' | null>(null);
   const [bootChecked, setBootChecked] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  // Show welcome tour on first campaign start (LS-gated, never re-shows)
+  useEffect(() => {
+    if (campaignStarted && shouldShowWelcomeTour()) {
+      setShowTour(true);
+    }
+  }, [campaignStarted]);
 
   // On boot: try to load the autosave silently. If present, resume from it
   // (campaign was in progress). If not, show the new-game modal.
@@ -170,6 +179,7 @@ export function AppLayout() {
         />
       )}
       <SavedToast />
+      {showTour && <WelcomeTour onClose={() => setShowTour(false)} />}
     </div>
   );
 }
