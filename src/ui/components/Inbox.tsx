@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 import { eventTemplateById } from '@engine/events/templates';
+import { interpolateEventText } from '@/utils/eventText';
 import { EventModal } from './EventModal';
 
 /**
@@ -9,6 +10,7 @@ import { EventModal } from './EventModal';
  */
 export function Inbox() {
   const inbox = useGameStore((s) => s.state.inbox);
+  const state = useGameStore((s) => s.state);
   const [openTemplateId, setOpenTemplateId] = useState<string | null>(null);
 
   const sorted = [...inbox].sort((a, b) => b.urgency - a.urgency);
@@ -64,10 +66,10 @@ export function Inbox() {
                       </span>
                     </div>
                     <div className="mt-1 text-sm font-medium text-neutral-900">
-                      {tmpl.headline}
+                      {interpolateEventText(tmpl.headline, state, tmpl.actorCharacterId)}
                     </div>
                     <div className="mt-1 text-xs text-neutral-600 line-clamp-2">
-                      {tmpl.body}
+                      {interpolateEventText(tmpl.body, state, tmpl.actorCharacterId)}
                     </div>
                   </button>
                 </li>

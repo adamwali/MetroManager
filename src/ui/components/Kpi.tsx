@@ -19,10 +19,12 @@ interface KpiProps {
 }
 
 const TONE_RING: Record<NonNullable<KpiProps['tone']>, string> = {
-  neutral: 'border-neutral-200',
-  positive: 'border-emerald-200',
-  warning: 'border-amber-200',
-  critical: 'border-red-300',
+  // Phase 10 audit: light palette across the board so KPIs feel cohesive.
+  // High confidence stays light green. Reds get darker as severity climbs.
+  neutral: 'border-neutral-200 bg-white',
+  positive: 'border-emerald-200 bg-emerald-50/40',
+  warning: 'border-amber-300 bg-amber-50/50',
+  critical: 'border-red-400 bg-red-50/80',
 };
 
 const TONE_VALUE: Record<NonNullable<KpiProps['tone']>, string> = {
@@ -57,7 +59,7 @@ export function Kpi({
     <Comp
       type={interactive ? 'button' : undefined}
       onClick={onClick}
-      className={`relative flex flex-col gap-1 rounded-md border bg-white px-3 py-2 text-left ${TONE_RING[tone]} ${
+      className={`relative flex flex-col gap-0.5 rounded-md border px-2.5 py-1.5 text-left ${TONE_RING[tone]} ${
         interactive
           ? 'cursor-pointer hover:border-blue-400 hover:shadow-sm transition-shadow'
           : ''
@@ -65,7 +67,7 @@ export function Kpi({
       title={interactive ? `Click to trace ${label}` : undefined}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 inline-flex items-center gap-1">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500 inline-flex items-center gap-0.5">
           {label}
           {helpText && (
             <span
@@ -88,10 +90,10 @@ export function Kpi({
         </span>
         {spark}
       </div>
-      <div className={`num text-2xl font-bold leading-tight tracking-tight ${TONE_VALUE[tone]}`}>{value}</div>
-      <div className="flex items-baseline gap-1.5 text-[10px]">
+      <div className={`num text-lg font-bold leading-tight tracking-tight ${TONE_VALUE[tone]}`}>{value}</div>
+      <div className="flex items-baseline gap-1.5 text-[10px] leading-tight">
         {delta !== undefined && <span className="num font-semibold text-neutral-700">{delta}</span>}
-        {caption !== undefined && <span className="text-neutral-400">{caption}</span>}
+        {caption !== undefined && <span className="text-neutral-400 truncate">{caption}</span>}
       </div>
       {helpText && showHelp && (
         <div

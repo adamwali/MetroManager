@@ -3,6 +3,7 @@ import { eventTemplateById } from '@engine/events/templates';
 import { visibleChoices } from '@engine/events/firing';
 import { previewRenegotiation } from '@engine/renegotiation';
 import { formatMoneyDelta } from '@/utils/humanize';
+import { interpolateEventText } from '@/utils/eventText';
 
 interface EventModalProps {
   templateId: string;
@@ -75,19 +76,9 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
     template.actorCharacterId !== undefined
       ? state.characters[template.actorCharacterId]
       : undefined;
-  // CEO name + actor name interpolation. Player feedback: events should
-  // feel personal. Replaces {ceoName}, {actorName}, and {actorFirstName}.
-  const interpolate = (text: string): string => {
-    let result = text.replace(/\{ceoName\}/g, state.ceo.name);
-    if (actor) {
-      result = result.replace(/\{actorName\}/g, actor.name);
-      const first = actor.name.split(' ')[0] ?? actor.name;
-      result = result.replace(/\{actorFirstName\}/g, first);
-    }
-    return result;
-  };
-  const headline = interpolate(template.headline);
-  const body = interpolate(template.body);
+  // CEO name + actor name interpolation. Shared with Inbox preview.
+  const headline = interpolateEventText(template.headline, state, template.actorCharacterId);
+  const body = interpolateEventText(template.body, state, template.actorCharacterId);
 
   const handleChoice = (choiceId: string) => {
     applyEventChoice(templateId, choiceId);
