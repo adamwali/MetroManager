@@ -139,6 +139,20 @@ export function setFrequencyPolicy(
   const oldOpex = agency.lastQuarterOpex as unknown as number;
   const newOpex = Math.max(0, Math.round((oldOpex * newOpexMul) / oldOpexMul));
 
+  // Phase 6.3.1: enforce costCap control from renegotiation outcome.
+  // Block opex-increasing frequency changes that would push total opex
+  // above the cap. Player must wait for control to expire.
+  const costCap = state.operatingAllowance.controls.find((c) => c.kind === 'costCap');
+  if (costCap && costCap.kind === 'costCap' && newOpex > oldOpex) {
+    const totalNewOpexAcrossAgencies =
+      newOpex +
+      Object.entries(state.agencies)
+        .filter(([id]) => id !== agencyId)
+        .reduce((acc, [, a]) => acc + (a.lastQuarterOpex as unknown as number), 0);
+    const cap = costCap.capPerQuarter as unknown as number;
+    if (totalNewOpexAcrossAgencies > cap) return state;
+  }
+
   const oldFareRev = agency.lastQuarterFareRevenue as unknown as number;
   const ridershipRatio = newRidershipMul / oldRidershipMul;
   const oldRiders = agency.dailyRiders as unknown as number;

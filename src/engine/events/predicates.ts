@@ -55,6 +55,23 @@ export function evaluatePredicate(state: GameState, pred: EventPredicate): boole
       );
     case 'quarter':
       return checkRange(state.quarter as unknown as number, pred);
+    case 'projectFundingShortfall': {
+      // True if any under-construction project has < 4Q of funding remaining
+      // at current burn rate. Triggers EV043 funding-shortfall crisis event.
+      for (const p of state.projects) {
+        if (p.state !== 'under_construction') continue;
+        const buildLength = Math.max(
+          1,
+          (p.forecastOpenAt as unknown as number) - (p.brokeGroundAt as unknown as number),
+        );
+        const burnPerQ = (p.totalBudget as unknown as number) / buildLength;
+        const remaining = p.remainingFunding as unknown as number;
+        if (burnPerQ > 0 && remaining < burnPerQ * 4 && remaining < (p.totalBudget as unknown as number)) {
+          return true;
+        }
+      }
+      return false;
+    }
     case 'and':
       return pred.predicates.every((p) => evaluatePredicate(state, p));
     case 'or':

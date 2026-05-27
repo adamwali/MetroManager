@@ -12,7 +12,8 @@ import {
   forecastFrequencyPolicy,
 } from '@engine/agencyActions';
 import { ARCHETYPE_MAINTENANCE_EFFICIENCY } from '@engine/policies';
-import type { AgencyId, FarePolicyTier, SubsystemId } from '@/types/agency';
+import type { AgencyId, FarePolicyTier, SubsystemCondition, SubsystemId } from '@/types/agency';
+import type { CeoArchetype } from '@/types/ceo';
 import type { FrequencyPolicy } from '@engine/policies';
 import {
   describeReliability,
@@ -22,6 +23,7 @@ import {
   formatRiders,
   quartersUntilLabel,
 } from '@/utils/humanize';
+import { useDebouncedCommit } from '@/utils/useDebouncedValue';
 
 const SUBSYSTEM_LABELS: Record<SubsystemId, string> = {
   rollingStock: 'Rolling stock',
@@ -157,78 +159,16 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
           </div>
         </header>
         <ul className="divide-y divide-neutral-200">
-          {agency.subsystems.map((sub) => {
-            const conditionN = sub.condition as unknown as number;
-            const budgetN = sub.maintenanceBudget as unknown as number;
-            const tier = maintenanceTier(budgetN, agencyId, archetype);
-            const tierStyle = TIER_STYLES[tier];
-            const forecast = forecastMaintenance(
-              sub.id,
-              conditionN,
-              budgetN,
-              budgetN,
-              agencyId,
-              archetype,
-              4,
-            );
-            const projectedSign =
-              forecast.conditionInNQuarters > conditionN
-                ? '+'
-                : forecast.conditionInNQuarters < conditionN
-                  ? ''
-                  : '';
-            const projectedTone =
-              forecast.conditionInNQuarters > conditionN
-                ? 'text-emerald-700'
-                : forecast.conditionInNQuarters < conditionN
-                  ? 'text-red-700'
-                  : 'text-neutral-500';
-            return (
-              <li key={sub.id} className="px-4 py-3">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
-                  <div>
-                    <div className="text-sm font-medium">{SUBSYSTEM_LABELS[sub.id] ?? sub.id}</div>
-                    <div className="mt-1 flex items-baseline gap-2 text-xs text-neutral-600">
-                      <span className="num">Condition {conditionN.toFixed(0)}/100</span>
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${tierStyle.bg} ${tierStyle.color}`}
-                      >
-                        {tierStyle.label}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={required * 3}
-                      step={Math.max(1, Math.round(required / 10))}
-                      value={budgetN}
-                      onChange={(e) => setMaintenance(agencyId, sub.id, Number(e.target.value))}
-                      className="w-full"
-                      aria-label={`${SUBSYSTEM_LABELS[sub.id]} maintenance budget`}
-                    />
-                    <div className="mt-1 flex justify-between text-[10px] text-neutral-400 num">
-                      <span>$0</span>
-                      <span>{formatMoney(required)} (req)</span>
-                      <span>{formatMoney(required * 3)}</span>
-                    </div>
-                    <div className={`mt-1 text-[11px] font-medium num ${projectedTone}`}>
-                      → {projectedSign}
-                      {(forecast.conditionInNQuarters - conditionN).toFixed(1)} condition in 4Q
-                      <span className="ml-1 text-neutral-500 font-normal">
-                        ({forecast.quarterlyDelta >= 0 ? '+' : ''}
-                        {forecast.quarterlyDelta.toFixed(2)}/Q)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right num text-sm font-semibold">
-                    {formatMoney(budgetN)}/Q
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+          {agency.subsystems.map((sub) => (
+            <SubsystemRow
+              key={sub.id}
+              sub={sub}
+              agencyId={agencyId}
+              archetype={archetype}
+              required={required}
+              setMaintenance={setMaintenance}
+            />
+          ))}
         </ul>
       </section>
 
@@ -333,6 +273,88 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
         </div>
       )}
     </div>
+  );
+}
+
+interface SubsystemRowProps {
+  sub: SubsystemCondition;
+  agencyId: AgencyId;
+  archetype: CeoArchetype;
+  required: number;
+  setMaintenance: (agencyId: AgencyId, sub: SubsystemId, amount: number) => void;
+}
+
+function SubsystemRow({ sub, agencyId, archetype, required, setMaintenance }: SubsystemRowProps) {
+  const conditionN = sub.condition as unknown as number;
+  const budgetN = sub.maintenanceBudget as unknown as number;
+  const [displayBudget, setDisplayBudget] = useDebouncedCommit<number>(
+    budgetN,
+    (next) => setMaintenance(agencyId, sub.id, next),
+    250,
+  );
+  const tier = maintenanceTier(displayBudget, agencyId, archetype);
+  const tierStyle = TIER_STYLES[tier];
+  const forecast = forecastMaintenance(
+    sub.id,
+    conditionN,
+    budgetN,
+    displayBudget,
+    agencyId,
+    archetype,
+    4,
+  );
+  const projectedDelta = forecast.conditionInNQuarters - conditionN;
+  const projectedSign = projectedDelta > 0 ? '+' : '';
+  const projectedTone =
+    projectedDelta > 0
+      ? 'text-emerald-700'
+      : projectedDelta < 0
+        ? 'text-red-700'
+        : 'text-neutral-500';
+  return (
+    <li className="px-4 py-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
+        <div>
+          <div className="text-sm font-medium">{SUBSYSTEM_LABELS[sub.id] ?? sub.id}</div>
+          <div className="mt-1 flex items-baseline gap-2 text-xs text-neutral-600">
+            <span className="num">Condition {conditionN.toFixed(0)}/100</span>
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${tierStyle.bg} ${tierStyle.color}`}
+            >
+              {tierStyle.label}
+            </span>
+          </div>
+        </div>
+        <div>
+          <input
+            type="range"
+            min={0}
+            max={required * 3}
+            step={Math.max(1, Math.round(required / 10))}
+            value={displayBudget}
+            onChange={(e) => setDisplayBudget(Number(e.target.value))}
+            className="w-full"
+            aria-label={`${SUBSYSTEM_LABELS[sub.id]} maintenance budget`}
+          />
+          <div className="mt-1 flex justify-between text-[10px] text-neutral-400 num">
+            <span>$0</span>
+            <span>{formatMoney(required)} (req)</span>
+            <span>{formatMoney(required * 3)}</span>
+          </div>
+          <div className={`mt-1 text-[11px] font-medium num ${projectedTone}`}>
+            → {projectedSign}
+            {projectedDelta.toFixed(1)} condition in 4Q
+            <span className="ml-1 text-neutral-500 font-normal">
+              ({forecast.quarterlyDelta >= 0 ? '+' : ''}
+              {forecast.quarterlyDelta.toFixed(2)}/Q)
+            </span>
+          </div>
+        </div>
+        <div className="text-right num text-sm font-semibold">
+          {formatMoney(displayBudget)}/Q
+        </div>
+      </div>
+    </li>
   );
 }
 

@@ -26,7 +26,6 @@ const dashboards: DashboardLink[] = [
   { to: '/go', label: 'GO', end: false },
   { to: '/up', label: 'UP', end: false },
   { to: '/capital', label: 'Capital Projects', end: false },
-  { to: '/allocation', label: 'Allocation', end: false },
   { to: '/treasury', label: 'Treasury', end: false },
   { to: '/political', label: 'Political', end: false },
 ];

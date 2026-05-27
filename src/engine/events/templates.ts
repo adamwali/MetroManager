@@ -1787,6 +1787,63 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       },
     ],
   },
+
+  // ── EV043 — Project funding shortfall (conditional, fires when any under-construction project has <4Q funding) ──
+  {
+    id: 'EV043_projectFundingShortfall',
+    category: 'construction_crisis',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'projectFundingShortfall' },
+      cooldownQuarters: 8,
+    },
+    outlet: 'Internal memo',
+    headline: 'Capital project running out of funds',
+    body: 'At least one project will exhaust its financing within 4 quarters at current burn rate. You need to act before construction stalls.',
+    urgency: 85,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'emergency_bond',
+        label: 'Issue emergency operating bond ($2B at penalty rate)',
+        tradeoff: '+$2B cash · +debt service forever · -3 board (emergency optics)',
+        effects: [
+          { kind: 'cash', deltaM: 2_000 },
+          { kind: 'boardConfidence', delta: -3, reason: 'Emergency bond issued at penalty rate' },
+        ],
+      },
+      {
+        id: 'cut_scope',
+        label: 'Cut project scope to fit existing financing',
+        tradeoff: '+$1B savings · -5 each gov trust (broken promises) · -10 public approval',
+        effects: [
+          { kind: 'cash', deltaM: 1_000 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -5 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -5 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -5 },
+          { kind: 'publicApproval', delta: -10 },
+        ],
+      },
+      {
+        id: 'defer',
+        label: "Defer the decision; pray for better terms",
+        tradeoff: '-10 board · -8 approval · cascading reliability event queued 6Q out',
+        effects: [
+          { kind: 'boardConfidence', delta: -10, reason: 'Deferred project funding crisis' },
+          { kind: 'publicApproval', delta: -8 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 6,
+            cause: 'Project funding crisis spiral',
+            effects: [
+              { kind: 'reliability', agency: 'ttc', delta: -8 },
+              { kind: 'cash', deltaM: -800 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /** Lookup by id. */

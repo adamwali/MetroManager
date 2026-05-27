@@ -53,6 +53,12 @@ export function proposeProject(
 ): GameState {
   const entry = catalogEntry(catalogProjectId);
   if (!entry) return state;
+  // Phase 6.3.1: enforce projectDeprioritization control from renegotiation
+  // outcome — blocked projects cannot be proposed until the control expires.
+  const deprioritized = state.operatingAllowance.controls.some(
+    (c) => c.kind === 'projectDeprioritization' && c.projectIds.includes(catalogProjectId),
+  );
+  if (deprioritized) return state;
   const alignment = entry.alignments.find((a) => a.id === alignmentId) ?? entry.alignments[0]!;
 
   const proposed: ProposedProject = {
