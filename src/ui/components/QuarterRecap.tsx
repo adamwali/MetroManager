@@ -1,4 +1,5 @@
 import { useGameStore } from '@state/gameStore';
+import { catalogEntry } from '@engine/projectCatalog';
 import {
   formatMoneyDelta,
   formatRidersDelta,
@@ -80,7 +81,7 @@ export function QuarterRecap() {
   // Project transitions
   for (const t of b.projects.transitions) {
     items.push({
-      label: `${t.templateId} transition`,
+      label: `${catalogEntry(t.templateId)?.name ?? t.templateId} transition`,
       delta: `${t.from} → ${t.to}`,
       magnitude: 1_000_000, // always surface
       tone: 'positive',

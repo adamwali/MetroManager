@@ -2,12 +2,10 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '@ui/AppLayout';
 import { MissionControl } from '@ui/dashboards/MissionControl';
-import { TtcOperations } from '@ui/dashboards/TtcOperations';
-import { GoOperations } from '@ui/dashboards/GoOperations';
-import { UpOperations } from '@ui/dashboards/UpOperations';
 import { CapitalProjects } from '@ui/dashboards/CapitalProjects';
 import { Treasury } from '@ui/dashboards/Treasury';
 import { PoliticalAffairs } from '@ui/dashboards/PoliticalAffairs';
+import { NetworkManagement } from '@ui/dashboards/NetworkManagement';
 
 // PerformanceBoard pulls in Recharts (~400KB). Lazy-load so it only
 // downloads when player visits /performance — keeps initial bundle lean.
@@ -44,13 +42,16 @@ export const router = createBrowserRouter(
       Component: AppLayout,
       children: [
         { index: true, Component: MissionControl },
-        { path: 'performance', Component: PerformanceRoute },
-        { path: 'ttc', Component: TtcOperations },
-        { path: 'go', Component: GoOperations },
-        { path: 'up', Component: UpOperations },
-        { path: 'capital', Component: CapitalProjects },
+        { path: 'network', Component: NetworkManagement },
+        { path: 'expansion', Component: CapitalProjects },
         { path: 'treasury', Component: Treasury },
         { path: 'political', Component: PoliticalAffairs },
+        { path: 'performance', Component: PerformanceRoute },
+        // Back-compat for old links
+        { path: 'ttc', Component: NetworkManagement },
+        { path: 'go', Component: NetworkManagement },
+        { path: 'up', Component: NetworkManagement },
+        { path: 'capital', Component: CapitalProjects },
       ],
     },
   ],

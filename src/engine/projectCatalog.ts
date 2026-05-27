@@ -66,6 +66,37 @@ export const STATION_QUALITY_RIDERSHIP_MULTIPLIER: Record<StationQualityTier, nu
 };
 
 export const PROJECT_CATALOG: ProjectCatalogEntry[] = [
+  // P00 — Ontario Line (the inherited mega project). Already under
+  // construction at game start; not re-proposable. Listed here so the
+  // UI can look up the human name "Ontario Line" instead of showing "P00".
+  {
+    id: 'P00',
+    name: 'Ontario Line',
+    description: 'New 15-station subway from Exhibition to Science Centre. Already mid-construction at game start.',
+    tier: 'mega',
+    mode: 'subway',
+    primaryAgency: 'ttc',
+    baseCostM: 27_000,
+    buildDurationQuarters: 36,
+    startingPoliticalSupport: { ottawa: 8, queensPark: 12, cityHall: 10 },
+    alignments: [
+      {
+        id: 'A',
+        label: 'Exhibition to Science Centre (15 stations)',
+        kilometers: 15.6,
+        stations: 15,
+        fullRidership: 388_000,
+        openingRidership: 290_000,
+        costMultiplier: 1.0,
+        cannibalization: { ttc: -200_000, go: -38_000 },
+        nimbyImpact: 'low',
+        lvcPotential: 'high',
+        blurb: 'Inherited from previous CEO. Mid-construction; cost overruns + scope cuts already absorbed.',
+      },
+    ],
+    blurb: 'The headline inherited megaproject. Decisions you make now affect opening reception.',
+  },
+
   // Large subway
   {
     id: 'P01',

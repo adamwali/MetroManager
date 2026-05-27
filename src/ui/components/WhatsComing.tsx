@@ -1,4 +1,5 @@
 import { useGameStore } from '@state/gameStore';
+import { catalogEntry } from '@engine/projectCatalog';
 import { quarterLabel, quartersUntilLabel } from '@/utils/humanize';
 
 /**
@@ -28,8 +29,9 @@ export function WhatsComing() {
   ];
   for (const p of state.projects) {
     if (p.state === 'under_construction') {
+      const entry = catalogEntry(p.templateId);
       events.push({
-        label: `${p.templateId} opens`,
+        label: `${entry?.name ?? p.templateId} opens`,
         q: p.forecastOpenAt as unknown as number,
       });
     }

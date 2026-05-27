@@ -40,9 +40,12 @@ export function createInitialGameState(
     // is realistic working capital for a transit agency — not coast money.
     cash: { balance: cash(mods.startingCashM), lastQuarterDelta: cash(0) },
     debt: {
+      // All 3 tranches are the Ontario Line consortium — split across creditors
+      // so the player can see the multi-stack financing they inherited. Labels
+      // make this explicit in the UI.
       tranches: [
         {
-          id: 't_pension_fixed',
+          id: 't_ol_pension',
           creditor: 'pension',
           principal: cash(3_500),
           coupon: { kind: 'fixed', rate: bp(410) },
@@ -50,7 +53,7 @@ export function createInitialGameState(
           issuedAt: quarter(-24),
         },
         {
-          id: 't_institutional_fixed',
+          id: 't_ol_institutional_fixed',
           creditor: 'institutional',
           principal: cash(2_240),
           coupon: { kind: 'fixed', rate: bp(425) },
@@ -58,7 +61,7 @@ export function createInitialGameState(
           issuedAt: quarter(-16),
         },
         {
-          id: 't_institutional_floating',
+          id: 't_ol_institutional_floating',
           creditor: 'institutional',
           principal: cash(2_460),
           coupon: { kind: 'floating', spreadOverBOC: bp(90) },
@@ -196,14 +199,33 @@ export function createInitialGameState(
         spent: cash(9_000),
         remainingFunding: cash(18_000),
         forecastOpenAt: quarter(20),
+        // Inherited consortium financing — 3 tranches across creditors.
+        // Combined $8.2B of issued debt + ~$18B committed-but-undrawn from
+        // consortium (drawn as construction progresses, becomes new tranches).
         financing: [
           {
-            approach: 'consortium',
-            amount: cash(27_000),
-            rateBp: 400,
+            approach: 'pensionConsortium',
+            amount: cash(3_500),
+            rateBp: 410,
             conditions: [],
             signedAt: quarter(-24),
-            trancheId: 't_ol_consortium',
+            trancheId: 't_ol_pension',
+          },
+          {
+            approach: 'consortium',
+            amount: cash(2_240),
+            rateBp: 425,
+            conditions: [],
+            signedAt: quarter(-16),
+            trancheId: 't_ol_institutional_fixed',
+          },
+          {
+            approach: 'consortium',
+            amount: cash(2_460),
+            rateBp: 490,
+            conditions: [],
+            signedAt: quarter(-8),
+            trancheId: 't_ol_institutional_floating',
           },
         ],
         perProject: { sitePrep: score(40), megaContract: true, settlementPremium: score(10) },

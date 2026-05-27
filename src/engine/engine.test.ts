@@ -51,7 +51,9 @@ describe('createInitialGameState', () => {
     expect(ol.state).toBe('under_construction');
     if (ol.state === 'under_construction') {
       expect(ol.financing.length).toBeGreaterThan(0);
-      expect(ol.financing[0]!.approach).toBe('consortium');
+      // After Phase 10 polish, OL has 3 financing layers: pension + 2
+      // institutional. First layer is pension consortium.
+      expect(['pensionConsortium', 'consortium']).toContain(ol.financing[0]!.approach);
     }
   });
 

@@ -24,11 +24,8 @@ interface DashboardLink {
 
 const dashboards: DashboardLink[] = [
   { to: '/', label: 'Mission Control', end: true, domainColor: 'bg-blue-500' },
-  { to: '/performance', label: 'Performance', end: false, domainColor: 'bg-indigo-500' },
-  { to: '/ttc', label: 'TTC', end: false, domainColor: 'bg-cyan-500' },
-  { to: '/go', label: 'GO', end: false, domainColor: 'bg-violet-500' },
-  { to: '/up', label: 'UP', end: false, domainColor: 'bg-amber-500' },
-  { to: '/capital', label: 'Capital', end: false, domainColor: 'bg-emerald-500' },
+  { to: '/network', label: 'Network Management', end: false, domainColor: 'bg-cyan-500' },
+  { to: '/expansion', label: 'Network Expansion', end: false, domainColor: 'bg-emerald-500' },
   { to: '/treasury', label: 'Treasury', end: false, domainColor: 'bg-purple-500' },
   { to: '/political', label: 'Political', end: false, domainColor: 'bg-red-500' },
 ];
