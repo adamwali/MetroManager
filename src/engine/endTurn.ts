@@ -234,6 +234,38 @@ export function endTurn(state: GameState): GameState {
         go: agenciesFinal.go.dailyRiders as unknown as number,
         up: agenciesFinal.up.dailyRiders as unknown as number,
       },
+      // Phase 10 financial overhaul: per-agency breakdown for drill-down
+      perAgencyFareRevenue: {
+        ttc: agenciesFinal.ttc.lastQuarterFareRevenue as unknown as number,
+        go: agenciesFinal.go.lastQuarterFareRevenue as unknown as number,
+        up: agenciesFinal.up.lastQuarterFareRevenue as unknown as number,
+      },
+      perAgencyOpex: {
+        ttc: (agenciesFinal.ttc.lastQuarterOpex as unknown as number) +
+          (agenciesFinal.ttc.operatingParams.securityBudget as unknown as number) +
+          (agenciesFinal.ttc.operatingParams.cleanlinessBudget as unknown as number) +
+          ((agenciesFinal.ttc.operatingParams.accessibilityBudget as unknown as number) ?? 0),
+        go: (agenciesFinal.go.lastQuarterOpex as unknown as number) +
+          (agenciesFinal.go.operatingParams.securityBudget as unknown as number) +
+          (agenciesFinal.go.operatingParams.cleanlinessBudget as unknown as number) +
+          ((agenciesFinal.go.operatingParams.accessibilityBudget as unknown as number) ?? 0),
+        up: (agenciesFinal.up.lastQuarterOpex as unknown as number) +
+          (agenciesFinal.up.operatingParams.securityBudget as unknown as number) +
+          (agenciesFinal.up.operatingParams.cleanlinessBudget as unknown as number) +
+          ((agenciesFinal.up.operatingParams.accessibilityBudget as unknown as number) ?? 0),
+      },
+      perAgencyMaintenance: {
+        ttc: agenciesFinal.ttc.subsystems.reduce((a, s) => a + (s.maintenanceBudget as unknown as number), 0),
+        go: agenciesFinal.go.subsystems.reduce((a, s) => a + (s.maintenanceBudget as unknown as number), 0),
+        up: agenciesFinal.up.subsystems.reduce((a, s) => a + (s.maintenanceBudget as unknown as number), 0),
+      },
+      allowanceByGov: {
+        ottawa: allowanceN * 0.40,
+        queensPark: allowanceN * 0.35,
+        cityHall: allowanceN * 0.25,
+      },
+      projectCapexDraws: constructionDraws.reduce((a, d) => a + (d.drawn ?? 0), 0),
+      projectLvcRevenue: lvcN,
       trustOttawa: state.politics.ottawa.trust as unknown as number,
       trustQueensPark: state.politics.queensPark.trust as unknown as number,
       trustCityHall: state.politics.cityHall.trust as unknown as number,

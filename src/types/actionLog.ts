@@ -75,6 +75,19 @@ export interface QuarterSummaryBreakdown {
     cashM: number;
     totalRiders: number;
     perAgencyRiders: Record<AgencyId, number>;
+    /** Phase 10 financial overhaul: per-agency breakdown for drill-down P&L. */
+    perAgencyFareRevenue: Record<AgencyId, number>;
+    perAgencyOpex: Record<AgencyId, number>;
+    perAgencyMaintenance: Record<AgencyId, number>;
+    /** Allowance split by government (Ottawa 40% / QP 35% / City 25% spec). */
+    allowanceByGov: {
+      ottawa: number;
+      queensPark: number;
+      cityHall: number;
+    };
+    /** Capital project draws + LVC revenue this quarter ($M). */
+    projectCapexDraws: number;
+    projectLvcRevenue: number;
     trustOttawa: number;
     trustQueensPark: number;
     trustCityHall: number;
