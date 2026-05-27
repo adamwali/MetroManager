@@ -5,12 +5,10 @@ import type { TraceMetric } from '@/utils/trace';
 import {
   describeBoardConfidence,
   describeCashRunway,
-  describeReliability,
   describeRidersDelta,
   describeTrust,
   formatMoney,
   formatMoneyDelta,
-  formatPct,
   formatPctDelta,
   formatRiders,
   formatRidersDelta,
@@ -81,14 +79,6 @@ export function TopStrip() {
         }
         onClick={() => setTraceMetric('boardConfidence')}
         helpText="Board confidence 0-100. Below 20 for 4Q gets you fired (game over). Driven by delivery wins, financial discipline, reliability, scandals."
-      />
-      <Kpi
-        label="TTC on-time"
-        value={formatPct(k.ttcOnTime)}
-        caption={describeReliability(k.ttcReliability)}
-        tone={
-          k.ttcOnTime < 0.8 ? 'critical' : k.ttcOnTime < 0.9 ? 'warning' : 'neutral'
-        }
       />
       <Kpi
         label="Satisfaction"

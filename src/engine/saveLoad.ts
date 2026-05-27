@@ -1,4 +1,5 @@
 import type { GameState } from '@/types/gameState';
+import { migrateLoadedState } from './migrate';
 
 /**
  * JSON save/load. Phase 1.4 — pure functions only, no IO.
@@ -66,5 +67,6 @@ export function loadGameFromJson(json: string): GameState {
     throw new SaveLoadError('Save bundle missing `state` field');
   }
   // Branded types are erased at runtime; nothing to reconstruct.
-  return bundle.state as GameState;
+  // Migrate any missing fields with safe defaults (Phase 10 robustness).
+  return migrateLoadedState(bundle.state);
 }

@@ -60,6 +60,21 @@ export function buildHistory(state: GameState, initialCash: number, initialRider
       });
     }
   }
+  // Phase 10 polish: if mid-turn actions have shifted cash since the last
+  // quarter_summary (e.g., favor called, bond issued, refi fee paid), append
+  // a live point so the sparkline reflects the in-progress quarter.
+  const currentCash = state.cash.balance as unknown as number;
+  if (history.length > 0 && currentCash !== history[history.length - 1]!.cash) {
+    const currentRiders =
+      (state.agencies.ttc.dailyRiders as unknown as number) +
+      (state.agencies.go.dailyRiders as unknown as number) +
+      (state.agencies.up.dailyRiders as unknown as number);
+    history.push({
+      quarter: (state.quarter as unknown as number) + 0.5, // fractional = "in progress"
+      cash: currentCash,
+      totalRiders: currentRiders,
+    });
+  }
   return history;
 }
 

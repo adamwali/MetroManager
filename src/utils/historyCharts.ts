@@ -42,23 +42,26 @@ export function buildQuarterPoints(state: GameState): QuarterPoint[] {
   const points: QuarterPoint[] = [];
   for (const entry of state.actionLog) {
     if (entry.kind !== 'quarter_summary') continue;
-    const m = entry.breakdown.endOfQuarterMetrics;
+    // Older saves (pre-Phase 9) may lack endOfQuarterMetrics. Skip those
+    // entries silently rather than crashing the chart.
+    const m = entry.breakdown?.endOfQuarterMetrics;
+    if (!m || typeof m.cashM !== 'number') continue;
     points.push({
       quarter: entry.quarter as unknown as number,
       label: quarterLabel(entry.quarter as unknown as number),
       cashM: m.cashM,
       cashDelta: entry.cashDelta,
       cashFlow: { ...entry.breakdown.cashFlow },
-      ttcRiders: m.perAgencyRiders.ttc,
-      goRiders: m.perAgencyRiders.go,
-      upRiders: m.perAgencyRiders.up,
-      totalRiders: m.totalRiders,
-      trustOttawa: m.trustOttawa,
-      trustQueensPark: m.trustQueensPark,
-      trustCityHall: m.trustCityHall,
-      boardConfidence: m.boardConfidence,
-      publicApproval: m.publicApproval,
-      operatingAllowanceAnnualM: m.operatingAllowanceAnnualM,
+      ttcRiders: m.perAgencyRiders?.ttc ?? 0,
+      goRiders: m.perAgencyRiders?.go ?? 0,
+      upRiders: m.perAgencyRiders?.up ?? 0,
+      totalRiders: m.totalRiders ?? 0,
+      trustOttawa: m.trustOttawa ?? 50,
+      trustQueensPark: m.trustQueensPark ?? 50,
+      trustCityHall: m.trustCityHall ?? 50,
+      boardConfidence: m.boardConfidence ?? 60,
+      publicApproval: m.publicApproval ?? 50,
+      operatingAllowanceAnnualM: m.operatingAllowanceAnnualM ?? 0,
     });
   }
   return points;

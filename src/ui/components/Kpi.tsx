@@ -88,10 +88,10 @@ export function Kpi({
         </span>
         {spark}
       </div>
-      <div className={`num text-xl font-semibold leading-tight ${TONE_VALUE[tone]}`}>{value}</div>
-      <div className="flex items-baseline gap-2 text-[11px]">
-        {delta !== undefined && <span className="num font-medium text-neutral-600">{delta}</span>}
-        {caption !== undefined && <span className="text-neutral-500">{caption}</span>}
+      <div className={`num text-2xl font-bold leading-tight tracking-tight ${TONE_VALUE[tone]}`}>{value}</div>
+      <div className="flex items-baseline gap-1.5 text-[10px]">
+        {delta !== undefined && <span className="num font-semibold text-neutral-700">{delta}</span>}
+        {caption !== undefined && <span className="text-neutral-400">{caption}</span>}
       </div>
       {helpText && showHelp && (
         <div

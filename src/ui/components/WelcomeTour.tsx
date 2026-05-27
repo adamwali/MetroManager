@@ -12,37 +12,41 @@ interface TourStep {
 
 const STEPS: TourStep[] = [
   {
-    title: 'Welcome — you run the integrated GTHA transit authority',
-    body: "You've got 60 quarters (15 years) to leave a legacy. Three agencies (TTC, GO, UP), three governments to manage (Ottawa / Queen's Park / City Hall), one Ontario Line under construction. The board fires you below confidence 20 for 4 quarters. The cash dies below zero for 3 quarters.",
+    title: 'Welcome — you run the GTHA transit authority',
+    body: "You're the new CEO. Three agencies (TTC subway/bus, GO regional rail, UP airport express), one Ontario Line under construction, three governments funding you. You've got 60 quarters (15 years) to leave a legacy.",
   },
   {
-    title: 'Top strip is your dashboard',
-    body: "Every KPI on the bar at top is clickable — opens a trace drawer showing what moved it. Hover the ⓘ icon next to any label for what the metric means and how to move it.",
-    cta: 'Hover the cash KPI now.',
+    title: 'The world you inherit',
+    body: "Toronto in 2026 has a transit crisis. The previous CEO oversaw the Ontario Line groundbreaking but resigned over fare-evasion scandals. The board hired you to deliver. Failure conditions: cash below $0 for 3 quarters (fiscal failure), or board confidence below 20 for 4 quarters (you're fired).",
+  },
+  {
+    title: 'Meet the three governments',
+    body: "OTTAWA (federal): Minister Marie-Claude Tremblay — technocratic, climate-focused, controls $4B infrastructure top-ups. QUEEN'S PARK (provincial): Minister David Hartwell — deals guy, suburban-aligned, sets your operating allowance. CITY HALL (Toronto): Mayor Kenneth Liang — responsive to local pressure, accessibility-focused. You'll see them in events and on the /political dashboard.",
+  },
+  {
+    title: 'Meet your operating directors',
+    body: "TTC: Priya Ramanathan (reliability-engineer doctrine — will quit if you let reliability crash). GO: James Okafor (ridership-maximizer — pushes electrification + frequency). UP: Sarah Chen (cost-discipline — wants stable funding, low expansion). Each has a tolerance score; if you ignore their doctrine, they resign.",
+  },
+  {
+    title: 'Top strip = your scoreboard',
+    body: "Every KPI on the bar at top is clickable — opens a trace drawer showing what moved it. Hover the ⓘ icon next to any label for what the metric means.",
+    cta: 'Hover any ⓘ icon now to see how it works.',
   },
   {
     title: 'Mission Control = your inbox',
-    body: 'Events land here. Each event has 2-4 branches with tradeoffs spelled out. The "What just changed" panel below summarizes each quarter\'s shifts. Standing orders on the right automate repetitive decisions (try a preset).',
+    body: 'Events land here. Each has 2-4 branches with tradeoffs. The "What just changed" panel summarizes each quarter. Standing orders on the right automate repetitive decisions — try a preset like "+ Safety net".',
   },
   {
-    title: '/capital is where you build',
-    body: "Propose new projects. The financing modal lets you stack offers (federal + provincial + bonds = $14B Don Mills mega project). Each layer becomes a debt tranche at its own rate. Bigger projects need creative stacking.",
+    title: 'Three big workstreams',
+    body: "/capital — propose projects, stack financing across federal/provincial/private/bonds. /treasury — issue bonds when cash dips, refi when rates drop. /political — lobby ministers, run ad-hoc funding requests. TTC/GO/UP dashboards — maintenance + fare + frequency + security/cleanliness sliders.",
   },
   {
-    title: '/treasury is where you manage debt',
-    body: 'Issue operating bonds when cash runs low (gated by credit rating). Refi tranches when rates favor (1.5% fee, must clear break-even). Watch the maturity ladder on /performance for refi pressure.',
-  },
-  {
-    title: '/political is where you lobby',
-    body: 'Each government has Public Lobby (+6 trust, -5 approval), Quiet Pitch (+3 trust, 4Q cooldown), Ad-hoc Funding (-8 trust, +cash). Insider archetype gets Call-In-Favor: one-time +$400M from a high-trust gov.',
-  },
-  {
-    title: "TTC / GO / UP dashboards: maintenance + policy",
-    body: "Drag maintenance sliders to see condition forecasts in green/red. Pick fare + frequency policies — both have inline impact preview. Watch the pledge banner: breaking a fare-freeze pledge costs board confidence.",
+    title: "The Y4 moment",
+    body: "At Q16 (Year 4), your operating allowance renegotiates. Outcome depends on trust scores + board confidence + delivery wins. Crash trust → -50% allowance with controls. Build trust + ship projects → +20%. This is the structural inflection that defines your campaign.",
   },
   {
     title: 'Time to play',
-    body: 'End Turn (bottom-right) advances one quarter. The first 4-6 quarters are usually quiet; events ramp up. You\'ll feel a major political moment at Y4 (Q16) when the allowance renegotiates. Good luck.',
+    body: "End Turn (bottom-right) advances one quarter. The first 4-6 quarters are quiet on purpose — set maintenance, plan your first project, feel the system. Then it ramps. Good luck, CEO.",
   },
 ];
 
