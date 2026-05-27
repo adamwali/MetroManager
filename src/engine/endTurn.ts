@@ -190,6 +190,9 @@ export function endTurn(state: GameState): GameState {
     };
   }
 
+  // Compute nextBalance first so endOfQuarterMetrics can reference it
+  const nextBalance = (state.cash.balance as unknown as number) + netCashDelta;
+
   const breakdown: QuarterSummaryBreakdown = {
     cashFlow: {
       operatingAllowance: allowanceN,
@@ -203,6 +206,22 @@ export function endTurn(state: GameState): GameState {
     ridership: { perAgency, systemBefore, systemAfter },
     projects: { transitions, constructionDraws },
     debt: { tranchesRefinanced: refinancedCount, refiFee: refiFeeN },
+    endOfQuarterMetrics: {
+      cashM: nextBalance,
+      totalRiders: systemAfter,
+      perAgencyRiders: {
+        ttc: agenciesFinal.ttc.dailyRiders as unknown as number,
+        go: agenciesFinal.go.dailyRiders as unknown as number,
+        up: agenciesFinal.up.dailyRiders as unknown as number,
+      },
+      trustOttawa: state.politics.ottawa.trust as unknown as number,
+      trustQueensPark: state.politics.queensPark.trust as unknown as number,
+      trustCityHall: state.politics.cityHall.trust as unknown as number,
+      boardConfidence: state.boardConfidence.score as unknown as number,
+      publicApproval: state.engineVars.publicApproval as unknown as number,
+      creditRating: debtWithRating.rating,
+      operatingAllowanceAnnualM: state.operatingAllowance.annualAmount as unknown as number,
+    },
   };
 
   const logId = `q${nextQuarter as unknown as number}-${state.nextLogId}`;
@@ -216,8 +235,6 @@ export function endTurn(state: GameState): GameState {
     summary: buildSummaryText(netCashDelta, ridersDelta, transitions),
     breakdown,
   };
-
-  const nextBalance = (state.cash.balance as unknown as number) + netCashDelta;
   const nextQuarterN = nextQuarter as unknown as number;
   const boardScore = state.boardConfidence.score as unknown as number;
   const { counters: nextCounters, gameOver } = detectGameOver(

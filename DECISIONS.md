@@ -5,6 +5,81 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 9: Recharts time-series + Performance dashboard
+
+Five charts on `/performance`. quarter_summary entries now snapshot
+end-of-quarter metrics so chart components have full historical data
+without engine reconstruction.
+
+**Engine change:**
+- `QuarterSummaryBreakdown.endOfQuarterMetrics` field added with 11
+  snapshot fields: cash, per-agency riders, three trust scores, board,
+  approval, credit rating, operating allowance annual amount, total
+  riders
+- endTurn populates it after all per-quarter mutations
+- nextBalance computation moved earlier in endTurn so breakdown can
+  reference it
+
+**Utility (`src/utils/historyCharts.ts`):**
+- `buildQuarterPoints(state)` → flat array of `QuarterPoint` ready for
+  charts
+- `buildMaturityLadder(state)` → debt principal grouped by maturity year
+- `buildProjectGantt(state)` → bar specs per project (start/end Q +
+  state)
+
+**5 charts via Recharts:**
+
+| Chart | Component | Recharts primitive |
+|---|---|---|
+| Cash flow waterfall (last 12Q) | `CashFlowWaterfall` | BarChart w/ signed bars (red/green) + ReferenceLine at 0 + breakdown in tooltip |
+| Three-gov trust over time | `TrustOverTimeChart` | LineChart with 3 monotone lines (red Ottawa, blue QP, emerald City Hall) |
+| Ridership stacked area | `RidershipStackedChart` | AreaChart stacked TTC + GO + UP |
+| Debt maturity ladder | `DebtMaturityLadder` | BarChart, principal × maturity year |
+| Project Gantt | `ProjectGantt` | Hand-rolled SVG (Recharts has no Gantt primitive) |
+
+Each chart degrades gracefully — shows empty-state text if no history
+yet.
+
+**Performance dashboard layout:**
+- Header with description
+- Cash flow waterfall (full width, top)
+- Two-column section: trust + ridership
+- Debt maturity ladder (full width)
+- Project Gantt (full width, bottom)
+
+**8 new chart-utility tests:**
+- buildQuarterPoints empty at game start
+- One point per endTurn
+- Snapshot data populated (cash, trust, riders, board, cash flow)
+- Quarter labels formatted "Qn YYYY"
+- Maturity ladder groups + sorts by year
+- Project Gantt: one bar per project, state correct
+
+**279 tests total passing.** Bundle 896KB JS / 257KB gzip (was
+481/144; +400KB JS for Recharts). Bundle size warning surfaced;
+deferred to Phase 10 polish (route-based code splitting so Recharts
+loads only when /performance is visited).
+
+**Strategic value:**
+- Cash flow waterfall makes the "operating deficit at $-134M/Q" visible
+  over time — player sees the slope worsening or improving
+- Trust over time makes the lobby-action cadence visible (trust spikes
+  after each publicLobby, decays over time)
+- Ridership stacked shows the Ontario Line opening as a clear inflection
+  in TTC's area; GO growth shows as continuous expansion
+- Maturity ladder is the credit-management view: bunched maturities in
+  one year = refi pressure incoming
+- Project Gantt shows the project pipeline at a glance, with the
+  current-quarter vertical marker for "where am I now"
+
+**Deferred (Phase 10):**
+- Route-based code splitting (only /performance loads Recharts)
+- Chart accessibility (ARIA labels, keyboard navigation)
+- Color-blind safe palette audit
+- Mobile chart sizing
+
+---
+
 ## 2026-05-26 — Phase 6.2: characters become real (Tremblay / Hartwell / Liang + 3 directors)
 
 Six characters with bios, doctrines, relationship scores. Events tagged

@@ -65,6 +65,24 @@ export interface QuarterSummaryBreakdown {
     tranchesRefinanced: number;
     refiFee: number;
   };
+  /**
+   * Snapshot of headline metrics at END of this quarter. Phase 9 charts
+   * read from these snapshots to build time-series views. Captures values
+   * that aren't otherwise reconstructable from incremental deltas
+   * (trust scores, board confidence, public approval, credit rating).
+   */
+  endOfQuarterMetrics: {
+    cashM: number;
+    totalRiders: number;
+    perAgencyRiders: Record<AgencyId, number>;
+    trustOttawa: number;
+    trustQueensPark: number;
+    trustCityHall: number;
+    boardConfidence: number;
+    publicApproval: number;
+    creditRating: string;
+    operatingAllowanceAnnualM: number;
+  };
 }
 
 export type ActionLogEntry =

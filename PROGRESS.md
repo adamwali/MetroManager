@@ -38,6 +38,12 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 - **Phase 6.1** — Political layer (lobby actions + ad-hoc funding +
   Insider-only call-in-favor). Per-government cooldowns. /political
   dashboard.
+- **Phase 9** — Charts. quarter_summary now snapshots endOfQuarterMetrics
+  (cash, ridership per-agency, three trust scores, board, approval,
+  credit rating, allowance amount). PerformanceBoard renders 5 charts
+  via Recharts: cash flow waterfall, three-gov trust over time,
+  per-agency ridership stacked area, debt maturity ladder, project
+  Gantt timeline.
 - **Phase 7** — Treasury: dynamic credit rating (recomputed each quarter
   from cash/debt-service/board, drifts one notch/quarter), operating
   bond issuance with rating-gated caps (AA $2B/Q, A $1B/Q, BBB blocked),
@@ -82,8 +88,8 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 
 ## ⏳ Not started
 
-- **Phase 9** — Full charts (Recharts), analytics polish
 - **Phase 10** — Onboarding briefing, polish, accessibility audit
+- Bundle code-splitting (Recharts on /performance only) → Phase 10 polish
 
 ## Deferred / known orphan features
 
