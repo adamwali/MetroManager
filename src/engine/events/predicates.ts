@@ -55,6 +55,18 @@ export function evaluatePredicate(state: GameState, pred: EventPredicate): boole
       );
     case 'quarter':
       return checkRange(state.quarter as unknown as number, pred);
+    case 'directorTolerance': {
+      // True if ANY of the three directors' tolerance falls in the range.
+      // Used by EV050 to fire when any director's tolerance hits 0.
+      const directors = ['c_ttc_director', 'c_go_director', 'c_up_director'];
+      for (const id of directors) {
+        const c = state.characters[id];
+        if (!c || c.role !== 'director_operating') continue;
+        const tol = c.tolerance as unknown as number;
+        if (checkRange(tol, pred)) return true;
+      }
+      return false;
+    }
     case 'projectFundingShortfall': {
       // True if any under-construction project has < 4Q of funding remaining
       // at current burn rate. Triggers EV043 funding-shortfall crisis event.

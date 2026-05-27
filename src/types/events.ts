@@ -56,6 +56,7 @@ export type EventPredicate =
   | { kind: 'riders'; agency: AgencyId; gte?: number; lte?: number }
   | { kind: 'quarter'; gte?: number; lte?: number }
   | { kind: 'projectFundingShortfall' }
+  | { kind: 'directorTolerance'; gte?: number; lte?: number }
   | { kind: 'and'; predicates: EventPredicate[] }
   | { kind: 'or'; predicates: EventPredicate[] }
   | { kind: 'not'; predicate: EventPredicate };

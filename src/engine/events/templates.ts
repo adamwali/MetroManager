@@ -2092,8 +2092,54 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     ],
   },
 
-  // EV050 — TTC director quits (fires when c_ttc_director.tolerance reaches 0)
-  // Deferred to Phase 6.2.3 — currently tolerance just bottoms out.
+  // EV050 — Director quits at tolerance 0. Phase 6.2.3.
+  // Generic across agencies; engine handles which director based on which one
+  // is at tolerance 0 (predicate scans all three).
+  {
+    id: 'EV050_directorQuits',
+    category: 'internal_politics',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'directorTolerance', lte: 0 },
+      cooldownQuarters: 24,
+    },
+    outlet: 'Internal memo',
+    headline: 'Agency director resigning over fundamental disagreements',
+    body: "An operating director has informed the board of their resignation, citing 'fundamental disagreements with strategic direction' under {ceoName}. Replacement search begins immediately, but interim period will be rocky.",
+    urgency: 90,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'accept_resignation',
+        label: 'Accept; launch fast replacement search',
+        tradeoff: '-12 board (instability), -5 approval, -10 reliability (affected agency)',
+        effects: [
+          { kind: 'boardConfidence', delta: -12, reason: 'Director resigned in protest' },
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'reliability', agency: 'ttc', delta: -8 },
+        ],
+      },
+      {
+        id: 'negotiate_stay',
+        label: 'Negotiate them to stay (compromise on strategy)',
+        tradeoff: '-$15M cash (retention package), -6 board, but tolerance resets to 50',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+          { kind: 'boardConfidence', delta: -6, reason: 'Capitulated to director ultimatum' },
+        ],
+      },
+      {
+        id: 'public_dispute',
+        label: 'Let them quit publicly; refuse to back down',
+        tradeoff: '+2 board (resolve), -10 approval, -15 reliability, +5 disruptor cred',
+        effects: [
+          { kind: 'boardConfidence', delta: 2, reason: 'Held line against director' },
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'reliability', agency: 'ttc', delta: -12 },
+        ],
+      },
+    ],
+  },
 
   // EV051 — Whistleblower disclosure on internal practices
   {
