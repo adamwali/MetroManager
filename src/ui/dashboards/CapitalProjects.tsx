@@ -386,21 +386,26 @@ const APPROACH_SUBTITLE: Record<FinancingApproach, string> = {
 
 function OfferCard({
   offer,
-  projectCost,
-  onAccept,
+  remainingNeed,
+  alreadyTaken,
+  onAdd,
 }: {
   offer: FinancingOffer;
-  projectCost: number;
-  onAccept: () => void;
+  remainingNeed: number;
+  alreadyTaken: number;
+  onAdd: (amountM: number) => void;
 }) {
   const ratePct = offer.rateBp / 100;
   const isSovereign = offer.approach === 'sovereignWealth';
-  const offerAmount = offer.maxAmount as unknown as number;
-  const insufficient = offerAmount < projectCost;
+  const offerMax = offer.maxAmount as unknown as number;
+  const stillAvailable = Math.max(0, offerMax - alreadyTaken);
+  const suggested = Math.min(remainingNeed, stillAvailable);
+  const fullyTaken = alreadyTaken >= offerMax;
+
   return (
     <div
       className={`rounded-md border p-4 flex flex-col ${
-        insufficient
+        fullyTaken
           ? 'border-neutral-200 bg-neutral-50/50 opacity-60'
           : isSovereign
             ? 'border-amber-300'
@@ -413,20 +418,19 @@ function OfferCard({
       </div>
       <p className="mt-0.5 text-[10px] text-neutral-500">{APPROACH_SUBTITLE[offer.approach]}</p>
       <div className="mt-2 num text-xl font-semibold">
-        up to {formatMoney(offerAmount)}
+        up to {formatMoney(offerMax)}
       </div>
-      {insufficient && (
-        <div className="mt-2 rounded border border-neutral-300 bg-white px-2 py-1.5 text-[11px] text-neutral-700">
-          Insufficient — project needs {formatMoney(projectCost)}. Pick a larger source or
-          consortium.
+      {alreadyTaken > 0 && (
+        <div className="mt-1 text-[10px] text-blue-700 num">
+          {formatMoney(alreadyTaken)} added · {formatMoney(stillAvailable)} still available
         </div>
       )}
-      {!insufficient && offer.opticsLabel && (
+      {offer.opticsLabel && (
         <div className="mt-2 rounded border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] text-red-800">
           ⚠ {offer.opticsLabel}
         </div>
       )}
-      {offer.conditions.length > 0 ? (
+      {offer.conditions.length > 0 && (
         <ul className="mt-3 space-y-1 text-xs text-neutral-700">
           {offer.conditions.map((c, i) => (
             <li key={i} className="border-l-2 border-amber-300 pl-2">
@@ -434,23 +438,25 @@ function OfferCard({
             </li>
           ))}
         </ul>
-      ) : !offer.opticsLabel && !insufficient ? (
-        <p className="mt-3 text-xs text-neutral-500">No conditions attached.</p>
-      ) : null}
-      <div className="mt-auto pt-3">
+      )}
+      <div className="mt-auto pt-3 flex gap-2">
         <button
           type="button"
-          onClick={onAccept}
-          disabled={insufficient}
-          className={`w-full rounded-md px-3 py-2 text-xs font-semibold text-white transition-colors ${
-            insufficient
+          onClick={() => onAdd(suggested)}
+          disabled={fullyTaken || suggested <= 0}
+          className={`flex-1 rounded-md px-3 py-2 text-xs font-semibold text-white transition-colors ${
+            fullyTaken || suggested <= 0
               ? 'bg-neutral-300 cursor-not-allowed'
               : isSovereign
                 ? 'bg-red-700 hover:bg-red-800'
                 : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {insufficient ? 'Insufficient amount' : 'Accept this offer'}
+          {fullyTaken
+            ? 'Maxed out'
+            : suggested === remainingNeed
+              ? `Add ${formatMoney(suggested)} (covers gap)`
+              : `Add ${formatMoney(suggested)}`}
         </button>
       </div>
     </div>
@@ -459,10 +465,11 @@ function OfferCard({
 
 function FinancingModal({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const state = useGameStore((s) => s.state);
-  const accept = useGameStore((s) => s.acceptFinancing);
+  const acceptPackage = useGameStore((s) => s.acceptFinancingPackage);
   const entry = catalogEntry(projectId);
+  const [pkg, setPkg] = useState<Array<{ approach: FinancingApproach; amountM: number }>>([]);
+
   if (!entry) return null;
-  // Find the proposed project to get its actual cost (alignment + quality applied)
   const proposed = state.projects.find(
     (p) => p.state === 'proposed' && p.templateId === projectId,
   );
@@ -474,21 +481,51 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
   const govOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'government');
   const privateOffers = offers.filter((o) => FINANCING_APPROACH_SOURCE[o.approach] === 'private');
 
-  const onAccept = (approach: FinancingApproach) => {
-    accept(projectId, approach);
+  const totalCommitted = pkg.reduce((acc, l) => acc + l.amountM, 0);
+  const remainingNeed = Math.max(0, projectCost - totalCommitted);
+  const blended =
+    totalCommitted > 0
+      ? pkg.reduce((acc, l) => {
+          const o = offers.find((x) => x.approach === l.approach)!;
+          return acc + l.amountM * o.rateBp;
+        }, 0) / totalCommitted
+      : 0;
+
+  const addLayer = (approach: FinancingApproach, amountM: number) => {
+    if (amountM <= 0) return;
+    setPkg((prev) => {
+      const existing = prev.find((l) => l.approach === approach);
+      if (existing) {
+        return prev.map((l) =>
+          l.approach === approach ? { ...l, amountM: l.amountM + amountM } : l,
+        );
+      }
+      return [...prev, { approach, amountM }];
+    });
+  };
+  const removeLayer = (approach: FinancingApproach) => {
+    setPkg((prev) => prev.filter((l) => l.approach !== approach));
+  };
+  const confirm = () => {
+    if (totalCommitted < projectCost) return;
+    acceptPackage(projectId, pkg);
     onClose();
   };
 
+  const alreadyTakenFor = (approach: FinancingApproach): number =>
+    pkg.find((l) => l.approach === approach)?.amountM ?? 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl">
+      <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg bg-white shadow-xl">
         <header className="border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold">Financing offers — {entry.name}</h1>
+            <h1 className="text-lg font-semibold">Assemble financing package — {entry.name}</h1>
             <p className="text-sm text-neutral-500">
-              Project needs <span className="num font-semibold">{formatMoney(projectCost)}</span>.
-              Government offers are trust-priced; private offers are market-priced. Bigger
-              projects often need consortium financing.
+              Project needs{' '}
+              <span className="num font-semibold">{formatMoney(projectCost)}</span>. Stack
+              multiple offers to cover the cost. Each layer becomes its own debt tranche at
+              its own rate.
             </p>
           </div>
           <button
@@ -500,6 +537,78 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
           </button>
         </header>
 
+        {/* Package sidebar */}
+        <section className="border-b border-neutral-200 bg-neutral-50 px-6 py-3">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                Package being assembled
+              </div>
+              {pkg.length === 0 ? (
+                <p className="mt-1 text-sm text-neutral-500">
+                  No layers yet. Click "Add" on offers below to build your funding stack.
+                </p>
+              ) : (
+                <ul className="mt-1 space-y-1 text-sm">
+                  {pkg.map((l) => {
+                    const offer = offers.find((o) => o.approach === l.approach)!;
+                    return (
+                      <li key={l.approach} className="flex items-baseline justify-between">
+                        <span>
+                          <span className="font-medium">{APPROACH_LABEL[l.approach]}</span>{' '}
+                          <span className="num text-neutral-500">
+                            ({(offer.rateBp / 100).toFixed(2)}%)
+                          </span>
+                        </span>
+                        <span className="flex items-baseline gap-2">
+                          <span className="num font-semibold">{formatMoney(l.amountM)}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeLayer(l.approach)}
+                            className="rounded px-2 py-0.5 text-[10px] text-red-700 hover:bg-red-50"
+                          >
+                            remove
+                          </button>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-500">Total</div>
+              <div className="num text-2xl font-semibold">
+                {formatMoney(totalCommitted)} / {formatMoney(projectCost)}
+              </div>
+              {blended > 0 && (
+                <div className="num text-[10px] text-neutral-500">
+                  blended rate {(blended / 100).toFixed(2)}%
+                </div>
+              )}
+              {remainingNeed > 0 ? (
+                <div className="text-[11px] text-amber-700 font-medium">
+                  Gap: {formatMoney(remainingNeed)}
+                </div>
+              ) : (
+                <div className="text-[11px] text-emerald-700 font-medium">Fully funded ✓</div>
+              )}
+              <button
+                type="button"
+                onClick={confirm}
+                disabled={remainingNeed > 0 || pkg.length === 0}
+                className={`mt-2 rounded-md px-4 py-2 text-sm font-semibold text-white ${
+                  remainingNeed > 0 || pkg.length === 0
+                    ? 'bg-neutral-300 cursor-not-allowed'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                Confirm package
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section className="px-6 py-4">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-blue-700">
             Government financing
@@ -509,8 +618,9 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
               <OfferCard
                 key={o.approach}
                 offer={o}
-                projectCost={projectCost}
-                onAccept={() => onAccept(o.approach)}
+                remainingNeed={remainingNeed}
+                alreadyTaken={alreadyTakenFor(o.approach)}
+                onAdd={(amt) => addLayer(o.approach, amt)}
               />
             ))}
           </div>
@@ -521,17 +631,17 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
             Private financing
           </h2>
           <p className="mb-3 text-[11px] text-neutral-500">
-            No political conditions attached. Market-priced rates; some carry optics costs.
-            Private caps tend to be lower than government consortium — useful for small/medium
-            projects, fallback for bigger ones.
+            No political conditions; market-priced. Caps are lower than gov consortium — useful
+            as a layer to top up your package.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             {privateOffers.map((o) => (
               <OfferCard
                 key={o.approach}
                 offer={o}
-                projectCost={projectCost}
-                onAccept={() => onAccept(o.approach)}
+                remainingNeed={remainingNeed}
+                alreadyTaken={alreadyTakenFor(o.approach)}
+                onAdd={(amt) => addLayer(o.approach, amt)}
               />
             ))}
           </div>
@@ -542,7 +652,7 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
           QP {(state.politics.queensPark.trust as unknown as number).toFixed(0)} · City Hall{' '}
           {(state.politics.cityHall.trust as unknown as number).toFixed(0)}. Government rate
           = 5% + (50 − trust) × 0.06%, clamped {formatPct(0.01)} – {formatPct(0.12)}. Private
-          rates are market-driven.
+          rates are market-driven. Layering bonds + consortium often beats single-source.
         </p>
       </div>
     </div>

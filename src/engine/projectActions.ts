@@ -96,9 +96,18 @@ export function getFinancingOffersForProject(
 }
 
 /**
- * Accept a financing offer for a proposed project. Creates a new debt
- * tranche, transitions project to under_construction with the financing
- * amount as `remainingFunding`. Applies starting political support deltas.
+ * Stacked financing selection — one player-picked layer of a package.
+ * Multiple selections can be assembled per project.
+ */
+export interface FinancingSelection {
+  approach: FinancingApproach;
+  amountM: number;
+}
+
+/**
+ * Accept a single-offer financing for a proposed project. Wrapper around
+ * acceptFinancingPackage with a single selection. Kept for backward
+ * compatibility and simple flows.
  */
 export function acceptFinancing(
   state: GameState,
@@ -117,16 +126,64 @@ export function acceptFinancing(
   const offer = offers.find((o) => o.approach === approach);
   if (!offer) return state;
 
-  // Honor the smaller of project cost or financing offer
   const projectCost = estimatedCostOf(proposed);
   const amount = Math.min(projectCost, offer.maxAmount as unknown as number);
   if (amount <= 0) return state;
+  // Delegate to package logic with a single selection
+  return acceptFinancingPackage(state, catalogProjectId, [{ approach, amountM: amount }]);
+}
 
-  // Create new debt tranche from the accepted offer.
-  // Creditor class derived from financing approach so the debt portfolio
-  // reflects who funded each project.
+/**
+ * Accept a STACKED financing package — multiple offers assembled together.
+ * Phase 4 stacking polish. Each selection becomes its own DebtTranche.
+ * Sovereign onAcceptEffects applies if sovereign is in the package.
+ * Starting political support deltas apply once (from project template).
+ *
+ * Selections are validated against each offer's max amount; over-amounts
+ * are clamped. Total funding becomes sum of selections, capped at project
+ * cost (no over-financing).
+ */
+export function acceptFinancingPackage(
+  state: GameState,
+  catalogProjectId: string,
+  selections: FinancingSelection[],
+): GameState {
+  const proposedIdx = state.projects.findIndex(
+    (p) => p.state === 'proposed' && p.templateId === catalogProjectId,
+  );
+  if (proposedIdx === -1) return state;
+  const proposed = state.projects[proposedIdx]! as ProposedProject;
+  const entry = catalogEntry(catalogProjectId);
+  if (!entry) return state;
+  if (selections.length === 0) return state;
+
+  const offers = generateFinancingOffers(state.politics, entry.tier);
+  const projectCost = estimatedCostOf(proposed);
+
+  // Validate + clamp each selection
+  let remainingCost = projectCost;
+  const acceptedLayers: Array<{ offer: FinancingOffer; amount: number }> = [];
+  for (const sel of selections) {
+    const offer = offers.find((o) => o.approach === sel.approach);
+    if (!offer) continue;
+    const maxFromOffer = offer.maxAmount as unknown as number;
+    const amount = Math.min(
+      Math.max(0, Math.round(sel.amountM)),
+      maxFromOffer,
+      remainingCost,
+    );
+    if (amount <= 0) continue;
+    acceptedLayers.push({ offer, amount });
+    remainingCost -= amount;
+  }
+  if (acceptedLayers.length === 0) return state;
+
+  const totalAmount = acceptedLayers.reduce((acc, l) => acc + l.amount, 0);
+  if (totalAmount <= 0) return state;
+
+  // Creditor class derived from financing approach
   const creditorFor: Record<FinancingApproach, CreditorType> = {
-    federalOnly: 'institutional', // gov debt counts as institutional in our model
+    federalOnly: 'institutional',
     provincialOnly: 'institutional',
     municipalOnly: 'institutional',
     consortium: 'institutional',
@@ -134,28 +191,38 @@ export function acceptFinancing(
     bondMarket: 'institutional',
     sovereignWealth: 'foreign',
   };
-  const trancheId = `t_${catalogProjectId.toLowerCase()}_${approach}_q${state.quarter as unknown as number}`;
-  const newTranche: DebtTranche = {
-    id: trancheId,
-    creditor: creditorFor[approach],
-    principal: cash(amount),
-    coupon: { kind: 'fixed', rate: bp(offer.rateBp) },
-    maturity: quarter(
-      (state.quarter as unknown as number) + entry.buildDurationQuarters + 40,
-    ), // construction + 10yr term
-    issuedAt: state.quarter,
-  };
 
-  const accepted: AcceptedFinancing = {
-    approach,
-    amount: cash(amount),
-    rateBp: offer.rateBp,
-    conditions: offer.conditions,
-    signedAt: state.quarter,
-    trancheId,
-  };
+  // Build one tranche per layer + AcceptedFinancing record per layer
+  const newTranches: DebtTranche[] = [];
+  const acceptedRecords: AcceptedFinancing[] = [];
+  let onAcceptEffectsAcc: NonNullable<FinancingOffer['onAcceptEffects']> = [];
 
-  // Compute forecast open quarter = current Q + buildDuration
+  acceptedLayers.forEach(({ offer, amount }, idx) => {
+    const trancheId = `t_${catalogProjectId.toLowerCase()}_${offer.approach}_q${state.quarter as unknown as number}_${idx}`;
+    const tranche: DebtTranche = {
+      id: trancheId,
+      creditor: creditorFor[offer.approach],
+      principal: cash(amount),
+      coupon: { kind: 'fixed', rate: bp(offer.rateBp) },
+      maturity: quarter(
+        (state.quarter as unknown as number) + entry.buildDurationQuarters + 40,
+      ),
+      issuedAt: state.quarter,
+    };
+    newTranches.push(tranche);
+    acceptedRecords.push({
+      approach: offer.approach,
+      amount: cash(amount),
+      rateBp: offer.rateBp,
+      conditions: offer.conditions,
+      signedAt: state.quarter,
+      trancheId,
+    });
+    if (offer.onAcceptEffects) {
+      onAcceptEffectsAcc = [...onAcceptEffectsAcc, ...offer.onAcceptEffects];
+    }
+  });
+
   const constructing: ConstructingProject = {
     state: 'under_construction',
     templateId: catalogProjectId,
@@ -164,23 +231,23 @@ export function acceptFinancing(
     stationQuality: proposed.stationQuality,
     lvc: proposed.lvc,
     brokeGroundAt: state.quarter,
-    totalBudget: cash(amount),
+    totalBudget: cash(totalAmount),
     spent: cash(0),
-    remainingFunding: cash(amount),
+    remainingFunding: cash(totalAmount),
     forecastOpenAt: quarter(
       (state.quarter as unknown as number) + entry.buildDurationQuarters,
     ),
-    financing: [accepted],
+    financing: acceptedRecords,
     perProject: proposed.perProject,
   };
 
-  // Apply starting political support
+  // Apply starting political support (applied ONCE, not per layer)
   const sup = entry.startingPoliticalSupport;
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
   let next: GameState = {
     ...state,
     projects: state.projects.map((p, i) => (i === proposedIdx ? constructing : p)),
-    debt: { ...state.debt, tranches: [...state.debt.tranches, newTranche] },
+    debt: { ...state.debt, tranches: [...state.debt.tranches, ...newTranches] },
     politics: {
       ottawa: {
         ...state.politics.ottawa,
@@ -197,9 +264,9 @@ export function acceptFinancing(
     },
   };
 
-  // Apply per-offer onAcceptEffects (e.g., sovereign wealth political optics)
-  if (offer.onAcceptEffects && offer.onAcceptEffects.length > 0) {
-    next = applyEffects(next, offer.onAcceptEffects);
+  // Apply onAcceptEffects from all layers (sovereign optics, etc.)
+  if (onAcceptEffectsAcc.length > 0) {
+    next = applyEffects(next, onAcceptEffectsAcc);
   }
   return next;
 }

@@ -202,6 +202,100 @@ describe('private financing offers', () => {
   });
 });
 
+describe('stacked financing (acceptFinancingPackage)', () => {
+  it('combines multiple offers into one project', async () => {
+    const { acceptFinancingPackage } = await import('@engine/projectActions');
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P06', 'A', 'standard'); // mega ~$14B
+    const beforeTranches = s.debt.tranches.length;
+    s = acceptFinancingPackage(s, 'P06', [
+      { approach: 'consortium', amountM: 10_000 },
+      { approach: 'bondMarket', amountM: 4_000 },
+    ]);
+    const project = s.projects.find((p) => p.templateId === 'P06');
+    expect(project?.state).toBe('under_construction');
+    // Two new tranches (one per layer)
+    expect(s.debt.tranches.length).toBe(beforeTranches + 2);
+  });
+
+  it('totalBudget is sum of layers when within project cost', async () => {
+    const { acceptFinancingPackage } = await import('@engine/projectActions');
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P06', 'A', 'standard'); // mega ~$14B
+    s = acceptFinancingPackage(s, 'P06', [
+      { approach: 'federalOnly', amountM: 5_000 },
+      { approach: 'bondMarket', amountM: 3_000 },
+    ]);
+    const project = s.projects.find((p) => p.templateId === 'P06');
+    if (project?.state === 'under_construction') {
+      // Both layers capped at their offer max + total < cost = sum
+      // Fed mega cap is $12B, bond market mega cap is $5B
+      // Layers: $5B + $3B = $8B (no clamping)
+      expect(project.totalBudget as unknown as number).toBe(8_000);
+    } else {
+      throw new Error('expected under_construction');
+    }
+  });
+
+  it('caps individual layer amount at offer max', async () => {
+    const { acceptFinancingPackage } = await import('@engine/projectActions');
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P11', 'A', 'standard');
+    // Bond market max for medium tier is 1000; request 5000 → clamped to 1000
+    s = acceptFinancingPackage(s, 'P11', [{ approach: 'bondMarket', amountM: 5_000 }]);
+    const project = s.projects.find((p) => p.templateId === 'P11');
+    if (project?.state === 'under_construction') {
+      // Bond market medium cap is $1B; project cost ~$1.8B; clamped to $1B
+      expect(project.totalBudget as unknown as number).toBeLessThanOrEqual(1_000);
+    }
+  });
+
+  it('caps total at project cost (no over-financing)', async () => {
+    const { acceptFinancingPackage } = await import('@engine/projectActions');
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P13', 'A', 'standard'); // small ~$850M
+    s = acceptFinancingPackage(s, 'P13', [
+      { approach: 'consortium', amountM: 2_000 }, // way more than cost
+    ]);
+    const project = s.projects.find((p) => p.templateId === 'P13');
+    if (project?.state === 'under_construction') {
+      // Project cost is ~$850M; even if offer caps at $1.8B and we asked $2B,
+      // funding clamps to projectCost
+      expect(project.totalBudget as unknown as number).toBeLessThanOrEqual(900);
+    }
+  });
+
+  it('applies sovereign optics only ONCE per package even if 1 layer is sovereign', async () => {
+    const { acceptFinancingPackage } = await import('@engine/projectActions');
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P06', 'A', 'standard');
+    const cityBefore = s.politics.cityHall.trust as unknown as number;
+    const approvalBefore = s.engineVars.publicApproval as unknown as number;
+    // P06 mega: pension $10B + sovereign $5B partial = $15B with sovereign optics applied
+    s = acceptFinancingPackage(s, 'P06', [
+      { approach: 'pensionConsortium', amountM: 10_000 },
+      { approach: 'sovereignWealth', amountM: 5_000 },
+    ]);
+    // Sovereign optics: -8 City Hall (plus +10 from P06 starting support = +2 net)
+    expect(s.politics.cityHall.trust as unknown as number).toBe(cityBefore + 10 - 8);
+    // -5 public approval from sovereign
+    expect(s.engineVars.publicApproval as unknown as number).toBe(approvalBefore - 5);
+  });
+
+  it('multiple gov layers do not double-apply political support', async () => {
+    const { acceptFinancingPackage } = await import('@engine/projectActions');
+    let s = createInitialGameState(0);
+    s = proposeProject(s, 'P11', 'A', 'standard');
+    const ottawaBefore = s.politics.ottawa.trust as unknown as number;
+    s = acceptFinancingPackage(s, 'P11', [
+      { approach: 'federalOnly', amountM: 1_500 },
+      { approach: 'provincialOnly', amountM: 500 },
+    ]);
+    // P11 gives +6 Ottawa starting support — should only apply once
+    expect(s.politics.ottawa.trust as unknown as number).toBe(ottawaBefore + 6);
+  });
+});
+
 describe('catalog entry lookup', () => {
   it('returns entry for valid id', () => {
     expect(catalogEntry('P01')?.name).toBe('Yonge North extension');

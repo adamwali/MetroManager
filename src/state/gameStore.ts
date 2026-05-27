@@ -9,8 +9,10 @@ import {
 } from '@engine/agencyActions';
 import {
   acceptFinancing,
+  acceptFinancingPackage,
   proposeProject,
   rejectProject,
+  type FinancingSelection,
 } from '@engine/projectActions';
 import { executePoliticalAction } from '@engine/politicalActions';
 import {
@@ -87,6 +89,10 @@ export interface GameStore {
     stationQuality: StationQualityTier,
   ) => void;
   acceptFinancing: (catalogProjectId: string, approach: FinancingApproach) => void;
+  acceptFinancingPackage: (
+    catalogProjectId: string,
+    selections: FinancingSelection[],
+  ) => void;
   rejectProject: (catalogProjectId: string) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
@@ -256,6 +262,13 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     acceptFinancing: (catalogProjectId, approach) => {
       const next = acceptFinancing(get().state, catalogProjectId, approach);
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    acceptFinancingPackage: (catalogProjectId, selections) => {
+      const next = acceptFinancingPackage(get().state, catalogProjectId, selections);
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))

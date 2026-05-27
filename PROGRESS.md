@@ -42,6 +42,9 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
   from cash/debt-service/board, drifts one notch/quarter), operating
   bond issuance with rating-gated caps (AA $2B/Q, A $1B/Q, BBB blocked),
   per-tranche refinancing with 1.5% fee, /treasury dashboard.
+- **Phase 4 follow-up** — Stacked financing: assemble project package
+  from multiple offers; each layer becomes own debt tranche at own rate;
+  sovereign optics applied once; political support applied once.
 
 ## 🟡 Partial (more sub-phases to come)
 
@@ -78,5 +81,4 @@ an explicit phase pointer.
 - CEO `portraitId` — Phase 6
 - PerProjectVars (sitePrep, megaContract, settlementPremium) — Phase 4.2
 - Templates → project cost reduction → Phase 4.2
-- Stacked financing (assemble package from multiple offers per project) —
-  Phase 4 follow-up, queued (next!)
+- ~~Stacked financing~~ ✅ shipped (acceptFinancingPackage; package builder UI)
