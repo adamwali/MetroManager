@@ -13,6 +13,8 @@ interface KpiProps {
   className?: string;
   /** Click handler — wires KPI to the trace drawer (Phase 8.6). */
   onClick?: () => void;
+  /** Tooltip text explaining what this metric means + how it's computed. */
+  helpText?: string;
 }
 
 const TONE_RING: Record<NonNullable<KpiProps['tone']>, string> = {
@@ -42,9 +44,14 @@ export function Kpi({
   spark,
   className,
   onClick,
+  helpText,
 }: KpiProps) {
   const interactive = onClick !== undefined;
   const Comp: 'button' | 'div' = interactive ? 'button' : 'div';
+  const titleParts: string[] = [];
+  if (helpText) titleParts.push(helpText);
+  if (interactive) titleParts.push(`Click to trace ${label}`);
+  const title = titleParts.length > 0 ? titleParts.join(' — ') : undefined;
   return (
     <Comp
       type={interactive ? 'button' : undefined}
@@ -54,11 +61,19 @@ export function Kpi({
           ? 'cursor-pointer hover:border-blue-400 hover:shadow-sm transition-shadow'
           : ''
       } ${className ?? ''}`}
-      title={interactive ? `Click to trace ${label}` : undefined}
+      title={title}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 inline-flex items-center gap-1">
           {label}
+          {helpText && (
+            <span
+              className="text-neutral-400 cursor-help"
+              aria-label={`Help: ${helpText}`}
+            >
+              ⓘ
+            </span>
+          )}
         </span>
         {spark}
       </div>

@@ -150,13 +150,40 @@ export function requiredMaintenanceFor(agencyId: 'ttc' | 'go' | 'up'): number {
 }
 
 /**
- * Reliability composite, 0-100. Average condition across all subsystems
- * for one agency. Used by ridership drift math below.
+ * Reliability composite, 0-100. Phase 10 polish: weighted by subsystem
+ * criticality instead of plain average. Signals and rolling stock are
+ * weighted heaviest — a network with failing signals can't run safely
+ * regardless of how nice the stations are. Track + catenary mid-weight.
+ * Stations lowest weight (cosmetic + ridership effect, not safety).
+ *
+ * Previous bug: unweighted avg let players ignore signals (condition 10)
+ * and offset with stations (condition 100) for reliability avg of 55.
+ *
+ * Weights chosen so a single subsystem at 0 with others at 100:
+ *   - signals at 0 → composite ~70 (35% weight × -100 from 100)
+ *   - rolling stock at 0 → composite ~75
+ *   - track at 0 → composite ~85
+ *   - catenary at 0 → composite ~87
+ *   - stations at 0 → composite ~92
  */
+const SUBSYSTEM_RELIABILITY_WEIGHT: Record<string, number> = {
+  signals: 3.0,
+  rollingStock: 2.5,
+  track: 1.5,
+  catenary: 1.3,
+  stations: 0.7,
+};
+
 export function reliabilityScore(agency: Agency): number {
   if (agency.subsystems.length === 0) return 100;
-  const sum = agency.subsystems.reduce((acc, s) => acc + (s.condition as unknown as number), 0);
-  return sum / agency.subsystems.length;
+  let weightedSum = 0;
+  let weightTotal = 0;
+  for (const s of agency.subsystems) {
+    const weight = SUBSYSTEM_RELIABILITY_WEIGHT[s.id] ?? 1;
+    weightedSum += (s.condition as unknown as number) * weight;
+    weightTotal += weight;
+  }
+  return weightTotal > 0 ? weightedSum / weightTotal : 0;
 }
 
 /**

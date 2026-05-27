@@ -1,6 +1,7 @@
 import { useGameStore } from '@state/gameStore';
 import { eventTemplateById } from '@engine/events/templates';
 import { visibleChoices } from '@engine/events/firing';
+import { previewRenegotiation } from '@engine/renegotiation';
 import { formatMoneyDelta } from '@/utils/humanize';
 
 interface EventModalProps {
@@ -22,6 +23,46 @@ const EFFECT_AXIS_LABEL: Record<string, string> = {
   queueDelayedEffect: 'Delayed',
   queueDelayedEvent: 'Delayed event',
 };
+
+function RenegotiationPreviewPanel() {
+  const state = useGameStore((s) => s.state);
+  const acceptPreview = previewRenegotiation(state, 'accept');
+  const aggressivePreview = previewRenegotiation(state, 'aggressive');
+  const currentAllowance = state.operatingAllowance.annualAmount as unknown as number;
+  const tone = (m: number) =>
+    m >= 1.0 ? 'text-emerald-700' : m >= 0.9 ? 'text-amber-700' : 'text-red-700';
+  const fmt = (m: number) =>
+    `${m >= 1 ? '+' : ''}${((m - 1) * 100).toFixed(0)}% → $${Math.round(currentAllowance * m).toLocaleString()}M/yr`;
+  return (
+    <div className="mt-3 rounded-md border border-blue-200 bg-blue-50/40 p-3 text-xs">
+      <div className="font-semibold text-blue-900 mb-1.5">
+        Your scorecard: avg trust {acceptPreview.avgTrust.toFixed(0)} · board{' '}
+        {acceptPreview.boardScore.toFixed(0)} · {acceptPreview.deliveryWins} delivery
+        win{acceptPreview.deliveryWins === 1 ? '' : 's'}
+      </div>
+      <div className="space-y-1 text-neutral-700">
+        <div>
+          <span className="font-semibold">If you Accept:</span>{' '}
+          <span className={`num font-semibold ${tone(acceptPreview.allowanceMultiplier)}`}>
+            {fmt(acceptPreview.allowanceMultiplier)}
+          </span>
+          {acceptPreview.controls.length > 0 && (
+            <span className="ml-1 text-red-700">
+              + {acceptPreview.controls.length} control{acceptPreview.controls.length === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+        <div>
+          <span className="font-semibold">If you Lobby aggressively:</span>{' '}
+          <span className={`num font-semibold ${tone(aggressivePreview.allowanceMultiplier)}`}>
+            {fmt(aggressivePreview.allowanceMultiplier)}
+          </span>
+          <span className="ml-1 text-neutral-500">(at -5 approval, -3 each gov)</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function EventModal({ templateId, onClose }: EventModalProps) {
   const state = useGameStore((s) => s.state);
@@ -64,6 +105,10 @@ export function EventModal({ templateId, onClose }: EventModalProps) {
             </div>
           )}
           <p className="mt-2 text-sm text-neutral-600 leading-relaxed">{template.body}</p>
+          {/* Renegotiation outcome preview (EV041 only) */}
+          {templateId === 'EV041_allowanceRenegotiation' && (
+            <RenegotiationPreviewPanel />
+          )}
         </header>
         <div className="px-6 py-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">

@@ -24,9 +24,36 @@ const KIND_LABEL: Record<StandingOrder['kind'], string> = {
 
 export function StandingOrdersPanel() {
   const orders = useGameStore((s) => s.state.standingOrders);
+  const add = useGameStore((s) => s.addStandingOrder);
   const remove = useGameStore((s) => s.removeStandingOrder);
   const toggle = useGameStore((s) => s.toggleStandingOrder);
   const [showAdd, setShowAdd] = useState(false);
+
+  const addPreset = (key: 'safetyNet' | 'autoMaintenance' | 'trustGuard') => {
+    if (key === 'safetyNet') {
+      add({
+        kind: 'autoIssueOperatingBondsBelowCash',
+        cashThresholdM: cash(0),
+        amountM: cash(500),
+        creditor: 'pension',
+        enabled: true,
+      });
+    } else if (key === 'autoMaintenance') {
+      add({
+        kind: 'autoApproveMaintenanceBelow',
+        thresholdMillions: cash(80),
+        enabled: true,
+      });
+    } else if (key === 'trustGuard') {
+      add({
+        kind: 'autoLobbyOnTrustDrop',
+        governmentId: 'ottawa',
+        trustThreshold: 40,
+        actionKind: 'quietPitch',
+        enabled: true,
+      });
+    }
+  };
 
   return (
     <section className="rounded-md border border-neutral-200 bg-white p-4">
@@ -39,12 +66,38 @@ export function StandingOrdersPanel() {
           onClick={() => setShowAdd((v) => !v)}
           className="rounded-md border border-neutral-300 px-2 py-0.5 text-[11px] text-neutral-700 hover:bg-neutral-50"
         >
-          {showAdd ? 'Close' : '+ Add rule'}
+          {showAdd ? 'Close' : '+ Custom rule'}
         </button>
       </header>
       <p className="mt-1 text-[11px] text-neutral-500">
         Auto-actions applied each end-turn. Toggle off to pause without deleting.
       </p>
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        <button
+          type="button"
+          onClick={() => addPreset('safetyNet')}
+          className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-800 hover:bg-blue-100"
+          title="Auto-issue $500M pension bond when cash drops below $0"
+        >
+          + Safety net
+        </button>
+        <button
+          type="button"
+          onClick={() => addPreset('autoMaintenance')}
+          className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-800 hover:bg-emerald-100"
+          title="Bump any subsystem below $80M to required tier"
+        >
+          + Auto-maintain
+        </button>
+        <button
+          type="button"
+          onClick={() => addPreset('trustGuard')}
+          className="rounded border border-purple-200 bg-purple-50 px-2 py-1 text-[10px] font-semibold text-purple-800 hover:bg-purple-100"
+          title="Quiet pitch Ottawa when trust drops below 40"
+        >
+          + Trust guard
+        </button>
+      </div>
 
       {orders.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-500">

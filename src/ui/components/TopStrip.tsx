@@ -49,6 +49,7 @@ export function TopStrip() {
         tone={cashTone}
         spark={<Sparkline values={cashSpark} />}
         onClick={() => setTraceMetric('cash')}
+        helpText="Cash on hand. Below 0 for 3 quarters triggers fiscal-failure game over. Net flow = allowance + fare − opex − maintenance − debt service."
       />
       <Kpi
         label="Daily riders"
@@ -65,6 +66,7 @@ export function TopStrip() {
         }
         spark={<Sparkline values={ridersSpark} />}
         onClick={() => setTraceMetric('totalRiders')}
+        helpText="System daily riders across TTC + GO + UP. Grows with catchment + project openings. Falls with reliability drag + cannibalization."
       />
       <Kpi
         label="Board confidence"
@@ -78,6 +80,7 @@ export function TopStrip() {
               : 'neutral'
         }
         onClick={() => setTraceMetric('boardConfidence')}
+        helpText="Board confidence 0-100. Below 20 for 4Q gets you fired (game over). Driven by delivery wins, financial discipline, reliability, scandals."
       />
       <Kpi
         label="TTC on-time"
@@ -101,6 +104,7 @@ export function TopStrip() {
               : 'neutral'
         }
         onClick={() => setTraceMetric('publicApproval')}
+        helpText="Public approval 0-100. Affects ridership drift (≥70 boosts +0.1%/Q, <30 drags -0.3%/Q). Drops on fare hikes, service cuts, scandals."
       />
       <Kpi
         label="Ottawa"
@@ -114,6 +118,7 @@ export function TopStrip() {
               : 'neutral'
         }
         onClick={() => setTraceMetric('trust:ottawa')}
+        helpText="Federal government trust 0-100. Affects financing offer rates + ad-hoc funding eligibility. Built by quiet pitch (+3) or public lobby (+6, -5 approval)."
       />
       <Kpi
         label="Queen's Park"
@@ -127,6 +132,7 @@ export function TopStrip() {
               : 'neutral'
         }
         onClick={() => setTraceMetric('trust:queensPark')}
+        helpText="Provincial government trust 0-100. Affects financing offer rates + ad-hoc funding. Insider can 'call in favor' for +$400M cash once if trust ≥60."
       />
       <Kpi
         label="City Hall"
@@ -140,6 +146,7 @@ export function TopStrip() {
               : 'neutral'
         }
         onClick={() => setTraceMetric('trust:cityHall')}
+        helpText="City Hall trust 0-100. Affects financing rates + lobby effects. Sensitive to fare hikes and accessibility issues from Mayor Liang."
       />
       <TraceDrawer metric={traceMetric} onClose={() => setTraceMetric(null)} />
     </div>
