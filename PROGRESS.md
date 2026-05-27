@@ -43,7 +43,15 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
   credit rating, allowance amount). PerformanceBoard renders 5 charts
   via Recharts: cash flow waterfall, three-gov trust over time,
   per-agency ridership stacked area, debt maturity ladder, project
-  Gantt timeline.
+  Gantt timeline. Lazy-loaded (separate chunk on /performance only).
+- **Phase 6.3.1** — Allowance controls enforced. projectDeprioritization
+  blocks proposing listed projects; costCap blocks frequency policy
+  upgrades that would push opex above cap.
+- **Phase 10** — Welcome tour (8-step first-run onboarding), KPI
+  tooltips with help text, EV041 outcome preview inline in modal,
+  standing-order presets (3 one-click buttons), Recharts code-splitting,
+  reliability composite weighted by subsystem criticality, slider
+  debouncing, SavedToast feedback, EV043 funding-shortfall crisis event.
 - **Phase 7** — Treasury: dynamic credit rating (recomputed each quarter
   from cash/debt-service/board, drifts one notch/quarter), operating
   bond issuance with rating-gated caps (AA $2B/Q, A $1B/Q, BBB blocked),
@@ -88,8 +96,8 @@ detail lives in `DECISIONS.md`; this file is the at-a-glance.
 
 ## ⏳ Not started
 
-- **Phase 10** — Onboarding briefing, polish, accessibility audit
-- Bundle code-splitting (Recharts on /performance only) → Phase 10 polish
+(All major phases shipped. Remaining work is content expansion +
+optional Phase 6.2.1 character depth + accessibility audit.)
 
 ## Deferred / known orphan features
 
