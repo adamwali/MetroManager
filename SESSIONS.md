@@ -5,6 +5,61 @@ each entry captures: what got done, what's left, surprises.
 
 ---
 
+## 2026-05-26 — Phase 7: Treasury (bonds + refi + dynamic rating) + PROGRESS.md
+
+**Pre-execute:** Repo owner requested:
+1. Stacked financing (queued for next commit) — bonds top up, not replace
+2. Progress tracking file
+3. Phase 7 next
+
+Locked 4 design questions: package builder UX, rating-gated caps, simple
+refi (pick + 1.5% fee), dynamic rating in Phase 7.
+
+**Done:**
+- Created `PROGRESS.md` flat status tracker at repo root
+- `src/engine/rating.ts`: computeMetrics, ratingFromMetrics, driftRating
+  (one notch/quarter), nextRatingFor (called by endTurn)
+- `src/engine/treasuryActions.ts`: quoteOperatingBond, issueOperatingBond,
+  quoteRefi, refinanceTranche
+- `endTurn` integrates rating recomputation after BOC drift
+- Zustand store: `issueOperatingBond` + `refinanceTranche` actions
+- `/treasury` dashboard: portfolio summary cards, operating bond issuance
+  form, debt portfolio table with per-tranche refi button + tooltip
+- 18 new tests for rating + bonds + refi
+- 218 tests total passing
+
+**Heartbeat:**
+- Technocrat at default AA rating + openBooks gets foreign operating
+  bond at 5.35% vs Steady at 5.55%. Compounds.
+- Insider campaign reaching cash -$3B + board 30 → next quarter rating
+  drifts AA → A → A (one notch only via hysteresis), then can drop
+  further. At BBB → operating bonds blocked entirely.
+- /treasury portfolio table shows ~4 starting tranches with rates,
+  maturities, refi buttons. Inherited tranches are mostly fixed at
+  4.10-4.25% — refi-N/A button shown since current market is higher.
+
+**Phase 7 DoD met:**
+- ✓ Operating bond issuance with rating caps
+- ✓ Per-tranche refinancing with 1.5% fee
+- ✓ Dynamic credit rating (recomputes each quarter)
+- ✓ /treasury dashboard with portfolio + issuance + refi
+
+**Left for later (clearly tracked in PROGRESS.md):**
+- Stacked financing for projects → next commit
+- Bond market sentiment events → Phase 7.2
+- Restructuring negotiation → Phase 7.2
+
+**Surprises:**
+- The rating hysteresis (one notch/quarter) makes the rating feel
+  responsive but not punishing. A bad quarter is recoverable; a sustained
+  decline still eventually downgrades.
+- Operating bonds are genuinely useful for closing deficits without
+  trashing the agency. The cap structure forces discipline: you can't
+  fund a year of $500M deficits with bonds alone at AA — you'll hit the
+  $6B total outstanding cap by year 3.
+
+---
+
 ## 2026-05-26 — Phase 6.1: political layer + private cap tightening
 
 **Pre-execute:** Repo owner flagged: (1) private financing caps too

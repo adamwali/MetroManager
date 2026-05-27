@@ -13,9 +13,14 @@ import {
   rejectProject,
 } from '@engine/projectActions';
 import { executePoliticalAction } from '@engine/politicalActions';
+import {
+  issueOperatingBond,
+  refinanceTranche,
+} from '@engine/treasuryActions';
 import type { StationQualityTier } from '@engine/projectCatalog';
 import type { FrequencyPolicy } from '@engine/policies';
 import type { FinancingApproach } from '@/types/projects';
+import type { CreditorType } from '@/types/finance';
 import type { GovernmentId, PoliticalActionKind } from '@/types/politics';
 import type { GameState } from '@/types/gameState';
 import type { AgencyId, FarePolicyTier, SubsystemId } from '@/types/agency';
@@ -85,6 +90,9 @@ export interface GameStore {
   rejectProject: (catalogProjectId: string) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
+  /** Treasury actions (Phase 7). */
+  issueOperatingBond: (creditor: CreditorType, amountM: number) => void;
+  refinanceTranche: (trancheId: string) => void;
 }
 
 const DEFAULT_SEED = 1;
@@ -263,6 +271,22 @@ export const useGameStore = create<GameStore>((set, get) => {
     executePoliticalAction: (gov, kind) => {
       const result = executePoliticalAction(get().state, gov, kind);
       if (result.state === get().state) return; // No-op (ineligible)
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    issueOperatingBond: (creditor, amountM) => {
+      const result = issueOperatingBond(get().state, creditor, amountM);
+      if (result.state === get().state) return;
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    refinanceTranche: (trancheId) => {
+      const result = refinanceTranche(get().state, trancheId);
+      if (result.state === get().state) return;
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)
         .then(() => set({ autosaveStatus: 'saved' }))

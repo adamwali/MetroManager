@@ -5,6 +5,116 @@ whenever a non-obvious choice is made.
 
 ---
 
+## 2026-05-26 — Phase 7: Treasury (operating bonds + refi + dynamic rating)
+
+Treasury dashboard shipped with three new mechanics: operating bond
+issuance with rating-gated caps, per-tranche refinancing, and dynamic
+credit rating that recomputes each quarter.
+
+**Dynamic credit rating (`src/engine/rating.ts`):**
+
+Computed each `endTurn` from three metrics:
+- Cash position (in $M)
+- Debt service ratio (quarterly service / quarterly fare+allowance revenue)
+- Board confidence (0-100)
+
+Tier thresholds (all three must be met to qualify):
+| Rating | Min cash | Max DSR | Min board |
+|---|---|---|---|
+| AAA | $5,000M | 5% | 70 |
+| AA | -$500M | 10% | 50 |
+| A | -$2,000M | 15% | 35 |
+| BBB | -$4,000M | 20% | 25 |
+| BB | -$6,000M | 30% | 0 |
+| B | (any) | (any) | (any) |
+
+**Hysteresis**: rating drifts ONE notch per quarter toward target.
+Prevents whiplash. A bad quarter can't tank AA → BB in one tick.
+
+**Operating bond issuance (`src/engine/treasuryActions.ts`):**
+
+Rate computation per creditor:
+- BOC + rating spread + creditor premium + 75bp operating risk premium
+- OpenBooks=true: -20bp discount (Phase 3.2 polish reused)
+
+Creditor premiums (over BOC + rating spread):
+- pension: +60bp · institutional: +80bp · retail: +130bp · foreign: +40bp
+
+At AA + openBooks + BOC 350:
+- pension operating bond: 350 + 90 + 60 + 75 - 20 = **5.55%**
+- foreign operating bond: 350 + 90 + 40 + 75 - 20 = **5.35%** (cheapest)
+
+Rating-gated caps:
+- AAA: $3B/Q, $10B outstanding
+- AA: $2B/Q, $6B outstanding
+- A: $1B/Q, $3B outstanding
+- BBB and below: **blocked**
+
+Operating tranches prefixed `t_op_` for cap tracking.
+
+**Refinancing (`refinanceTranche`):**
+
+- 1.5% of principal upfront fee paid from cash
+- Replaces tranche with new fixed-rate at current market
+- UI shows quote inline: old rate vs new rate, fee, savings per year,
+  break-even quarters
+- "Refi N/A" button disabled if (a) new rate ≥ old rate, or (b) break-
+  even quarters > remaining maturity
+
+**Treasury dashboard (`/treasury`):**
+
+- Summary cards: total debt, service per Q, weighted rate, credit rating
+  (color-coded chip — emerald AAA, blue AA, sky A, amber BBB, orange BB,
+  red B)
+- Operating bond issuance form: creditor select + amount input + live
+  quote (effective rate, cap remaining), "Issue bond" button
+- Debt portfolio table: each tranche with id, creditor, principal, rate,
+  service, maturity, refi button with tooltip showing the refi math
+
+**Strategic implications:**
+- Technocrat (openBooks=true) gets cheaper bonds — 20bp on every new
+  issuance. Compounds over a campaign with multiple tranches.
+- Insider can't be saved by bonds if board confidence crashes — rating
+  drops to BBB blocks operating-bond access. The political ATM has limits.
+- Steady Operator at AA can issue $2B/Q to cover crunches. Disciplined
+  bond use lets you weather 4-6 deficit quarters without firing.
+- Refi becomes interesting when BOC drops below issuance rate. At BOC
+  350, a fixed tranche at 4.25% has no refi benefit. At BOC 200, that
+  tranche refis to ~3.5% — meaningful savings.
+
+**Engine wiring:**
+- `endTurn` now calls `nextRatingFor` after debt-maturity + BOC drift.
+  Rating is updated on `state.debt.rating` before debt service is
+  computed for that quarter.
+- Quarterly debt service automatically reflects current rating via the
+  existing `effectiveCouponBp` (fixed tranches keep their coupon;
+  floating tranches use current BOC + spread; openBooks discount applies).
+
+**18 new tests:**
+- ratingFromMetrics threshold table
+- driftRating one-notch movement
+- endTurn drift across multi-quarter deficit
+- operating bond quote (rate, caps, blocking)
+- issuance adds cash + creates tranche
+- BBB blocks issuance, per-quarter cap enforced
+- foreign cheapest, retail most expensive
+- openBooks -20bp on new issuance
+- refi quote (fee 1.5%, savings, break-even)
+- refi execution + blocking on insufficient cash
+- log entries created
+
+**218 tests passing total.** Bundle 446KB JS / 135KB gzip (was 433/132;
++13KB for treasury layer).
+
+**Deferred to future phases:**
+- Stacked financing (assemble project package from multiple offers) —
+  Phase 4 follow-up, next!
+- Bond market sentiment shifts (event-driven rate changes) → Phase 7.2
+- Restructuring negotiation (defer maturity for fee) → Phase 7.2
+- Rating change events ("S&P upgrades to AAA" informational) → Phase 7.2
+
+---
+
 ## 2026-05-26 — Phase 6.1: political layer (lobby + ad-hoc + favor) + private cap tightening
 
 Repo owner flagged that private financing caps were too generous —

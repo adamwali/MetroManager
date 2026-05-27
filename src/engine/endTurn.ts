@@ -11,6 +11,7 @@ import {
 } from '@/types/gameOver';
 import { cash, quarter, riders } from '@/types/scalars';
 import { applyMaturities, driftBocRate, quarterlyDebtService } from './finance';
+import { nextRatingFor } from './rating';
 import { keyedFloat } from './rng';
 import { bp as bpScalar } from '@/types/scalars';
 import {
@@ -60,6 +61,11 @@ export function endTurn(state: GameState): GameState {
   const bocRoll = keyedFloat(state.rng.masterSeed, `boc:q${nextQuarter as unknown as number}`);
   const newBocBp = driftBocRate(debtAfterStep.bocPolicyRate as unknown as number, bocRoll);
   const debtAfterMaturity = { ...debtAfterStep, bocPolicyRate: bpScalar(newBocBp) };
+
+  // Dynamic credit rating (Phase 7) — recomputed each quarter, drifts one
+  // notch per quarter toward target rating.
+  const { rating: nextRating } = nextRatingFor({ ...state, debt: debtAfterMaturity });
+  const debtWithRating = { ...debtAfterMaturity, rating: nextRating };
   const refiFeeN = refiFee as unknown as number;
   const tranchesRefinanced = state.debt.tranches.length - debtAfterMaturity.tranches.length + 1;
   const actualTranchesRefinanced = Math.max(0, tranchesRefinanced - 1); // -1 hack avoided below
@@ -75,7 +81,7 @@ export function endTurn(state: GameState): GameState {
   const opexN = quarterlyOperatingExpense(state.agencies) as unknown as number;
   const maintN = quarterlyMaintenanceExpense(state.agencies) as unknown as number;
   const debtServiceN = quarterlyDebtService(
-    debtAfterMaturity,
+    debtWithRating,
     state.engineVars.openBooks,
   ) as unknown as number;
   const netCashDelta = allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN;
@@ -229,7 +235,7 @@ export function endTurn(state: GameState): GameState {
   const postTick: GameState = {
     ...state,
     quarter: nextQuarter,
-    debt: debtAfterMaturity,
+    debt: debtWithRating,
     agencies: agenciesFinal,
     projects: tickedProjects,
     cash: { balance: cash(nextBalance), lastQuarterDelta: cash(netCashDelta) },
