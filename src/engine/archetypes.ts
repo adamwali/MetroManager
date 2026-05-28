@@ -131,8 +131,11 @@ export const ARCHETYPE_CONFIGS: Record<CeoArchetype, ArchetypeStartingMods> = {
     ],
   },
   disruptor: {
-    // Deferred until Phase 3.1 (random gaffe events needed).
-    startingCashM: 1_300,
+    // Phase 10.7: cash bumped $1,300 → $1,500. Disruptor's penalty stack
+    // (low board/trust + opex/maint inefficiencies) was making balanced
+    // strategy fail 57% with only 3% wins. Buffer extends runway so the
+    // +60 engineers advantage (faster project delivery) can materialize.
+    startingCashM: 1_500,
     boardConfidence: 40,
     publicApproval: 70,
     trust: { ottawa: 40, queensPark: 40, cityHall: 45 },

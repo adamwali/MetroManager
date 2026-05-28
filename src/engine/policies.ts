@@ -51,7 +51,10 @@ export const ARCHETYPE_OPEX_MULTIPLIER: Record<CeoArchetype, number> = {
   internationalTechnocrat: 0.95, // standardized, efficient
   insider: 1.05, // less internal efficiency, deferred maintenance burdens
   coalitionBuilder: 1.03, // consultation overhead
-  disruptor: 1.10, // high-speed, high-cost
+  // Phase 10.7: disruptor opex 1.10 → 1.05 (was crushing — +$74M/Q over 60Q
+  // compounded with -15% maintenance + low trust = 90% failure even with
+  // balanced strategy. Now matches insider's penalty.)
+  disruptor: 1.05,
 };
 
 // Archetype maintenance-efficiency multiplier — applied inside decaySubsystems.
