@@ -97,7 +97,7 @@ export function Kpi({
       </div>
       {helpText && showHelp && (
         <div
-          className="absolute left-0 right-0 top-full z-30 mt-1 rounded-md border border-neutral-200 bg-neutral-900 text-white px-3 py-2 text-[11px] leading-snug shadow-lg pointer-events-none"
+          className="absolute left-1/2 top-full z-30 mt-1 w-64 max-w-[16rem] -translate-x-1/2 rounded-md border border-neutral-200 bg-neutral-900 text-white px-3 py-2 text-[11px] leading-snug shadow-lg pointer-events-none"
           role="tooltip"
         >
           {helpText}

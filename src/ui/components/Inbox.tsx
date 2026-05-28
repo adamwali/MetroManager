@@ -8,6 +8,15 @@ import { EventModal } from './EventModal';
  * Priority inbox per design doc §4. Shows active events sorted by urgency.
  * Each item opens the EventModal on click for response.
  */
+
+function urgencyLabel(u: number): string {
+  if (u >= 85) return 'Critical';
+  if (u >= 70) return 'Urgent';
+  if (u >= 50) return 'Important';
+  if (u >= 30) return 'Routine';
+  return 'Low priority';
+}
+
 export function Inbox() {
   const inbox = useGameStore((s) => s.state.inbox);
   const state = useGameStore((s) => s.state);
@@ -38,16 +47,20 @@ export function Inbox() {
             {sorted.map((e) => {
               const tmpl = eventTemplateById(e.templateId);
               if (!tmpl) return null;
-              const urgent = e.urgency >= 70;
+              const urgentLabel = urgencyLabel(e.urgency);
+              const isCritical = e.urgency >= 85;
+              const isUrgent = e.urgency >= 70;
               return (
                 <li key={e.templateId}>
                   <button
                     type="button"
                     onClick={() => setOpenTemplateId(e.templateId)}
                     className={`block w-full text-left rounded-md border p-3 transition-colors ${
-                      urgent
-                        ? 'border-red-200 bg-red-50/40 hover:bg-red-50'
-                        : 'border-neutral-200 hover:border-blue-400 hover:bg-blue-50/40'
+                      isCritical
+                        ? 'border-red-300 bg-red-50/50 hover:bg-red-50'
+                        : isUrgent
+                          ? 'border-amber-200 bg-amber-50/30 hover:bg-amber-50/50'
+                          : 'border-neutral-200 hover:border-blue-400 hover:bg-blue-50/40'
                     }`}
                   >
                     <div className="flex items-baseline gap-2">
@@ -56,13 +69,16 @@ export function Inbox() {
                           {tmpl.outlet}
                         </span>
                       )}
-                      {urgent && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-red-700">
-                          Urgent
-                        </span>
-                      )}
-                      <span className="text-[10px] text-neutral-500">
-                        urgency {e.urgency}
+                      <span
+                        className={`text-[10px] font-semibold uppercase tracking-wider ${
+                          isCritical
+                            ? 'text-red-700'
+                            : isUrgent
+                              ? 'text-amber-700'
+                              : 'text-neutral-500'
+                        }`}
+                      >
+                        {urgentLabel}
                       </span>
                     </div>
                     <div className="mt-1 text-sm font-medium text-neutral-900">

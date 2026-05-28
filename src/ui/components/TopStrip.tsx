@@ -171,7 +171,7 @@ function Section({
 }) {
   return (
     <div className="flex-1 min-w-full sm:min-w-fit">
-      <div className="text-[8px] uppercase tracking-wider text-neutral-400 font-semibold mb-0.5 px-0.5">
+      <div className="text-[10px] uppercase tracking-wider text-neutral-600 font-bold mb-1 px-0.5">
         {label}
       </div>
       <div

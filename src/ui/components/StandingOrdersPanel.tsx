@@ -24,10 +24,32 @@ const KIND_LABEL: Record<StandingOrder['kind'], string> = {
 
 export function StandingOrdersPanel() {
   const orders = useGameStore((s) => s.state.standingOrders);
+  const log = useGameStore((s) => s.state.actionLog);
+  const currentQ = useGameStore((s) => s.state.quarter as unknown as number);
   const add = useGameStore((s) => s.addStandingOrder);
   const remove = useGameStore((s) => s.removeStandingOrder);
   const toggle = useGameStore((s) => s.toggleStandingOrder);
   const [showAdd, setShowAdd] = useState(false);
+
+  // Phase 10.3: surface firings per order so the player knows when their
+  // automations actually triggered. Walk action log filtered to
+  // cause.system === 'standingOrder' + causedById matches order id.
+  const firingsByOrderId = new Map<string, ReadonlyArray<{ quarter: number; summary: string }>>();
+  for (const order of orders) {
+    const firings = log
+      .filter(
+        (e) =>
+          e.kind === 'player_action' &&
+          e.cause.kind === 'system' &&
+          e.cause.system === 'standingOrder' &&
+          e.causedById === order.id,
+      )
+      .map((e) => ({
+        quarter: e.quarter as unknown as number,
+        summary: e.summary.replace(/^\[Standing order\] /, ''),
+      }));
+    firingsByOrderId.set(order.id, firings);
+  }
 
   const addPreset = (key: 'safetyNet' | 'autoMaintenance' | 'trustGuard') => {
     if (key === 'safetyNet') {
@@ -105,35 +127,74 @@ export function StandingOrdersPanel() {
         </p>
       ) : (
         <ul className="mt-3 space-y-2">
-          {orders.map((o) => (
-            <li
-              key={o.id}
-              className={`rounded-md border p-2.5 ${
-                o.enabled ? 'border-blue-200 bg-blue-50/30' : 'border-neutral-200 bg-neutral-50/40 opacity-60'
-              }`}
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm font-semibold">{KIND_LABEL[o.kind]}</span>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => toggle(o.id)}
-                    className="rounded px-2 py-0.5 text-[10px] font-medium text-neutral-700 hover:bg-neutral-100"
-                  >
-                    {o.enabled ? 'Pause' : 'Enable'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(o.id)}
-                    className="rounded px-2 py-0.5 text-[10px] font-medium text-red-700 hover:bg-red-50"
-                  >
-                    Remove
-                  </button>
+          {orders.map((o) => {
+            const firings = firingsByOrderId.get(o.id) ?? [];
+            const thisQuarterCount = firings.filter((f) => f.quarter === currentQ).length;
+            const totalCount = firings.length;
+            const recent = firings.slice(-3).reverse();
+            return (
+              <li
+                key={o.id}
+                className={`rounded-md border p-2.5 ${
+                  o.enabled
+                    ? 'border-blue-200 bg-blue-50/30'
+                    : 'border-neutral-200 bg-neutral-50/40 opacity-60'
+                }`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold">{KIND_LABEL[o.kind]}</span>
+                  <div className="flex items-baseline gap-1">
+                    {thisQuarterCount > 0 && (
+                      <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800">
+                        FIRED {thisQuarterCount}× THIS Q
+                      </span>
+                    )}
+                    {thisQuarterCount === 0 && totalCount > 0 && (
+                      <span className="rounded bg-neutral-200 px-1.5 py-0.5 text-[9px] font-medium text-neutral-600">
+                        {totalCount}× total
+                      </span>
+                    )}
+                    {totalCount === 0 && (
+                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[9px] font-medium text-neutral-500">
+                        idle
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggle(o.id)}
+                      className="rounded px-2 py-0.5 text-[10px] font-medium text-neutral-700 hover:bg-neutral-100"
+                    >
+                      {o.enabled ? 'Pause' : 'Enable'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => remove(o.id)}
+                      className="rounded px-2 py-0.5 text-[10px] font-medium text-red-700 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-1 text-[11px] text-neutral-600">{describeOrder(o)}</div>
-            </li>
-          ))}
+                <div className="mt-1 text-[11px] text-neutral-600">{describeOrder(o)}</div>
+                {recent.length > 0 && (
+                  <details className="mt-1.5">
+                    <summary className="cursor-pointer text-[10px] uppercase tracking-wide text-neutral-500 hover:text-neutral-700">
+                      Recent firings
+                    </summary>
+                    <ul className="mt-1 space-y-0.5 border-l-2 border-blue-200 pl-2">
+                      {recent.map((f, i) => (
+                        <li key={i} className="text-[10px] text-neutral-600">
+                          <span className="font-medium text-neutral-500">Q{f.quarter}</span>
+                          {' · '}
+                          {f.summary}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
