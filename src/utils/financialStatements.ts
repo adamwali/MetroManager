@@ -30,6 +30,11 @@ export interface PnlCol {
   // Below operating income
   interestExpense: number;
   netIncome: number;
+  // Phase 10.4: operating bond proceeds shown as a separate financing
+  // line below net income — clarifies that these are debt-financed
+  // inflows, not operating revenue.
+  operatingFinancingProceeds: number;
+  netCashChange: number;
 }
 
 export interface CapitalCol {
@@ -136,6 +141,10 @@ export function buildOperatingPnl(
       operatingIncome,
       interestExpense: scope === 'consolidated' ? interestExpense : 0,
       netIncome,
+      operatingFinancingProceeds:
+        scope === 'consolidated' ? (m.operatingFinancingProceeds ?? 0) : 0,
+      netCashChange:
+        netIncome + (scope === 'consolidated' ? (m.operatingFinancingProceeds ?? 0) : 0),
     });
   }
 
@@ -153,6 +162,8 @@ export function buildOperatingPnl(
         quarter: fq,
         label: quarterLabel(fq),
         isForecast: true,
+        operatingFinancingProceeds: 0, // forecasts don't issue new bonds
+        netCashChange: last.netIncome,
       });
     }
   } else {
@@ -202,6 +213,8 @@ export function buildOperatingPnl(
         operatingIncome,
         interestExpense: scope === 'consolidated' ? debtQ : 0,
         netIncome: operatingIncome - (scope === 'consolidated' ? debtQ : 0),
+        operatingFinancingProceeds: 0,
+        netCashChange: operatingIncome - (scope === 'consolidated' ? debtQ : 0),
       });
     }
   }
@@ -236,7 +249,9 @@ export function buildCapitalActivity(
       ontarioLine: 0,
       general: b.cashFlow.debtService,
     };
-    const financingProceeds = m.financingProceeds ?? 0;
+    // Phase 10.4: Capital Activity should show ONLY project financing inflows.
+    // Operating bond proceeds appear in the Operating P&L instead.
+    const projectFinancingProceeds = m.projectFinancingProceeds ?? m.financingProceeds ?? 0;
 
     cols.push({
       quarter: q,
@@ -247,9 +262,9 @@ export function buildCapitalActivity(
       totalCapexDraws,
       ontarioLineDebtService: dsByPurpose.ontarioLine,
       otherDebtService: dsByPurpose.general,
-      financingProceeds,
+      financingProceeds: projectFinancingProceeds,
       refiFee: b.cashFlow.refiFee,
-      netCapitalFlow: financingProceeds - totalCapexDraws - b.cashFlow.refiFee,
+      netCapitalFlow: projectFinancingProceeds - totalCapexDraws - b.cashFlow.refiFee,
       endingCash: m.cashM,
     });
   }

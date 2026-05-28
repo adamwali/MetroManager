@@ -141,7 +141,23 @@ function PnlTable({ cols, scope }: { cols: PnlCol[]; scope: FinancialScope }) {
             <Row label="  Interest expense (debt service)" cols={cols} pick={(c) => -c.interestExpense} />
           </>
         )}
-        <TotalRow label="Net income" cols={cols} pick={(c) => c.netIncome} />
+        <SubtotalRow label="Net income (operations)" cols={cols} pick={(c) => c.netIncome} />
+        {isConsolidated && (
+          <>
+            <Subheader label="FINANCING (non-operating)" cols={cols} />
+            <Row
+              label="  Operating bond proceeds (issued this Q)"
+              cols={cols}
+              pick={(c) => c.operatingFinancingProceeds}
+              positive
+            />
+          </>
+        )}
+        <TotalRow
+          label={isConsolidated ? 'Net change in cash' : 'Agency net income'}
+          cols={cols}
+          pick={(c) => (isConsolidated ? c.netCashChange : c.netIncome)}
+        />
       </tbody>
     </table>
   );

@@ -126,6 +126,7 @@ export function issueOperatingBond(
     coupon: { kind: 'fixed', rate: bp(quote.rateBp) },
     maturity: quarter(q + 32), // 8-year operating term
     issuedAt: state.quarter,
+    purpose: 'operating',
   };
   const logId = `q${q}-${state.nextLogId}`;
   const entry: ActionLogEntry = {

@@ -44,6 +44,15 @@ export function migrateLoadedState(loaded: unknown): GameState {
     next.standingOrders = [];
   }
 
+  // Phase 10.4: backfill tranche purpose by id prefix.
+  if (next.debt?.tranches) {
+    next.debt.tranches = next.debt.tranches.map((t) => {
+      if (t.purpose) return t;
+      const isOp = t.id.startsWith('t_op_');
+      return { ...t, purpose: isOp ? 'operating' : 'project' };
+    });
+  }
+
   // engineVars: backfill orphan vars (Phase 6.3.2)
   if (next.engineVars) {
     const ev = { ...next.engineVars };

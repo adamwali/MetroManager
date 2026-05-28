@@ -224,6 +224,7 @@ export function acceptFinancingPackage(
         (state.quarter as unknown as number) + entry.buildDurationQuarters + 40,
       ),
       issuedAt: state.quarter,
+      purpose: 'project',
     };
     newTranches.push(tranche);
     acceptedRecords.push({

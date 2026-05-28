@@ -24,6 +24,15 @@ export interface DebtTranche {
   maturity: QuarterIndex;
   /** Quarter the tranche was issued (or inherited at Q0 for starting debt). */
   issuedAt: QuarterIndex;
+  /**
+   * Phase 10.4: 'operating' = funded operating cash (issueOperatingBond),
+   * 'project' = funded a capital project's remainingFunding pool (project
+   * financing via acceptFinancingPackage / inherited OL). Lets the Capital
+   * Activity view separate project-related cash flows from operating ones.
+   * Optional with backfill via id prefix for old saves (t_op_* → operating,
+   * else project).
+   */
+  purpose?: 'operating' | 'project';
 }
 
 export type CreditRating = 'AAA' | 'AA' | 'A' | 'BBB' | 'BB' | 'B' | 'CCC';

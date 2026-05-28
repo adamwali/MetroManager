@@ -200,6 +200,8 @@ describe('autoResolveEvent', () => {
 describe('endTurn integration', () => {
   it('applies standing orders after events fire', () => {
     let s = createInitialGameState(0);
+    // Force cash low so the safety-net order fires after one endTurn.
+    s = { ...s, cash: { ...s.cash, balance: 400 as unknown as typeof s.cash.balance } };
     s = addStandingOrder(s, {
       kind: 'autoIssueOperatingBondsBelowCash',
       cashThresholdM: cash(500),
@@ -207,11 +209,7 @@ describe('endTurn integration', () => {
       creditor: 'pension',
       enabled: true,
     });
-    // First quarter: cash starts at 1000, drops ~134 → goes below 900 but not 500
     s = endTurn(s);
-    // Let it run a few quarters until cash drops below 500
-    for (let i = 0; i < 4; i++) s = endTurn(s);
-    // By now cash should have triggered the order
     const hasOpBond = s.debt.tranches.some((t) => t.id.startsWith('t_op_'));
     expect(hasOpBond).toBe(true);
   });

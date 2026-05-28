@@ -112,6 +112,12 @@ export interface QuarterSummaryBreakdown {
     };
     /** Bond proceeds raised this quarter ($M). Replaces fragile regex parsing. */
     financingProceeds: number;
+    /**
+     * Phase 10.4: split by tranche purpose so Capital Activity shows only
+     * project-funded inflows (capital flows separate from operating).
+     */
+    operatingFinancingProceeds: number;
+    projectFinancingProceeds: number;
     trustOttawa: number;
     trustQueensPark: number;
     trustCityHall: number;

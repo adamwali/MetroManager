@@ -15,7 +15,7 @@ describe('createInitialGameState', () => {
   it('matches design doc §5 starting numbers', () => {
     const s = createInitialGameState(1);
     expect(s.cash.balance as unknown as number).toBe(1_400);
-    expect(s.operatingAllowance.annualAmount as unknown as number).toBe(2_400);
+    expect(s.operatingAllowance.annualAmount as unknown as number).toBe(3_000);
     expect(s.operatingAllowance.renegotiatesAt as unknown as number).toBe(16);
 
     const totalDebt = s.debt.tranches.reduce(
@@ -91,7 +91,7 @@ describe('operating allowance', () => {
   it('quarterly slice = annual / 4', () => {
     const s = createInitialGameState(0);
     const q = quarterlyOperatingAllowance(s.operatingAllowance) as unknown as number;
-    expect(q).toBe(600);
+    expect(q).toBe(750);
   });
 
   it('does NOT change over time (no inflation indexing in v3.3)', () => {

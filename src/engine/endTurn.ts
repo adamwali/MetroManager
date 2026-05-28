@@ -203,10 +203,20 @@ export function endTurn(state: GameState): GameState {
 
   // Financing proceeds = tranches issued during this quarter (issuedAt
   // matches the quarter we're closing). Replaces fragile regex parsing.
+  // Phase 10.4: split by purpose so the Capital Activity view doesn't
+  // misleadingly show operating-bond inflows as if they funded projects.
   const currentQ = state.quarter as unknown as number;
-  const financingProceedsThisQuarter = debtWithRating.tranches
-    .filter((t) => (t.issuedAt as unknown as number) === currentQ)
+  const tranchesIssuedThisQ = debtWithRating.tranches.filter(
+    (t) => (t.issuedAt as unknown as number) === currentQ,
+  );
+  const operatingFinancingProceedsThisQuarter = tranchesIssuedThisQ
+    .filter((t) => t.purpose === 'operating')
     .reduce((a, t) => a + (t.principal as unknown as number), 0);
+  const projectFinancingProceedsThisQuarter = tranchesIssuedThisQ
+    .filter((t) => t.purpose !== 'operating')
+    .reduce((a, t) => a + (t.principal as unknown as number), 0);
+  const financingProceedsThisQuarter =
+    operatingFinancingProceedsThisQuarter + projectFinancingProceedsThisQuarter;
 
   const perAgency = {} as QuarterSummaryBreakdown['ridership']['perAgency'];
   for (const agencyId of ['ttc', 'go', 'up'] as const) {
@@ -296,6 +306,8 @@ export function endTurn(state: GameState): GameState {
         ) as unknown as number,
       },
       financingProceeds: financingProceedsThisQuarter,
+      operatingFinancingProceeds: operatingFinancingProceedsThisQuarter,
+      projectFinancingProceeds: projectFinancingProceedsThisQuarter,
       trustOttawa: state.politics.ottawa.trust as unknown as number,
       trustQueensPark: state.politics.queensPark.trust as unknown as number,
       trustCityHall: state.politics.cityHall.trust as unknown as number,

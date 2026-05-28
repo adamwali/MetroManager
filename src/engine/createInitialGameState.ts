@@ -51,6 +51,7 @@ export function createInitialGameState(
           coupon: { kind: 'fixed', rate: bp(410) },
           maturity: quarter(40),
           issuedAt: quarter(-24),
+          purpose: 'project',
         },
         {
           id: 't_ol_institutional_fixed',
@@ -59,6 +60,7 @@ export function createInitialGameState(
           coupon: { kind: 'fixed', rate: bp(425) },
           maturity: quarter(28),
           issuedAt: quarter(-16),
+          purpose: 'project',
         },
         {
           id: 't_ol_institutional_floating',
@@ -67,13 +69,14 @@ export function createInitialGameState(
           coupon: { kind: 'floating', spreadOverBOC: bp(90) },
           maturity: quarter(36),
           issuedAt: quarter(-8),
+          purpose: 'project',
         },
       ],
       rating: 'AA',
       bocPolicyRate: bp(350),
     },
     operatingAllowance: {
-      annualAmount: cash(2_400),
+      annualAmount: cash(3_000),
       signedAt: quarter(0),
       renegotiatesAt: quarter(16),
       controls: [],

@@ -5,6 +5,8 @@ interface KpiProps {
   label: string;
   value: ReactNode;
   delta?: ReactNode;
+  /** Tone for delta coloring. If unset, falls back to neutral. */
+  deltaTone?: 'positive' | 'negative' | 'neutral';
   /** Plain-language descriptor below the number ("3.2 years runway"). */
   caption?: ReactNode;
   /** Color hint based on status. */
@@ -45,6 +47,7 @@ export function Kpi({
   label,
   value,
   delta,
+  deltaTone = 'neutral',
   caption,
   tone = 'neutral',
   spark,
@@ -52,6 +55,12 @@ export function Kpi({
   onClick,
   helpText,
 }: KpiProps) {
+  const deltaClass =
+    deltaTone === 'positive'
+      ? 'text-emerald-700'
+      : deltaTone === 'negative'
+        ? 'text-red-700'
+        : 'text-neutral-700';
   const interactive = onClick !== undefined;
   const Comp: 'button' | 'div' = interactive ? 'button' : 'div';
   const [showHelp, setShowHelp] = useState(false);
@@ -92,7 +101,7 @@ export function Kpi({
       </div>
       <div className={`num text-lg font-bold leading-tight tracking-tight ${TONE_VALUE[tone]}`}>{value}</div>
       <div className="flex items-baseline gap-1.5 text-[10px] leading-tight">
-        {delta !== undefined && <span className="num font-semibold text-neutral-700">{delta}</span>}
+        {delta !== undefined && <span className={`num font-semibold ${deltaClass}`}>{delta}</span>}
         {caption !== undefined && <span className="text-neutral-400 truncate">{caption}</span>}
       </div>
       {helpText && showHelp && (

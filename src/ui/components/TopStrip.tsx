@@ -52,11 +52,12 @@ export function TopStrip() {
           label="Cash"
           value={formatMoney(cashBalance)}
           delta={`${formatMoneyDelta(cashDelta)}/Q`}
+          deltaTone={cashDelta > 0 ? 'positive' : cashDelta < 0 ? 'negative' : 'neutral'}
           caption={describeCashRunway(cashBalance, cashDelta)}
           tone={cashTone}
           spark={<Sparkline values={cashSpark} />}
           onClick={() => navigate('/treasury')}
-          helpText="Cash on hand. Click to open Treasury (P&L, cash flow, balance sheet, debt portfolio, bond issuance). Below 0 for 3 quarters triggers fiscal-failure game over."
+          helpText="Cash on hand + quarterly net change. Click to open Treasury (P&L breakdown, cash flow, debt). Below 0 for 3 quarters triggers fiscal-failure game over."
         />
       </Section>
 
