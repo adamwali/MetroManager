@@ -53,6 +53,12 @@ export function CapitalProjects() {
         </button>
       </header>
 
+      <CapacityBar
+        templates={state.engineVars.templates as unknown as number}
+        engineers={state.engineVars.engineers}
+        crosslinx={state.engineVars.crosslinxLeverage as unknown as number}
+      />
+
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
           Active projects
@@ -905,5 +911,68 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
         </p>
       </div>
     </div>
+  );
+}
+
+// Phase 10.3: surface the three engine vars that affect project cost +
+// burn rate, so the player knows what's behind their estimates.
+function CapacityBar({
+  templates,
+  engineers,
+  crosslinx,
+}: {
+  templates: number;
+  engineers: number;
+  crosslinx: number;
+}) {
+  const templateDiscountPct = Math.min(14, Math.max(0, (templates - 30) * 0.2)).toFixed(1);
+  const leveragePremiumPct = Math.min(9, Math.max(0, (crosslinx - 55) * 0.2)).toFixed(1);
+  const burnHint =
+    engineers >= 200 ? 'fast burn' : engineers >= 150 ? 'normal burn' : 'slow burn';
+  return (
+    <section className="rounded-md border border-neutral-200 bg-neutral-50/60 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-2">
+        Delivery capacity (affects every new project)
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs font-medium text-neutral-700">Data Systems</span>
+            <span className="num text-sm font-semibold">{templates.toFixed(0)}/100</span>
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-0.5">
+            {Number(templateDiscountPct) > 0
+              ? `−${templateDiscountPct}% project cost`
+              : 'No procurement discount yet'}
+          </div>
+        </div>
+        <div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs font-medium text-neutral-700">In-house engineers</span>
+            <span className="num text-sm font-semibold">{engineers}</span>
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-0.5">
+            Project {burnHint} per quarter
+          </div>
+        </div>
+        <div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs font-medium text-neutral-700">Crosslinx leverage</span>
+            <span
+              className={`num text-sm font-semibold ${
+                Number(leveragePremiumPct) > 5 ? 'text-red-700' : Number(leveragePremiumPct) > 2 ? 'text-amber-700' : 'text-neutral-800'
+              }`}
+            >
+              {crosslinx.toFixed(0)}/100
+            </span>
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-0.5">
+            {Number(leveragePremiumPct) > 0
+              ? `+${leveragePremiumPct}% project cost premium`
+              : 'No consortium premium yet'}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

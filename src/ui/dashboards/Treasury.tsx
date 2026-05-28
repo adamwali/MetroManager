@@ -285,8 +285,18 @@ function BondIssuanceCard() {
       {!quote.blockedReason && amountM > 0 && amountM <= quote.maxIssuableM && (
         <p className="mt-3 text-[11px] text-neutral-500">
           Issuing ${amountM}M at {quote.ratePct.toFixed(2)}% adds{' '}
-          {formatMoney((amountM * quote.rateBp) / 10_000 / 4)}/Q to debt service ·{' '}
-          {formatPct(((amountM * quote.rateBp) / 10_000 / 4) / Math.max(1, (state.cash.balance as unknown as number) > 0 ? (state.cash.balance as unknown as number) : 1000), 2)} of current cash per Q.
+          {formatMoney((amountM * quote.rateBp) / 10_000 / 4)}/Q to debt service
+          {(state.cash.balance as unknown as number) > 0 && (
+            <>
+              {' · '}
+              {formatPct(
+                ((amountM * quote.rateBp) / 10_000 / 4) / (state.cash.balance as unknown as number),
+                2,
+              )}{' '}
+              of current cash per Q
+            </>
+          )}
+          .
         </p>
       )}
     </section>

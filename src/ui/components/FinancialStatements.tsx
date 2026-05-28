@@ -24,7 +24,7 @@ const SCOPE_LABELS: Record<FinancialScope, string> = {
   ttc: 'TTC',
   go: 'GO',
   up: 'UP',
-  capital: 'Capital Activity',
+  capital: 'Capital activity',
 };
 
 export function FinancialStatements() {
