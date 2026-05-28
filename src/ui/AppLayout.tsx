@@ -171,8 +171,10 @@ export function AppLayout() {
       {gameOver && (
         <GameOverScreen
           onStartNew={() => {
-            // Reset to baseline then open the new-game modal.
-            newGame(1, 'steadyOperator', 'CEO');
+            // Reset to baseline with a fresh random seed, then let the
+            // player customize via the modal.
+            const seed = Math.floor(Math.random() * 1_000_000) + 1;
+            newGame(seed, 'steadyOperator', 'CEO');
             setShowNewGame(true);
           }}
           onLoad={() => setSaveLoad('load')}

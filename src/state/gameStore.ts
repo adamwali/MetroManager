@@ -136,7 +136,13 @@ export interface GameStore {
   updateStandingOrder: (orderId: string, patch: Partial<StandingOrder>) => void;
 }
 
-const DEFAULT_SEED = 1;
+/**
+ * Randomized at module load so fresh games get different event sequences.
+ * Autosave restoration overrides this with the saved game's own seed, so
+ * resumed campaigns stay deterministic. Only affects players who skip
+ * the New Game modal and just start playing the default campaign.
+ */
+const DEFAULT_SEED = Math.floor(Math.random() * 1_000_000) + 1;
 
 function initialFor(seed: number, archetype: CeoArchetype, ceoName: string): GameState {
   return createInitialGameState(seed, archetype, ceoName);
