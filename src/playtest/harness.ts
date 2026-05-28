@@ -13,7 +13,19 @@ import {
   runCommunityConsultation,
   terminateConsultants,
 } from '@engine/treasuryActions';
-import { adHocFunding, quietPitch } from '@engine/politicalActions';
+import { adHocFunding, callInFavor, isActionEligible, publicLobby, quietPitch } from '@engine/politicalActions';
+import {
+  acceptFinancingPackage,
+  availableProjectCatalog,
+  proposeProject,
+} from '@engine/projectActions';
+import { setMaintenanceBudget } from '@engine/agencyActions';
+import { refinanceTranche, quoteRefi } from '@engine/treasuryActions';
+import { requiredMaintenanceFor } from '@engine/agencies';
+import { generateFinancingOffers } from '@engine/financing';
+import type { SubsystemId } from '@/types/agency';
+import type { GovernmentId } from '@/types/politics';
+import type { SizeTier } from '@/types/projects';
 
 /**
  * Playtest harness. Phase 10.5.
@@ -226,6 +238,164 @@ function maybeBoostLowestTrust(state: GameState): GameState {
   return r.state;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Phase 10.6: bots can do EVERYTHING a player can do
+
+function maybeProposeProject(state: GameState, strategy: Strategy): GameState {
+  // Strategy gating
+  const cash = state.cash.balance as unknown as number;
+  const activeProjects = state.projects.filter(
+    (p) => p.state === 'proposed' || p.state === 'under_construction',
+  ).length;
+  // Only propose if we have room
+  const maxConcurrent = strategy === 'aggressive' ? 4 : strategy === 'conservative' ? 2 : 3;
+  if (activeProjects >= maxConcurrent) return state;
+  // Need some cash buffer to cover construction draws
+  const cashBuffer = strategy === 'aggressive' ? 500 : strategy === 'conservative' ? 1200 : 800;
+  if (cash < cashBuffer) return state;
+  // Once every 4Q at most (don't spam)
+  const q = state.quarter as unknown as number;
+  const lastProposed = state.projects
+    .filter((p) => p.state === 'proposed' || p.state === 'under_construction')
+    .map((p) => p.state === 'proposed' ? p.initiatedAt : p.state === 'under_construction' ? p.brokeGroundAt : null)
+    .filter((v): v is NonNullable<typeof v> => v !== null)
+    .map((v) => v as unknown as number);
+  if (lastProposed.length > 0 && q - Math.max(...lastProposed) < 4) return state;
+
+  const catalog = availableProjectCatalog(state);
+  // Skip P00 (Ontario Line — already in flight)
+  const eligible = catalog.filter((c) => c.id !== 'P00');
+  // Pick by tier preference based on strategy
+  const targetTiers =
+    strategy === 'aggressive'
+      ? ['mega', 'major', 'minor', 'micro']
+      : strategy === 'conservative'
+        ? ['micro', 'minor']
+        : ['minor', 'major', 'micro'];
+  const candidate = eligible.find((c) => targetTiers.includes(c.tier as string));
+  if (!candidate) return state;
+  // Propose with first (usually cheapest) alignment and 'standard' station quality
+  const alignment = candidate.alignments[0]!;
+  return proposeProject(state, candidate.id, alignment.id, 'standard');
+}
+
+function maybeAcceptProjectFinancing(state: GameState): GameState {
+  // Find proposed projects past the study buffer and accept financing
+  const q = state.quarter as unknown as number;
+  let s = state;
+  for (const p of s.projects) {
+    if (p.state !== 'proposed') continue;
+    const initiated = p.initiatedAt as unknown as number;
+    // Wait through 2Q study buffer
+    if (q - initiated < 2) continue;
+    // Pull tier from catalog; default to 'medium'
+    const catalog = availableProjectCatalog(s);
+    const entry = catalog.find((c) => c.id === p.templateId);
+    const tier: SizeTier = (entry?.tier as SizeTier) ?? 'medium';
+    const offers = generateFinancingOffers(s.politics, tier);
+    if (offers.length === 0) continue;
+    // Pick the offer with best (lowest) rate, weighted by size
+    const sorted = [...offers].sort((a, b) => a.rateBp - b.rateBp);
+    const cheapest = sorted[0]!;
+    // Accept up to the project cost (cap, applied internally)
+    const next = acceptFinancingPackage(s, p.templateId, [
+      { approach: cheapest.approach, amountM: cheapest.maxAmount as unknown as number },
+    ]);
+    if (next !== s) {
+      s = next;
+      // Only accept one project per quarter to avoid debt spike
+      break;
+    }
+  }
+  return s;
+}
+
+function maybeRebalanceMaintenance(state: GameState, strategy: Strategy): GameState {
+  // Phase 10.6: tune maintenance by strategy
+  // - aggressive: 110% of required (faster recovery, +cost)
+  // - conservative: 85% of required (save cash, accept decay)
+  // - balanced/reactive: 100% of required (default)
+  const cash = state.cash.balance as unknown as number;
+  const multiplier =
+    strategy === 'aggressive'
+      ? 1.1
+      : strategy === 'conservative' || (strategy === 'reactive' && cash < 400)
+        ? 0.85
+        : 1.0;
+  let s = state;
+  for (const agencyId of ['ttc', 'go', 'up'] as const) {
+    const required = requiredMaintenanceFor(agencyId);
+    const target = Math.round(required * multiplier);
+    for (const sub of s.agencies[agencyId].subsystems) {
+      const current = sub.maintenanceBudget as unknown as number;
+      if (Math.abs(current - target) < 5) continue; // hysteresis
+      s = setMaintenanceBudget(s, agencyId, sub.id as SubsystemId, target);
+    }
+  }
+  return s;
+}
+
+function maybeRefinanceTranches(state: GameState): GameState {
+  // Phase 10.6: refinance when BOC rate dropped meaningfully vs tranche rate.
+  // Only refinance fixed-rate operating tranches (don't touch OL project debt).
+  let s = state;
+  const bocBp = s.debt.bocPolicyRate as unknown as number;
+  for (const tranche of s.debt.tranches) {
+    if (tranche.purpose !== 'operating') continue;
+    if (tranche.coupon.kind !== 'fixed') continue;
+    const couponBp = tranche.coupon.rate as unknown as number;
+    // Only refi if new market rate would be 75bp+ cheaper
+    if (couponBp - bocBp < 75) continue;
+    const quote = quoteRefi(s, tranche.id);
+    if (!quote) continue;
+    if (quote.newRateBp >= couponBp - 50) continue; // not worth it
+    if (quote.breakEvenQuarters > 16) continue; // payback too slow
+    const r = refinanceTranche(s, tranche.id);
+    if (r.state !== s) {
+      s = r.state;
+      // One refi per quarter
+      break;
+    }
+  }
+  return s;
+}
+
+function maybePublicLobby(state: GameState): GameState {
+  // Phase 10.6: aggressive trust gain. Use when trust < 30 and approval > 50
+  // (can afford the -5 approval hit).
+  const approval = state.engineVars.publicApproval as unknown as number;
+  if (approval < 50) return state;
+  for (const gov of ['ottawa', 'queensPark', 'cityHall'] as const) {
+    if ((state.politics[gov].trust as unknown as number) < 30) {
+      if (!isActionEligible(state, gov, 'publicLobby')) continue;
+      const r = publicLobby(state, gov);
+      return r.state;
+    }
+  }
+  return state;
+}
+
+function maybeCallInFavor(state: GameState): GameState {
+  // Phase 10.6: emergency cash via favor. Only when truly desperate
+  // (cash < $100M, since this burns the relationship).
+  const cash = state.cash.balance as unknown as number;
+  if (cash > 100) return state;
+  // Pick highest-trust gov that allows it
+  const govs: GovernmentId[] = ['ottawa', 'queensPark', 'cityHall'];
+  const sorted = [...govs].sort(
+    (a, b) =>
+      (state.politics[b].trust as unknown as number) -
+      (state.politics[a].trust as unknown as number),
+  );
+  for (const gov of sorted) {
+    if (isActionEligible(state, gov, 'callInFavor')) {
+      const r = callInFavor(state, gov);
+      return r.state;
+    }
+  }
+  return state;
+}
+
 function maybeManageConsultants(state: GameState, strategy: Strategy): GameState {
   const cash = state.cash.balance as unknown as number;
   const engaged = state.engineVars.consultantsEngaged;
@@ -270,10 +440,18 @@ export function runPlaytest(opts: PlaytestOptions): PlaytestRun {
       state = r.state;
     }
 
-    // 2. Player actions based on state
+    // 2. Player actions based on state. Phase 10.6: bots can do EVERYTHING
+    // a player can do — project initiation/financing, maintenance tuning,
+    // refinancing, full political action suite, etc.
     state = maybeBoostLowestTrust(state);
+    state = maybePublicLobby(state);
     state = maybeAskForFunding(state);
+    state = maybeCallInFavor(state); // last resort
     state = maybeIssueBondIfLow(state, opts.strategy);
+    state = maybeRefinanceTranches(state);
+    state = maybeProposeProject(state, opts.strategy);
+    state = maybeAcceptProjectFinancing(state);
+    state = maybeRebalanceMaintenance(state, opts.strategy);
     state = maybeCommissionAudit(state);
     state = maybeRunConsultation(state);
     state = maybeManageConsultants(state, opts.strategy);
