@@ -306,10 +306,13 @@ function InstitutionalPressurePanel() {
   const state = useGameStore((s) => s.state);
   const commission = useGameStore((s) => s.commissionVoluntaryAudit);
   const consult = useGameStore((s) => s.runCommunityConsultation);
+  const engage = useGameStore((s) => s.engageConsultants);
+  const terminate = useGameStore((s) => s.terminateConsultants);
   const scrutiny = state.engineVars.auditorScrutiny as unknown as number;
   const nimby = state.engineVars.nimbyOrganization as unknown as number;
   const crosslinx = state.engineVars.crosslinxLeverage as unknown as number;
   const consultant = state.engineVars.consultantAlignment as unknown as number;
+  const consultantsEngaged = state.engineVars.consultantsEngaged;
   const lastAudit = state.engineVars.lastVoluntaryAuditQuarter;
   const lastConsult = state.engineVars.lastCommunityConsultationQuarter;
   const currentQ = state.quarter as unknown as number;
@@ -389,7 +392,7 @@ function InstitutionalPressurePanel() {
           }
         />
         <PressureCard
-          label="Consultant alignment"
+          label={`Consultants${consultantsEngaged ? ' (engaged)' : ''}`}
           value={consultant}
           scale={100}
           signedScale
@@ -399,7 +402,9 @@ function InstitutionalPressurePanel() {
               ? 'Hostile op-eds active'
               : consultant >= 30
                 ? '+1 QP/Q · -3 approval'
-                : 'Neutral'
+                : consultantsEngaged
+                  ? 'Engaged, drifting + each Q'
+                  : 'Neutral / unengaged'
           }
         />
       </div>
@@ -438,6 +443,37 @@ function InstitutionalPressurePanel() {
           >
             {consultBlocked ?? 'Run consultation'}
           </button>
+        </div>
+        <div className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
+          <div>
+            <div className="text-xs font-semibold text-neutral-800">
+              External consultants {consultantsEngaged ? '(currently engaged)' : '(currently disengaged)'}
+            </div>
+            <div className="text-[11px] text-neutral-500">
+              {consultantsEngaged
+                ? '$30M/Q ongoing · alignment drifts toward +50 · at ≥30 gives +1 QP/Q but -3 approval/Q'
+                : 'Engage to start $30M/Q + alignment drift. Terminate to drop alignment by 80 (hostile state risk).'}
+            </div>
+          </div>
+          {consultantsEngaged ? (
+            <button
+              type="button"
+              onClick={() => terminate()}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white"
+              title="Terminate retainer (alignment -80, may enter hostile state)"
+            >
+              Terminate
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => engage()}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white"
+              title="Engage McKinsey-tier consultants on $30M/Q retainer"
+            >
+              Engage
+            </button>
+          )}
         </div>
       </div>
     </section>

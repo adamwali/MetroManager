@@ -54,6 +54,7 @@ export function migrateLoadedState(loaded: unknown): GameState {
     if (ev.engineers === undefined) ev.engineers = 180;
     if (ev.publicApproval === undefined) ev.publicApproval = score(50);
     if (ev.auditorScrutiny === undefined) ev.auditorScrutiny = score(15);
+    if (ev.consultantsEngaged === undefined) ev.consultantsEngaged = false;
     // Phase 10 audit fix: openBooks undefined would cascade to NaN in finance
     // calculations (debt service applies a -20bp discount when true).
     if (ev.openBooks === undefined) ev.openBooks = false;

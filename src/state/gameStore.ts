@@ -27,6 +27,8 @@ import {
   refinanceTranche,
   commissionVoluntaryAudit,
   runCommunityConsultation,
+  engageConsultants,
+  terminateConsultants,
 } from '@engine/treasuryActions';
 import {
   addStandingOrder,
@@ -125,6 +127,8 @@ export interface GameStore {
   refinanceTranche: (trancheId: string) => void;
   commissionVoluntaryAudit: () => void;
   runCommunityConsultation: () => void;
+  engageConsultants: () => void;
+  terminateConsultants: () => void;
   /** Standing orders (Phase 8.1). */
   addStandingOrder: (order: StandingOrderWithoutId) => void;
   removeStandingOrder: (orderId: string) => void;
@@ -402,6 +406,22 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     runCommunityConsultation: () => {
       const result = runCommunityConsultation(get().state);
+      if (result.state === get().state) return;
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    engageConsultants: () => {
+      const result = engageConsultants(get().state);
+      if (result.state === get().state) return;
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    terminateConsultants: () => {
+      const result = terminateConsultants(get().state);
       if (result.state === get().state) return;
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)

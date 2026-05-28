@@ -98,7 +98,11 @@ export function endTurn(state: GameState): GameState {
     debtWithRating,
     state.engineVars.openBooks,
   ) as unknown as number;
-  const netCashDelta = allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN;
+  // Phase 10.2: consultant engagement fee — flat $30M/Q while engaged.
+  // Shown as a separate cash outflow so the cost is visible in the breakdown.
+  const consultantFeeN = state.engineVars.consultantsEngaged ? 30 : 0;
+  const netCashDelta =
+    allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN - consultantFeeN;
 
   // 4. Decay subsystems (archetype maintenance efficiency applied inside)
   const agenciesDecayed = applyToAgencies(state.agencies, (a) =>
@@ -360,6 +364,31 @@ export function endTurn(state: GameState): GameState {
     cleanlinessApprovalDrift(agenciesFinal.go) +
     cleanlinessApprovalDrift(agenciesFinal.up);
 
+  // Phase 10.2: consultant relationship dynamics.
+  // - Engaged: alignment drifts +5/Q toward +50 cap
+  // - Terminated: alignment drifts +3/Q back toward 0 (slow recovery from
+  //   hostile state); hostile state (≤ -40) holds until recovery
+  // Aligned state (≥ +30): -3 approval/Q, +1 QP trust/Q (they lobby for you)
+  // Hostile state (≤ -40): -2 approval/Q, -1 QP trust/Q (lobby against you)
+  const curAlignment = state.engineVars.consultantAlignment as unknown as number;
+  let nextAlignment = curAlignment;
+  if (state.engineVars.consultantsEngaged) {
+    nextAlignment = Math.min(50, curAlignment + 5);
+  } else if (curAlignment < 0) {
+    nextAlignment = Math.min(0, curAlignment + 3);
+  } else if (curAlignment > 0) {
+    nextAlignment = Math.max(0, curAlignment - 1);
+  }
+  let consultantApprovalDelta = 0;
+  let consultantQpDelta = 0;
+  if (nextAlignment >= 30) {
+    consultantApprovalDelta = -3;
+    consultantQpDelta = 1;
+  } else if (nextAlignment <= -40) {
+    consultantApprovalDelta = -2;
+    consultantQpDelta = -1;
+  }
+
   // Phase 5.4: accessibility budget → City Hall trust drift
   const accessibilityCityHallDelta =
     accessibilityCityHallDrift(agenciesFinal.ttc) +
@@ -372,8 +401,19 @@ export function endTurn(state: GameState): GameState {
       (state.politics.cityHall.trust as unknown as number) + accessibilityCityHallDelta,
     ),
   );
+  const newQpTrust = Math.max(
+    0,
+    Math.min(
+      100,
+      (state.politics.queensPark.trust as unknown as number) + consultantQpDelta,
+    ),
+  );
   const politicsWithAccessibility = {
     ...state.politics,
+    queensPark: {
+      ...state.politics.queensPark,
+      trust: score(newQpTrust),
+    },
     cityHall: {
       ...state.politics.cityHall,
       trust: score(newCityHallTrust),
@@ -383,7 +423,9 @@ export function endTurn(state: GameState): GameState {
     0,
     Math.min(
       100,
-      (state.engineVars.publicApproval as unknown as number) + cleanlinessApprovalDelta,
+      (state.engineVars.publicApproval as unknown as number) +
+        cleanlinessApprovalDelta +
+        consultantApprovalDelta,
     ),
   );
 
@@ -392,6 +434,7 @@ export function endTurn(state: GameState): GameState {
     nimbyOrganization: score(nimbyDecayed),
     auditorScrutiny: score(auditorDecayed),
     publicApproval: score(newPublicApproval),
+    consultantAlignment: nextAlignment as unknown as typeof state.engineVars.consultantAlignment,
   };
 
   // Compose the post-tick state before event processing

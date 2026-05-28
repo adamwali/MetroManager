@@ -39,4 +39,11 @@ export interface EngineVars {
    * (NIMBY mitigation). 6Q cooldown.
    */
   lastCommunityConsultationQuarter?: number;
+  /**
+   * Phase 10.2: Whether McKinsey-tier external consultants are currently
+   * engaged. When true: $30M/Q opex burden (visible), alignment drifts
+   * +5/Q toward +50 cap, and aligned-state effects activate (+1 QP/Q,
+   * -3 approval/Q). Toggleable via player actions.
+   */
+  consultantsEngaged: boolean;
 }

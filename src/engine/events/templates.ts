@@ -2093,6 +2093,52 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     ],
   },
 
+  // ── EV060 Hostile consultant op-ed ─ Phase 10.2 ────────────────────────
+  {
+    id: 'EV060_hostileConsultantOpEd',
+    category: 'consulting_pressure',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'consultantAlignment', lte: -40 },
+      cooldownQuarters: 6,
+    },
+    outlet: 'Globe',
+    headline: 'McKinsey alumni op-ed: "GTTA management has lost the plot"',
+    body: 'Three former senior consultants you terminated published a joint op-ed in the Globe. They cite "amateurish forecasting" and "wilful disregard of best-in-class practices." It will be picked up by every business reporter in the country.',
+    urgency: 65,
+    choices: [
+      {
+        id: 'ignore',
+        label: 'No comment; ride it out',
+        tradeoff: '-3 approval, -5 QP trust (they read the Globe)',
+        effects: [
+          { kind: 'publicApproval', delta: -3 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -5 },
+        ],
+      },
+      {
+        id: 'aggressive_rebuttal',
+        label: 'Aggressive rebuttal: cite their billed hours',
+        tradeoff: '-5 approval (looks petty), +5 board, +10 alignment (they back off)',
+        effects: [
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Defended record vs consultants' },
+          { kind: 'consultantAlignment', delta: 10 },
+        ],
+      },
+      {
+        id: 're_engage',
+        label: 'Quietly bring them back on a retainer',
+        tradeoff: 'Re-engages consultants ($30M/Q starts), +20 alignment immediately, -3 approval (capitulation)',
+        effects: [
+          { kind: 'consultantAlignment', delta: 20 },
+          { kind: 'publicApproval', delta: -3 },
+          { kind: 'reEngageConsultants' },
+        ],
+      },
+    ],
+  },
+
   // ── EV057 Charter challenge ─ Phase 10.2 NIMBY ─────────────────────────
   {
     id: 'EV057_nimbyCharterChallenge',

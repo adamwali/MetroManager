@@ -241,6 +241,77 @@ export function refinanceTranche(
   };
 }
 
+// ── Engage / terminate consultants (Phase 10.2) ──────────────────────────
+// Engaging McKinsey-tier consultants is a strategic Treasury policy choice.
+// Binary toggle on engineVars.consultantsEngaged; effects applied in endTurn.
+
+export function engageConsultants(state: GameState): {
+  state: GameState;
+  logEntry: ActionLogEntry | null;
+  outcomeSummary: string;
+} {
+  if (state.engineVars.consultantsEngaged) {
+    return { state, logEntry: null, outcomeSummary: 'Consultants already engaged.' };
+  }
+  const currentQ = state.quarter as unknown as number;
+  const summary = `Engaged consultants → $30M/Q opex ongoing, alignment will drift toward +50, +1 QP trust/Q when aligned, -3 approval/Q`;
+  const entry: ActionLogEntry = {
+    kind: 'player_action',
+    id: `q${currentQ}-${state.nextLogId}`,
+    quarter: state.quarter,
+    cause: { kind: 'player' },
+    action: 'engageConsultants',
+    summary,
+  };
+  return {
+    state: {
+      ...state,
+      engineVars: { ...state.engineVars, consultantsEngaged: true },
+      actionLog: [...state.actionLog, entry],
+      nextLogId: state.nextLogId + 1,
+    },
+    logEntry: entry,
+    outcomeSummary: summary,
+  };
+}
+
+export function terminateConsultants(state: GameState): {
+  state: GameState;
+  logEntry: ActionLogEntry | null;
+  outcomeSummary: string;
+} {
+  if (!state.engineVars.consultantsEngaged) {
+    return { state, logEntry: null, outcomeSummary: 'No consultants currently engaged.' };
+  }
+  const currentQ = state.quarter as unknown as number;
+  const curAlignment = state.engineVars.consultantAlignment as unknown as number;
+  // -80 alignment swing on termination; clamped to -100 floor
+  const newAlignment = Math.max(-100, curAlignment - 80);
+  const summary = `Terminated consultants → alignment ${curAlignment.toFixed(0)}→${newAlignment} (HOSTILE STATE: -2 approval/Q, -1 QP/Q until recovery)`;
+  const entry: ActionLogEntry = {
+    kind: 'player_action',
+    id: `q${currentQ}-${state.nextLogId}`,
+    quarter: state.quarter,
+    cause: { kind: 'player' },
+    action: 'terminateConsultants',
+    summary,
+  };
+  return {
+    state: {
+      ...state,
+      engineVars: {
+        ...state.engineVars,
+        consultantsEngaged: false,
+        consultantAlignment: newAlignment as unknown as typeof state.engineVars.consultantAlignment,
+      },
+      actionLog: [...state.actionLog, entry],
+      nextLogId: state.nextLogId + 1,
+    },
+    logEntry: entry,
+    outcomeSummary: summary,
+  };
+}
+
 // ── Community consultation program (Phase 10.2) ─────────────────────────
 // Player-initiated NIMBY mitigation. Costs $15M, drops NIMBY by 15.
 // Gated by City Hall trust ≥ 40 (you need municipal buy-in to do meaningful

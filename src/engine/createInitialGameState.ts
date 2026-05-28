@@ -248,6 +248,7 @@ export function createInitialGameState(
       engineers: mods.engineers,
       publicApproval: score(clampScore(mods.publicApproval)),
       auditorScrutiny: score(15),
+      consultantsEngaged: false,
     },
     rng: createRngSeeds(seed),
     actionLog: [],
