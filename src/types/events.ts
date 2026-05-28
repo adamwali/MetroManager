@@ -53,6 +53,7 @@ export type EventPredicate =
   | { kind: 'nimbyOrganization'; gte?: number; lte?: number }
   | { kind: 'auditorScrutiny'; gte?: number; lte?: number }
   | { kind: 'consultantAlignment'; gte?: number; lte?: number }
+  | { kind: 'crosslinxLeverage'; gte?: number; lte?: number }
   | { kind: 'openBooks'; equals: boolean }
   | { kind: 'reliability'; agency: AgencyId; gte?: number; lte?: number }
   | { kind: 'riders'; agency: AgencyId; gte?: number; lte?: number }

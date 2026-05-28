@@ -84,11 +84,21 @@ export function proposeProject(
 }
 
 /** Estimated cost for a proposed project (derived from catalog + chosen options). */
-function estimatedCostOf(proposed: ProposedProject, templates: number): number {
+function estimatedCostOf(
+  proposed: ProposedProject,
+  templates: number,
+  crosslinxLeverage = 55,
+): number {
   const entry = catalogEntry(proposed.templateId);
   if (!entry) return 0;
   const alignmentId = proposed.chosenAlignment ?? entry.alignments[0]!.id;
-  return realizedProjectCost(entry, alignmentId, proposed.stationQuality, templates);
+  return realizedProjectCost(
+    entry,
+    alignmentId,
+    proposed.stationQuality,
+    templates,
+    crosslinxLeverage,
+  );
 }
 
 /** Generate the 4 financing offers for a proposed project at current trust scores. */
@@ -132,7 +142,7 @@ export function acceptFinancing(
   const offer = offers.find((o) => o.approach === approach);
   if (!offer) return state;
 
-  const projectCost = estimatedCostOf(proposed, state.engineVars.templates as unknown as number);
+  const projectCost = estimatedCostOf(proposed, state.engineVars.templates as unknown as number, state.engineVars.crosslinxLeverage as unknown as number);
   const amount = Math.min(projectCost, offer.maxAmount as unknown as number);
   if (amount <= 0) return state;
   // Delegate to package logic with a single selection
@@ -164,7 +174,7 @@ export function acceptFinancingPackage(
   if (selections.length === 0) return state;
 
   const offers = generateFinancingOffers(state.politics, entry.tier);
-  const projectCost = estimatedCostOf(proposed, state.engineVars.templates as unknown as number);
+  const projectCost = estimatedCostOf(proposed, state.engineVars.templates as unknown as number, state.engineVars.crosslinxLeverage as unknown as number);
 
   // Validate + clamp each selection
   let remainingCost = projectCost;

@@ -48,6 +48,8 @@ export function evaluatePredicate(state: GameState, pred: EventPredicate): boole
       return checkRange(state.engineVars.auditorScrutiny as unknown as number, pred);
     case 'consultantAlignment':
       return checkRange(state.engineVars.consultantAlignment as unknown as number, pred);
+    case 'crosslinxLeverage':
+      return checkRange(state.engineVars.crosslinxLeverage as unknown as number, pred);
     case 'openBooks':
       return state.engineVars.openBooks === pred.equals;
     case 'reliability':

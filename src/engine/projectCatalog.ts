@@ -584,14 +584,22 @@ export function realizedProjectCost(
   alignmentId: string,
   stationQuality: StationQualityTier,
   templates = 30,
+  crosslinxLeverage = 55,
 ): number {
   const alignment = entry.alignments.find((a) => a.id === alignmentId) ?? entry.alignments[0]!;
   const templatesAboveBaseline = Math.max(0, templates - 30);
   const templatesDiscount = Math.min(0.14, templatesAboveBaseline * 0.002); // 0.2% per pt
+  // Phase 10.2: Crosslinx leverage premium. Baseline 55; every point above
+  // adds 0.2% to cost (consortium extracts change orders, schedule premiums).
+  // Below 55 grants no discount (you can't push costs below alignment min).
+  // Max premium at leverage=100: +9%.
+  const leverageAboveBaseline = Math.max(0, crosslinxLeverage - 55);
+  const leveragePremium = Math.min(0.09, leverageAboveBaseline * 0.002);
   return Math.round(
     entry.baseCostM *
       alignment.costMultiplier *
       STATION_QUALITY_MULTIPLIER[stationQuality] *
-      (1 - templatesDiscount),
+      (1 - templatesDiscount) *
+      (1 + leveragePremium),
   );
 }

@@ -499,9 +499,10 @@ function InitiateProjectModal({ onClose }: { onClose: () => void }) {
   }
 
   const templates = state.engineVars.templates as unknown as number;
+  const crosslinx = state.engineVars.crosslinxLeverage as unknown as number;
   const alignment =
     selected.alignments.find((a) => a.id === alignmentId) ?? selected.alignments[0]!;
-  const cost = realizedProjectCost(selected, alignment.id, stationQuality, templates);
+  const cost = realizedProjectCost(selected, alignment.id, stationQuality, templates, crosslinx);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4">
@@ -722,6 +723,7 @@ function FinancingModal({ projectId, onClose }: { projectId: string; onClose: ()
           proposed.chosenAlignment,
           proposed.stationQuality,
           state.engineVars.templates as unknown as number,
+          state.engineVars.crosslinxLeverage as unknown as number,
         )
       : entry.baseCostM;
   const offers = generateFinancingOffers(state.politics, entry.tier);

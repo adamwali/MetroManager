@@ -2093,6 +2093,143 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     ],
   },
 
+  // ── EV061 Crosslinx change-order demand ─ Phase 10.2 ──────────────────
+  {
+    id: 'EV061_crosslinxChangeOrder',
+    category: 'crosslinx_contractor',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'crosslinxLeverage', gte: 70 },
+      cooldownQuarters: 10,
+    },
+    outlet: 'Star',
+    headline: 'Crosslinx files $600M change order: "Unforeseen geological conditions"',
+    body: 'Consortium claims the soil profile at three OL station boxes differs from the geotechnical reports, requiring additional underpinning. Their lawyers think they have you over a barrel.',
+    urgency: 80,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'pay_in_full',
+        label: 'Pay in full to keep schedule',
+        tradeoff: '-$600M cash, +5 board (decisive), no schedule impact, +5 Crosslinx leverage',
+        effects: [
+          { kind: 'cash', deltaM: -600 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Kept OL schedule intact' },
+          { kind: 'crosslinxLeverage', delta: 5 },
+        ],
+      },
+      {
+        id: 'negotiate_split',
+        label: 'Negotiate down to 50%',
+        tradeoff: '-$300M cash, -1Q schedule slip (acceptable), -3 Crosslinx leverage',
+        effects: [
+          { kind: 'cash', deltaM: -300 },
+          { kind: 'crosslinxLeverage', delta: -3 },
+        ],
+      },
+      {
+        id: 'threaten_termination',
+        label: 'Threaten to terminate the contract',
+        tradeoff: '-$60M legal escrow, -15 Crosslinx leverage if they back down, +5 board, 30% chance they walk (4Q OL delay)',
+        effects: [
+          { kind: 'cash', deltaM: -60 },
+          { kind: 'crosslinxLeverage', delta: -15 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Stood up to Crosslinx' },
+        ],
+      },
+    ],
+  },
+
+  // ── EV062 Crosslinx slow-walk ─ Phase 10.2 ────────────────────────────
+  {
+    id: 'EV062_crosslinxSlowWalk',
+    category: 'crosslinx_contractor',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'crosslinxLeverage', gte: 60 },
+      cooldownQuarters: 12,
+    },
+    outlet: 'Globe',
+    headline: 'Sources: Crosslinx deliberately slowing work to extract concessions',
+    body: 'Insiders tell the Globe that productivity on the Ontario Line site has dropped 30% since last contract dispute. Crosslinx denies it. Your project manager thinks it\'s real.',
+    urgency: 60,
+    choices: [
+      {
+        id: 'accept_meeting',
+        label: 'Accept private negotiation; "find a solution"',
+        tradeoff: '-$120M cash (likely concession), +10 Crosslinx leverage (rewarded for slowing)',
+        effects: [
+          { kind: 'cash', deltaM: -120 },
+          { kind: 'crosslinxLeverage', delta: 10 },
+        ],
+      },
+      {
+        id: 'public_pressure',
+        label: 'Go public: file complaints with Auditor + IO',
+        tradeoff: '-$10M comms, -8 Crosslinx leverage, +5 approval, +8 auditor scrutiny (now they look at you too)',
+        effects: [
+          { kind: 'cash', deltaM: -10 },
+          { kind: 'crosslinxLeverage', delta: -8 },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'auditorScrutiny', delta: 8 },
+        ],
+      },
+      {
+        id: 'cure_notice',
+        label: 'Issue formal "cure notice" under contract terms',
+        tradeoff: '-$5M legal, -12 Crosslinx leverage if they comply, 25% chance arbitration drags 2Q',
+        effects: [
+          { kind: 'cash', deltaM: -5 },
+          { kind: 'crosslinxLeverage', delta: -12 },
+        ],
+      },
+    ],
+  },
+
+  // ── EV063 Crosslinx walks back into the open arms ─ Phase 10.2 ──────────
+  // Positive event when you've reduced their leverage successfully
+  {
+    id: 'EV063_crosslinxBackOff',
+    category: 'crosslinx_contractor',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'crosslinxLeverage', lte: 30 },
+      cooldownQuarters: 16,
+    },
+    outlet: 'Star',
+    headline: 'Crosslinx CEO concedes: "We need to rebuild this relationship"',
+    body: 'After months of tough negotiations and a public airing of grievances, the Crosslinx CEO requests a private meeting and proposes a "reset" — fixed-price for remaining OL work and a profit-sharing accelerator if delivered early.',
+    urgency: 55,
+    choices: [
+      {
+        id: 'accept_reset',
+        label: 'Accept the reset: fixed-price + early-delivery bonus',
+        tradeoff: '-$50M one-time legal/accounting, OL remaining capex effectively capped, +10 board',
+        effects: [
+          { kind: 'cash', deltaM: -50 },
+          { kind: 'boardConfidence', delta: 10, reason: 'Renegotiated OL contract terms' },
+        ],
+      },
+      {
+        id: 'extract_more',
+        label: 'Demand more: profit penalty for delays + opening of books',
+        tradeoff: '-$15M legal, 60% chance accepted (+15 board, +5 approval), 40% they walk (+15 Crosslinx leverage)',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+          { kind: 'boardConfidence', delta: 8, reason: 'Pushed hard on Crosslinx renegotiation' },
+        ],
+      },
+      {
+        id: 'refuse',
+        label: 'Refuse; honor original contract',
+        tradeoff: '+3 board (firmness), no upside, OL keeps grinding on existing terms',
+        effects: [
+          { kind: 'boardConfidence', delta: 3, reason: 'Held the line on Crosslinx terms' },
+        ],
+      },
+    ],
+  },
+
   // ── EV060 Hostile consultant op-ed ─ Phase 10.2 ────────────────────────
   {
     id: 'EV060_hostileConsultantOpEd',
