@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "engine:harness": "tsx --tsconfig ./tsconfig.app.json src/engine/test-harness.ts"
+    "engine:harness": "tsx --tsconfig ./tsconfig.app.json src/engine/test-harness.ts",
+    "playtest": "tsx --tsconfig ./tsconfig.app.json src/playtest/runPlaytests.ts"
   },
   "dependencies": {
     "dexie": "^4.0.11",
