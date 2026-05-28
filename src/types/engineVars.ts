@@ -34,4 +34,9 @@ export interface EngineVars {
    * value-for-money audit. Used to enforce 8Q cooldown. Undefined = never.
    */
   lastVoluntaryAuditQuarter?: number;
+  /**
+   * Quarter at which the player last ran a community consultation program
+   * (NIMBY mitigation). 6Q cooldown.
+   */
+  lastCommunityConsultationQuarter?: number;
 }

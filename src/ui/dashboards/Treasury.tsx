@@ -305,15 +305,18 @@ function Stat({ label, value }: { label: string; value: string }) {
 function InstitutionalPressurePanel() {
   const state = useGameStore((s) => s.state);
   const commission = useGameStore((s) => s.commissionVoluntaryAudit);
+  const consult = useGameStore((s) => s.runCommunityConsultation);
   const scrutiny = state.engineVars.auditorScrutiny as unknown as number;
   const nimby = state.engineVars.nimbyOrganization as unknown as number;
   const crosslinx = state.engineVars.crosslinxLeverage as unknown as number;
   const consultant = state.engineVars.consultantAlignment as unknown as number;
-  const last = state.engineVars.lastVoluntaryAuditQuarter;
+  const lastAudit = state.engineVars.lastVoluntaryAuditQuarter;
+  const lastConsult = state.engineVars.lastCommunityConsultationQuarter;
   const currentQ = state.quarter as unknown as number;
   const cashOnHand = state.cash.balance as unknown as number;
+  const cityHallTrust = state.politics.cityHall.trust as unknown as number;
 
-  const auditCooldown = last !== undefined ? Math.max(0, 8 - (currentQ - last)) : 0;
+  const auditCooldown = lastAudit !== undefined ? Math.max(0, 8 - (currentQ - lastAudit)) : 0;
   const auditBlocked =
     scrutiny < 10
       ? 'Scrutiny too low to justify'
@@ -322,6 +325,18 @@ function InstitutionalPressurePanel() {
         : cashOnHand < 40
           ? 'Need $40M cash'
           : null;
+
+  const consultCooldown = lastConsult !== undefined ? Math.max(0, 6 - (currentQ - lastConsult)) : 0;
+  const consultBlocked =
+    nimby < 5
+      ? 'NIMBY too low to act'
+      : cityHallTrust < 40
+        ? `Need City Hall trust ≥40 (you: ${cityHallTrust.toFixed(0)})`
+        : consultCooldown > 0
+          ? `On cooldown — ${consultCooldown}Q left`
+          : cashOnHand < 15
+            ? 'Need $15M cash'
+            : null;
 
   return (
     <section className="rounded-md border border-neutral-200 bg-white p-4">
@@ -389,22 +404,41 @@ function InstitutionalPressurePanel() {
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
-        <div>
-          <div className="text-xs font-semibold text-neutral-800">Voluntary value-for-money audit</div>
-          <div className="text-[11px] text-neutral-500">
-            -$40M · scrutiny -20 · approval +5 · 8Q cooldown
+      <div className="mt-3 space-y-1.5">
+        <div className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
+          <div>
+            <div className="text-xs font-semibold text-neutral-800">Voluntary value-for-money audit</div>
+            <div className="text-[11px] text-neutral-500">
+              -$40M · scrutiny -20 · approval +5 · 8Q cooldown
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => commission()}
+            disabled={auditBlocked !== null}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:bg-neutral-300"
+            title={auditBlocked ?? 'Commission audit'}
+          >
+            {auditBlocked ?? 'Commission audit'}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => commission()}
-          disabled={auditBlocked !== null}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:bg-neutral-300"
-          title={auditBlocked ?? 'Commission audit'}
-        >
-          {auditBlocked ?? 'Commission audit'}
-        </button>
+        <div className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
+          <div>
+            <div className="text-xs font-semibold text-neutral-800">Community consultation program</div>
+            <div className="text-[11px] text-neutral-500">
+              -$15M · NIMBY -15 · approval +3 · 6Q cooldown · needs City Hall trust ≥40
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => consult()}
+            disabled={consultBlocked !== null}
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:bg-neutral-300"
+            title={consultBlocked ?? 'Run consultation'}
+          >
+            {consultBlocked ?? 'Run consultation'}
+          </button>
+        </div>
       </div>
     </section>
   );

@@ -2093,6 +2093,149 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     ],
   },
 
+  // ── EV057 Charter challenge ─ Phase 10.2 NIMBY ─────────────────────────
+  {
+    id: 'EV057_nimbyCharterChallenge',
+    category: 'demographics_community',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'nimbyOrganization', gte: 40 },
+      cooldownQuarters: 10,
+    },
+    outlet: 'Globe',
+    headline: 'Beaches Coalition files Charter challenge against Pape station entrance',
+    body: 'A coalition of homeowner associations argues the station head-house violates property-rights protections. If granted, ALL upcoming station designs face new constitutional scrutiny.',
+    urgency: 78,
+    choices: [
+      {
+        id: 'settle_redesign',
+        label: 'Redesign station with smaller entrance (-1Q on schedule)',
+        tradeoff: '-$60M redesign cost, +5 approval, -8 NIMBY',
+        effects: [
+          { kind: 'cash', deltaM: -60 },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'nimbyOrganization', delta: -8 },
+        ],
+      },
+      {
+        id: 'fight_charter',
+        label: 'Fight challenge to the Supreme Court',
+        tradeoff: '-$40M legal, +5 board (you stood firm), +12 NIMBY (martyrdom), +8 scrutiny',
+        effects: [
+          { kind: 'cash', deltaM: -40 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Stood firm on Charter challenge' },
+          { kind: 'nimbyOrganization', delta: 12 },
+          { kind: 'auditorScrutiny', delta: 8 },
+        ],
+      },
+      {
+        id: 'community_fund',
+        label: 'Set up neighborhood mitigation fund ($90M, broad)',
+        tradeoff: '-$90M cash, +10 approval, +5 City Hall, -15 NIMBY',
+        effects: [
+          { kind: 'cash', deltaM: -90 },
+          { kind: 'publicApproval', delta: 10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+          { kind: 'nimbyOrganization', delta: -15 },
+        ],
+      },
+    ],
+  },
+
+  // ── EV058 Coalition endorses opposition candidate ─ Phase 10.2 ────────
+  {
+    id: 'EV058_nimbyEndorsement',
+    category: 'demographics_community',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'nimbyOrganization', gte: 55 },
+      cooldownQuarters: 14,
+    },
+    outlet: 'Star',
+    headline: 'Anti-transit coalition endorses leading opposition candidate',
+    body: '37 homeowner associations endorse the opposition for the next municipal election. If they win, expect frostier City Hall relations and project approval friction.',
+    urgency: 70,
+    choices: [
+      {
+        id: 'ignore',
+        label: 'Stay out of the politics; focus on operations',
+        tradeoff: '-5 City Hall trust (incumbents nervous), +5 NIMBY',
+        effects: [
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -5 },
+          { kind: 'nimbyOrganization', delta: 5 },
+        ],
+      },
+      {
+        id: 'public_engagement',
+        label: 'Counter with public town halls + transparency push',
+        tradeoff: '-$25M comms cash, +5 approval, -8 NIMBY, no political risk',
+        effects: [
+          { kind: 'cash', deltaM: -25 },
+          { kind: 'publicApproval', delta: 5 },
+          { kind: 'nimbyOrganization', delta: -8 },
+        ],
+      },
+      {
+        id: 'lobby_incumbent',
+        label: 'Quietly back the incumbent campaign',
+        tradeoff: '-$5M (improper), +10 City Hall if they win (50%), -10 City Hall if they lose, +5 scrutiny',
+        effects: [
+          { kind: 'cash', deltaM: -5 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 3 },
+          { kind: 'auditorScrutiny', delta: 5 },
+        ],
+      },
+    ],
+  },
+
+  // ── EV059 Anti-transit referendum ─ Phase 10.2 ────────────────────────
+  {
+    id: 'EV059_nimbyReferendum',
+    category: 'demographics_community',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'nimbyOrganization', gte: 70 },
+      cooldownQuarters: 20,
+    },
+    outlet: 'Globe',
+    headline: 'Anti-transit referendum proposed for next municipal election',
+    body: 'Petition with 80,000 signatures forces a referendum question: should the city pause new subway construction until the next masterplan? Polling: 48/52 against.',
+    urgency: 92,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'fund_yes_campaign',
+        label: 'Fund "Yes — keep building" coalition ($60M)',
+        tradeoff: '-$60M cash, -10 NIMBY, +5 City Hall trust, +3 board (decisive)',
+        effects: [
+          { kind: 'cash', deltaM: -60 },
+          { kind: 'nimbyOrganization', delta: -10 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 5 },
+          { kind: 'boardConfidence', delta: 3, reason: 'Defended transit at the ballot box' },
+        ],
+      },
+      {
+        id: 'stay_neutral',
+        label: 'Stay neutral; respect democratic process',
+        tradeoff: '+5 board (proper conduct), +15 NIMBY (referendum likely passes), no cash',
+        effects: [
+          { kind: 'boardConfidence', delta: 5, reason: 'Proper conduct on referendum' },
+          { kind: 'nimbyOrganization', delta: 15 },
+        ],
+      },
+      {
+        id: 'attack_petition',
+        label: 'Challenge petition signatures in court',
+        tradeoff: '-$15M legal, -5 approval (looks bad), +5 scrutiny, 50% chance referendum dismissed',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+          { kind: 'publicApproval', delta: -5 },
+          { kind: 'auditorScrutiny', delta: 5 },
+        ],
+      },
+    ],
+  },
+
   // ── EV056 Auditor General investigation ─ Phase 10 ─────────────────────
   {
     id: 'EV056_auditorInvestigation',

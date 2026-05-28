@@ -241,6 +241,84 @@ export function refinanceTranche(
   };
 }
 
+// ── Community consultation program (Phase 10.2) ─────────────────────────
+// Player-initiated NIMBY mitigation. Costs $15M, drops NIMBY by 15.
+// Gated by City Hall trust ≥ 40 (you need municipal buy-in to do meaningful
+// outreach). 6Q cooldown via lastCommunityConsultationQuarter.
+
+export interface CommunityConsultationQuote {
+  feeM: number;
+  nimbyDelta: number;
+  blockedReason?: string;
+}
+
+export function quoteCommunityConsultation(state: GameState): CommunityConsultationQuote {
+  const cashOnHand = state.cash.balance as unknown as number;
+  const nimby = state.engineVars.nimbyOrganization as unknown as number;
+  const cityHallTrust = state.politics.cityHall.trust as unknown as number;
+  const last = state.engineVars.lastCommunityConsultationQuarter as number | undefined;
+  const currentQ = state.quarter as unknown as number;
+  const feeM = 15;
+  if (nimby < 5) {
+    return { feeM, nimbyDelta: 0, blockedReason: 'No meaningful opposition to consult (<5).' };
+  }
+  if (cityHallTrust < 40) {
+    return { feeM, nimbyDelta: 0, blockedReason: 'Need City Hall trust ≥40 for outreach buy-in.' };
+  }
+  if (last !== undefined && currentQ - last < 6) {
+    const wait = 6 - (currentQ - last);
+    return { feeM, nimbyDelta: 0, blockedReason: `On cooldown — ${wait}Q remaining.` };
+  }
+  if (cashOnHand < feeM) {
+    return { feeM, nimbyDelta: 0, blockedReason: `Need $${feeM}M cash on hand.` };
+  }
+  return { feeM, nimbyDelta: -15 };
+}
+
+export function runCommunityConsultation(state: GameState): {
+  state: GameState;
+  logEntry: ActionLogEntry | null;
+  outcomeSummary: string;
+} {
+  const quote = quoteCommunityConsultation(state);
+  if (quote.blockedReason) {
+    return { state, logEntry: null, outcomeSummary: quote.blockedReason };
+  }
+  const currentQ = state.quarter as unknown as number;
+  const cashOnHand = state.cash.balance as unknown as number;
+  const nimby = state.engineVars.nimbyOrganization as unknown as number;
+  const newNimby = Math.max(0, nimby + quote.nimbyDelta);
+  const oldApproval = state.engineVars.publicApproval as unknown as number;
+  const newApproval = Math.min(100, oldApproval + 3);
+
+  const summary = `-$${quote.feeM}M cash · NIMBY ${nimby}→${newNimby} · approval +3 (community consultation)`;
+  const entry: ActionLogEntry = {
+    kind: 'player_action',
+    id: `q${currentQ}-${state.nextLogId}`,
+    quarter: state.quarter,
+    cause: { kind: 'player' },
+    action: 'runCommunityConsultation',
+    summary,
+  };
+
+  return {
+    state: {
+      ...state,
+      cash: { ...state.cash, balance: cash(cashOnHand - quote.feeM) },
+      engineVars: {
+        ...state.engineVars,
+        nimbyOrganization: score(newNimby),
+        publicApproval: score(newApproval),
+        lastCommunityConsultationQuarter: currentQ,
+      },
+      actionLog: [...state.actionLog, entry],
+      nextLogId: state.nextLogId + 1,
+    },
+    logEntry: entry,
+    outcomeSummary: summary,
+  };
+}
+
 // ── Voluntary value-for-money audit (Phase 10.2) ─────────────────────────
 // Player-initiated audit to lower auditor scrutiny before EV056 fires.
 // Costs $40M, drops scrutiny by 20, +5 approval, +3 each gov trust.
