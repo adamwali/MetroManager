@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '@state/gameStore';
 import { eventTemplateById } from '@engine/events/templates';
 import { interpolateEventText } from '@/utils/eventText';
+import { describeEventTrigger } from '@/utils/eventTrigger';
 import { EventModal } from './EventModal';
 
 /**
@@ -87,6 +88,14 @@ export function Inbox() {
                     <div className="mt-1 text-xs text-neutral-600 line-clamp-2">
                       {interpolateEventText(tmpl.body, state, tmpl.actorCharacterId)}
                     </div>
+                    {(() => {
+                      const why = describeEventTrigger(tmpl, state);
+                      return why ? (
+                        <div className="mt-1.5 rounded bg-amber-100/70 px-2 py-1 text-[10px] text-amber-900">
+                          ↳ {why}
+                        </div>
+                      ) : null;
+                    })()}
                   </button>
                 </li>
               );

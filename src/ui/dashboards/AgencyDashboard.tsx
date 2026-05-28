@@ -30,6 +30,7 @@ import {
   quartersUntilLabel,
 } from '@/utils/humanize';
 import { useDebouncedCommit } from '@/utils/useDebouncedValue';
+import { CashFlowForecast } from '@ui/components/CashFlowForecast';
 
 const SUBSYSTEM_LABELS: Record<SubsystemId, string> = {
   rollingStock: 'Rolling stock',
@@ -151,6 +152,9 @@ export function AgencyDashboard({ agencyId, title, blurb }: AgencyDashboardProps
           </div>
         )}
       </header>
+
+      {/* Live run-rate — updates as you move maintenance/fare/service sliders */}
+      <CashFlowForecast compact />
 
       {/* Summary panel */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
