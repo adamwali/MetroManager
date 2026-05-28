@@ -183,11 +183,27 @@ export function endTurn(state: GameState): GameState {
   });
 
   // 7. Apply project-driven per-agency deltas
-  const agenciesFinal = applyToAgencies(agenciesWithOrganicRidership, (a) => {
+  const agenciesAfterProjects = applyToAgencies(agenciesWithOrganicRidership, (a) => {
     const projectDelta = primaryByAgency[a.id] + cannibalizationByAgency[a.id];
     if (projectDelta === 0) return a;
     const before = a.dailyRiders as unknown as number;
     return { ...a, dailyRiders: riders(Math.max(0, before + projectDelta)) };
+  });
+
+  // 7b. Phase 10.5: scale fare revenue with ridership. Previously
+  // lastQuarterFareRevenue was static — ridership growth didn't translate
+  // into more fare revenue, breaking the project ROI loop. Now revenue
+  // tracks ridership proportionally (clamped to avoid extreme swings).
+  const agenciesFinal = applyToAgencies(agenciesAfterProjects, (a) => {
+    const startingRiders = (state.agencies[a.id].dailyRiders as unknown as number);
+    const endingRiders = a.dailyRiders as unknown as number;
+    if (startingRiders <= 0) return a;
+    const ratio = endingRiders / startingRiders;
+    // Clamp ratio to [0.85, 1.15] per quarter — prevents a single bad event
+    // from halving fare revenue overnight (fare hikes/cuts ladder gradually).
+    const clamped = Math.max(0.85, Math.min(1.15, ratio));
+    const oldFare = a.lastQuarterFareRevenue as unknown as number;
+    return { ...a, lastQuarterFareRevenue: cash(Math.round(oldFare * clamped)) };
   });
 
   // 8. Compose updated state and append quarter_summary log entry

@@ -15,7 +15,7 @@ describe('createInitialGameState', () => {
   it('matches design doc §5 starting numbers', () => {
     const s = createInitialGameState(1);
     expect(s.cash.balance as unknown as number).toBe(1_400);
-    expect(s.operatingAllowance.annualAmount as unknown as number).toBe(3_000);
+    expect(s.operatingAllowance.annualAmount as unknown as number).toBe(3_600);
     expect(s.operatingAllowance.renegotiatesAt as unknown as number).toBe(16);
 
     const totalDebt = s.debt.tranches.reduce(
@@ -91,7 +91,7 @@ describe('operating allowance', () => {
   it('quarterly slice = annual / 4', () => {
     const s = createInitialGameState(0);
     const q = quarterlyOperatingAllowance(s.operatingAllowance) as unknown as number;
-    expect(q).toBe(750);
+    expect(q).toBe(900);
   });
 
   it('does NOT change over time (no inflation indexing in v3.3)', () => {
@@ -196,7 +196,7 @@ describe('endTurn', () => {
     expect(s.quarter as unknown as number).toBe(60);
   });
 
-  it('baseline runs slight operating DEFICIT (~$300-500M/yr)', () => {
+  it('baseline runs near break-even (Phase 10.5 rebalance)', () => {
     const s = createInitialGameState(0);
     const allowanceQ = quarterlyOperatingAllowance(s.operatingAllowance) as unknown as number;
     const fareQ = quarterlyFareRevenue(s.agencies) as unknown as number;
@@ -205,11 +205,12 @@ describe('endTurn', () => {
     const debtServiceQ = quarterlyDebtService(s.debt) as unknown as number;
 
     const annualGap = (allowanceQ + fareQ - opexQ - maintQ - debtServiceQ) * 4;
-    // Want modest deficit: agency loses money at default settings, player must
-    // make tradeoffs to break even. Phase 5.2 added security + cleanliness
-    // budgets to baseline opex (~$135M/Q = $540M/yr), widening the gap.
-    expect(annualGap).toBeLessThan(0);
-    expect(annualGap).toBeGreaterThan(-1200);
+    // Phase 10.5: allowance bumped $2,400 → $3,600 to match real-world city
+    // + province + federal operating subsidies. Baseline now ~break-even;
+    // events drive the cash pressure. Agency should be within $400M/yr of
+    // zero at default settings.
+    expect(annualGap).toBeGreaterThan(-400);
+    expect(annualGap).toBeLessThan(400);
   });
 });
 

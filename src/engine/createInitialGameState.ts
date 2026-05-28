@@ -76,7 +76,7 @@ export function createInitialGameState(
       bocPolicyRate: bp(350),
     },
     operatingAllowance: {
-      annualAmount: cash(3_000),
+      annualAmount: cash(3_600),
       signedAt: quarter(0),
       renegotiatesAt: quarter(16),
       controls: [],

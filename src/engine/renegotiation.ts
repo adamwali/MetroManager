@@ -91,15 +91,18 @@ function shiftTierUp(o: RenegotiationOutcome): RenegotiationOutcome {
 }
 
 function multiplierFor(o: RenegotiationOutcome): number {
+  // Phase 10.5: softer renegotiation outcomes. Previously drasticCut at 0.5
+  // could cascade into fiscal failure; now -25% worst-case, -10% mild
+  // disappointment. Increase is still meaningful at +20%.
   switch (o) {
     case 'increase':
       return 1.2;
     case 'continuation':
       return 1.0;
     case 'decrease':
-      return 0.8;
+      return 0.9;
     case 'drasticCut':
-      return 0.5;
+      return 0.75;
   }
 }
 

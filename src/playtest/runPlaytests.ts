@@ -30,7 +30,7 @@ const ARCHETYPES: CeoArchetype[] = [
   'coalitionBuilder',
   'disruptor',
 ];
-const STRATEGIES: Strategy[] = ['conservative', 'aggressive', 'random', 'reactive'];
+const STRATEGIES: Strategy[] = ['conservative', 'aggressive', 'random', 'reactive', 'balanced'];
 
 function main() {
   const { seeds, maxQuarters, out } = parseArgs();

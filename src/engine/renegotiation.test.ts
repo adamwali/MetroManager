@@ -56,7 +56,7 @@ describe('renegotiation preview', () => {
     };
     const p = previewRenegotiation(s, 'accept');
     expect(p.outcome).toBe('decrease');
-    expect(p.allowanceMultiplier).toBe(0.8);
+    expect(p.allowanceMultiplier).toBe(0.9);
     expect(p.controls.length).toBeGreaterThan(0);
   });
 
@@ -68,7 +68,7 @@ describe('renegotiation preview', () => {
     };
     const p = previewRenegotiation(s, 'accept');
     expect(p.outcome).toBe('drasticCut');
-    expect(p.allowanceMultiplier).toBe(0.5);
+    expect(p.allowanceMultiplier).toBe(0.75);
     expect(p.controls.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -102,7 +102,7 @@ describe('applyRenegotiation', () => {
     crashed = { ...crashed, boardConfidence: { ...crashed.boardConfidence, score: score(15) } };
     const cut = applyRenegotiation(crashed, 'accept');
     expect(cut.operatingAllowance.annualAmount as unknown as number).toBe(
-      Math.round(startAmount * 0.5),
+      Math.round(startAmount * 0.75),
     );
   });
 

@@ -13,7 +13,7 @@ import {
   runCommunityConsultation,
   terminateConsultants,
 } from '@engine/treasuryActions';
-import { adHocFunding } from '@engine/politicalActions';
+import { adHocFunding, quietPitch } from '@engine/politicalActions';
 
 /**
  * Playtest harness. Phase 10.5.
@@ -25,7 +25,7 @@ import { adHocFunding } from '@engine/politicalActions';
  * Pure: no I/O, no DOM. CLI entrypoint serializes results to JSON.
  */
 
-export type Strategy = 'conservative' | 'aggressive' | 'random' | 'reactive';
+export type Strategy = 'conservative' | 'aggressive' | 'random' | 'reactive' | 'balanced';
 
 export interface PlaytestOptions {
   seed: number;
@@ -93,6 +93,50 @@ function pickChoiceReactive(state: GameState, template: EventTemplate): EventCho
   return cashOk ? pickChoiceAggressive(state, template) : pickChoiceConservative(state, template);
 }
 
+function pickChoiceBalanced(state: GameState, template: EventTemplate): EventChoice | null {
+  // Phase 10.5: score each choice on net expected impact.
+  // - cash: $1M = 1 point (most direct)
+  // - board: 1 pt = $5M equivalent (board <20 for 4Q = game over)
+  // - approval: 1 pt = $3M (drives ridership/fare drift)
+  // - gov trust: 1 pt = $4M each (drives allowance renegotiation)
+  // - reliability: 1 pt = $2M (drives ridership directly)
+  // - opex hit: same as cash (one quarter cost)
+  const choices = visibleChoices(state, template);
+  if (choices.length === 0) return null;
+  const cashWeight = (state.cash.balance as unknown as number) < 400 ? 2 : 1; // amplify cash if low
+  const scored = choices.map((c) => ({
+    c,
+    score: c.effects.reduce((acc, e) => {
+      switch (e.kind) {
+        case 'cash':
+          return acc + e.deltaM * cashWeight;
+        case 'boardConfidence':
+          return acc + e.delta * 5;
+        case 'publicApproval':
+          return acc + e.delta * 3;
+        case 'governmentTrust':
+          return acc + e.delta * 4;
+        case 'reliability':
+          return acc + e.delta * 2;
+        case 'opex':
+          return acc - e.deltaM * 1;
+        case 'auditorScrutiny':
+          return acc - e.delta * 2; // scrutiny rising is bad
+        case 'nimbyOrganization':
+          return acc - e.delta * 1;
+        case 'crosslinxLeverage':
+          return acc - e.delta * 1;
+        case 'consultantAlignment':
+          return acc + e.delta * 0.5; // mild positive
+        default:
+          return acc;
+      }
+    }, 0),
+  }));
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0]?.c ?? null;
+}
+
 function costOf(choice: EventChoice): number {
   return choice.effects.reduce(
     (acc, e) => (e.kind === 'cash' && e.deltaM < 0 ? acc + Math.abs(e.deltaM) : acc),
@@ -110,6 +154,8 @@ function pickChoice(strategy: Strategy, state: GameState, template: EventTemplat
       return pickChoiceRandom(state, template, rng);
     case 'reactive':
       return pickChoiceReactive(state, template);
+    case 'balanced':
+      return pickChoiceBalanced(state, template);
   }
 }
 
@@ -125,9 +171,12 @@ function makeRng(seed: number): () => number {
 // ─────────────────────────────────────────────────────────────────────────
 // Periodic player actions (between quarters)
 
-function maybeIssueBondIfLow(state: GameState): GameState {
+function maybeIssueBondIfLow(state: GameState, strategy: Strategy): GameState {
+  // Phase 10.5: smarter bot — issue bonds proactively, not at death's-door.
+  // Conservative waits longer, aggressive bonds earlier.
   const cash = state.cash.balance as unknown as number;
-  if (cash < 200) {
+  const threshold = strategy === 'aggressive' ? 800 : strategy === 'conservative' ? 400 : 600;
+  if (cash < threshold) {
     const r = issueOperatingBond(state, 'pension', 500);
     return r.state;
   }
@@ -136,8 +185,8 @@ function maybeIssueBondIfLow(state: GameState): GameState {
 
 function maybeAskForFunding(state: GameState): GameState {
   const cash = state.cash.balance as unknown as number;
-  if (cash > 500) return state;
-  // Ad-hoc funding from gov with highest trust
+  if (cash > 700) return state;
+  // Ad-hoc funding from gov with highest trust (cooldown enforced inside)
   const govs = ['ottawa', 'queensPark', 'cityHall'] as const;
   const best = [...govs].sort(
     (a, b) =>
@@ -159,6 +208,21 @@ function maybeRunConsultation(state: GameState): GameState {
   const nimby = state.engineVars.nimbyOrganization as unknown as number;
   if (nimby < 40) return state;
   const r = runCommunityConsultation(state);
+  return r.state;
+}
+
+function maybeBoostLowestTrust(state: GameState): GameState {
+  // Phase 10.5: bots maintain political trust so renegotiations don't crash.
+  // Quiet pitch on lowest-trust gov when trust dips below 40.
+  const govs = ['ottawa', 'queensPark', 'cityHall'] as const;
+  const sorted = [...govs].sort(
+    (a, b) =>
+      (state.politics[a].trust as unknown as number) -
+      (state.politics[b].trust as unknown as number),
+  );
+  const lowest = sorted[0]!;
+  if ((state.politics[lowest].trust as unknown as number) >= 45) return state;
+  const r = quietPitch(state, lowest);
   return r.state;
 }
 
@@ -207,8 +271,9 @@ export function runPlaytest(opts: PlaytestOptions): PlaytestRun {
     }
 
     // 2. Player actions based on state
+    state = maybeBoostLowestTrust(state);
     state = maybeAskForFunding(state);
-    state = maybeIssueBondIfLow(state);
+    state = maybeIssueBondIfLow(state, opts.strategy);
     state = maybeCommissionAudit(state);
     state = maybeRunConsultation(state);
     state = maybeManageConsultants(state, opts.strategy);
