@@ -1,7 +1,7 @@
 import type { GameState } from '@/types/gameState';
 import type { CreditorType, DebtTranche } from '@/types/finance';
 import type { ActionLogEntry } from '@/types/actionLog';
-import { bp, cash, quarter } from '@/types/scalars';
+import { bp, cash, quarter, score } from '@/types/scalars';
 import { RATING_OPERATING_BOND_CAPS, RATING_SPREAD_BP } from './rating';
 
 /**
@@ -232,6 +232,80 @@ export function refinanceTranche(
       debt: {
         ...state.debt,
         tranches: state.debt.tranches.map((t) => (t.id === trancheId ? newTranche : t)),
+      },
+      actionLog: [...state.actionLog, entry],
+      nextLogId: state.nextLogId + 1,
+    },
+    logEntry: entry,
+    outcomeSummary: summary,
+  };
+}
+
+// ── Voluntary value-for-money audit (Phase 10.2) ─────────────────────────
+// Player-initiated audit to lower auditor scrutiny before EV056 fires.
+// Costs $40M, drops scrutiny by 20, +5 approval, +3 each gov trust.
+// Cooldown 8Q tracked via lastVoluntaryAuditQuarter on engineVars.
+
+export interface VoluntaryAuditQuote {
+  feeM: number;
+  scrutinyDelta: number;
+  blockedReason?: string;
+}
+
+export function quoteVoluntaryAudit(state: GameState): VoluntaryAuditQuote {
+  const cashOnHand = state.cash.balance as unknown as number;
+  const scrutiny = state.engineVars.auditorScrutiny as unknown as number;
+  const last = state.engineVars.lastVoluntaryAuditQuarter as number | undefined;
+  const currentQ = state.quarter as unknown as number;
+  const feeM = 40;
+  if (scrutiny < 10) {
+    return { feeM, scrutinyDelta: 0, blockedReason: 'Scrutiny too low to justify the spend (<10).' };
+  }
+  if (last !== undefined && currentQ - last < 8) {
+    const wait = 8 - (currentQ - last);
+    return { feeM, scrutinyDelta: 0, blockedReason: `On cooldown — ${wait}Q remaining.` };
+  }
+  if (cashOnHand < feeM) {
+    return { feeM, scrutinyDelta: 0, blockedReason: `Need $${feeM}M cash on hand.` };
+  }
+  return { feeM, scrutinyDelta: -20 };
+}
+
+export function commissionVoluntaryAudit(state: GameState): {
+  state: GameState;
+  logEntry: ActionLogEntry | null;
+  outcomeSummary: string;
+} {
+  const quote = quoteVoluntaryAudit(state);
+  if (quote.blockedReason) {
+    return { state, logEntry: null, outcomeSummary: quote.blockedReason };
+  }
+  const currentQ = state.quarter as unknown as number;
+  const cashOnHand = state.cash.balance as unknown as number;
+  const scrutiny = state.engineVars.auditorScrutiny as unknown as number;
+  const newScrutiny = Math.max(0, scrutiny + quote.scrutinyDelta);
+  const oldApproval = state.engineVars.publicApproval as unknown as number;
+  const newApproval = Math.min(100, oldApproval + 5);
+
+  const summary = `-$${quote.feeM}M cash · scrutiny ${scrutiny}→${newScrutiny} · approval +5 (voluntary VfM audit)`;
+  const entry: ActionLogEntry = {
+    kind: 'player_action',
+    id: `q${currentQ}-${state.nextLogId}`,
+    quarter: state.quarter,
+    cause: { kind: 'player' },
+    action: 'commissionVoluntaryAudit',
+    summary,
+  };
+
+  return {
+    state: {
+      ...state,
+      cash: { ...state.cash, balance: cash(cashOnHand - quote.feeM) },
+      engineVars: {
+        ...state.engineVars,
+        auditorScrutiny: score(newScrutiny),
+        publicApproval: score(newApproval),
+        lastVoluntaryAuditQuarter: currentQ,
       },
       actionLog: [...state.actionLog, entry],
       nextLogId: state.nextLogId + 1,

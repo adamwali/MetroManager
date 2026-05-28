@@ -25,6 +25,7 @@ import { executePoliticalAction } from '@engine/politicalActions';
 import {
   issueOperatingBond,
   refinanceTranche,
+  commissionVoluntaryAudit,
 } from '@engine/treasuryActions';
 import {
   addStandingOrder,
@@ -121,6 +122,7 @@ export interface GameStore {
   /** Treasury actions (Phase 7). */
   issueOperatingBond: (creditor: CreditorType, amountM: number) => void;
   refinanceTranche: (trancheId: string) => void;
+  commissionVoluntaryAudit: () => void;
   /** Standing orders (Phase 8.1). */
   addStandingOrder: (order: StandingOrderWithoutId) => void;
   removeStandingOrder: (orderId: string) => void;
@@ -382,6 +384,14 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
     refinanceTranche: (trancheId) => {
       const result = refinanceTranche(get().state, trancheId);
+      if (result.state === get().state) return;
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    commissionVoluntaryAudit: () => {
+      const result = commissionVoluntaryAudit(get().state);
       if (result.state === get().state) return;
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)

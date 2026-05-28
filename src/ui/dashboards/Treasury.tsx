@@ -93,6 +93,9 @@ export function Treasury() {
       {/* Financial statements — P&L / Cash flow / Balance sheet, quarters as columns */}
       <FinancialStatements />
 
+      {/* Institutional pressure — auditor scrutiny, NIMBY, consultants, Crosslinx */}
+      <InstitutionalPressurePanel />
+
       {/* Operating bond issuance */}
       <BondIssuanceCard />
 
@@ -295,6 +298,162 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div>
       <div className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
       <div className="num mt-0.5 text-sm font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function InstitutionalPressurePanel() {
+  const state = useGameStore((s) => s.state);
+  const commission = useGameStore((s) => s.commissionVoluntaryAudit);
+  const scrutiny = state.engineVars.auditorScrutiny as unknown as number;
+  const nimby = state.engineVars.nimbyOrganization as unknown as number;
+  const crosslinx = state.engineVars.crosslinxLeverage as unknown as number;
+  const consultant = state.engineVars.consultantAlignment as unknown as number;
+  const last = state.engineVars.lastVoluntaryAuditQuarter;
+  const currentQ = state.quarter as unknown as number;
+  const cashOnHand = state.cash.balance as unknown as number;
+
+  const auditCooldown = last !== undefined ? Math.max(0, 8 - (currentQ - last)) : 0;
+  const auditBlocked =
+    scrutiny < 10
+      ? 'Scrutiny too low to justify'
+      : auditCooldown > 0
+        ? `On cooldown — ${auditCooldown}Q left`
+        : cashOnHand < 40
+          ? 'Need $40M cash'
+          : null;
+
+  return (
+    <section className="rounded-md border border-neutral-200 bg-white p-4">
+      <header className="mb-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+          Institutional pressure
+        </h3>
+        <p className="text-[11px] text-neutral-500 mt-0.5">
+          Background forces that don't show up in the P&L but shape what events fire and how costly they get.
+        </p>
+      </header>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <PressureCard
+          label="Auditor scrutiny"
+          value={scrutiny}
+          scale={100}
+          tone={scrutiny >= 50 ? 'red' : scrutiny >= 30 ? 'amber' : 'neutral'}
+          hint={
+            scrutiny >= 50
+              ? 'EV056 investigation imminent'
+              : scrutiny >= 30
+                ? 'Building — consider voluntary audit'
+                : 'Background level'
+          }
+        />
+        <PressureCard
+          label="NIMBY organization"
+          value={nimby}
+          scale={100}
+          tone={nimby >= 60 ? 'red' : nimby >= 40 ? 'amber' : 'neutral'}
+          hint={
+            nimby >= 60
+              ? 'Referendum risk'
+              : nimby >= 40
+                ? 'Council motions likely'
+                : 'Manageable'
+          }
+        />
+        <PressureCard
+          label="Crosslinx leverage"
+          value={crosslinx}
+          scale={100}
+          tone={crosslinx >= 70 ? 'red' : crosslinx >= 55 ? 'amber' : 'neutral'}
+          hint={
+            crosslinx >= 70
+              ? 'Change orders inbound'
+              : crosslinx >= 55
+                ? 'Contractor dominant'
+                : 'You hold the leverage'
+          }
+        />
+        <PressureCard
+          label="Consultant alignment"
+          value={consultant}
+          scale={100}
+          signedScale
+          tone={consultant <= -40 ? 'red' : consultant >= 30 ? 'amber' : 'neutral'}
+          hint={
+            consultant <= -40
+              ? 'Hostile op-eds active'
+              : consultant >= 30
+                ? '+1 QP/Q · -3 approval'
+                : 'Neutral'
+          }
+        />
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2">
+        <div>
+          <div className="text-xs font-semibold text-neutral-800">Voluntary value-for-money audit</div>
+          <div className="text-[11px] text-neutral-500">
+            -$40M · scrutiny -20 · approval +5 · 8Q cooldown
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => commission()}
+          disabled={auditBlocked !== null}
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white disabled:bg-neutral-300"
+          title={auditBlocked ?? 'Commission audit'}
+        >
+          {auditBlocked ?? 'Commission audit'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function PressureCard({
+  label,
+  value,
+  scale,
+  tone,
+  hint,
+  signedScale,
+}: {
+  label: string;
+  value: number;
+  scale: number;
+  tone: 'red' | 'amber' | 'neutral';
+  hint: string;
+  signedScale?: boolean;
+}) {
+  // signedScale: value is -100..100, map to 0..200 for bar
+  const barPct = signedScale
+    ? Math.max(0, Math.min(100, ((value + 100) / 200) * 100))
+    : Math.max(0, Math.min(100, (value / scale) * 100));
+  const barClass =
+    tone === 'red'
+      ? 'bg-red-400'
+      : tone === 'amber'
+        ? 'bg-amber-400'
+        : 'bg-neutral-400';
+  const textClass =
+    tone === 'red'
+      ? 'text-red-700'
+      : tone === 'amber'
+        ? 'text-amber-700'
+        : 'text-neutral-700';
+  return (
+    <div className="rounded-md border border-neutral-200 p-2">
+      <div className="flex items-baseline justify-between">
+        <div className="text-[10px] uppercase tracking-wider text-neutral-500">{label}</div>
+        <div className={`num text-sm font-semibold ${textClass}`}>
+          {signedScale && value > 0 ? '+' : ''}
+          {value.toFixed(0)}
+        </div>
+      </div>
+      <div className="mt-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+        <div className={`h-full ${barClass}`} style={{ width: `${barPct}%` }} />
+      </div>
+      <div className={`mt-1 text-[10px] ${textClass}`}>{hint}</div>
     </div>
   );
 }

@@ -334,11 +334,23 @@ export function endTurn(state: GameState): GameState {
     (state.engineVars.nimbyOrganization as unknown as number) - 2,
   );
 
-  // Phase 10: auditor scrutiny decays -1/Q with no new incidents (slow). At
-  // ≥50 the EV056 audit investigation event will fire (handled by predicate).
+  // Phase 10: auditor scrutiny — decays -1/Q, but raised by structural
+  // signals that real auditors would notice: heavy refi activity, fiscal
+  // stress, big capital draws relative to budget.
+  let scrutinyAdj = -1; // baseline decay
+  if (actualTranchesRefinanced >= 3) scrutinyAdj += 3; // unusual refi volume
+  if (nextBalance < 0) scrutinyAdj += 5; // fiscal stress visible
+  else if (nextBalance < 200) scrutinyAdj += 2; // cash thin
+  // Large quarterly capex draw on a single project (>$500M) draws Auditor
+  // General attention to procurement practices on that project.
+  const maxSingleDraw = constructionDraws.reduce(
+    (a, d) => Math.max(a, d.drawn ?? 0),
+    0,
+  );
+  if (maxSingleDraw > 500) scrutinyAdj += 2;
   const auditorDecayed = Math.max(
     0,
-    (state.engineVars.auditorScrutiny as unknown as number) - 1,
+    Math.min(100, (state.engineVars.auditorScrutiny as unknown as number) + scrutinyAdj),
   );
 
   // Phase 5.2: cleanliness budgets drift public approval each quarter.

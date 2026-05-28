@@ -473,10 +473,11 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'fight_claim',
         label: 'Fight the claim in arbitration',
-        tradeoff: '-$80M legal cash, -2 reliability hit if Crosslinx slows work',
+        tradeoff: '-$80M legal cash, -2 reliability, +5 auditor scrutiny (legal docs become evidence)',
         effects: [
           { kind: 'cash', deltaM: -80 },
           { kind: 'reliability', agency: 'ttc', delta: -2 },
+          { kind: 'auditorScrutiny', delta: 5 },
         ],
       },
       {
@@ -2099,7 +2100,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     trigger: {
       kind: 'conditional',
       predicate: { kind: 'auditorScrutiny', gte: 50 },
-      cooldownQuarters: 12,
+      cooldownQuarters: 6,
     },
     outlet: 'Globe',
     headline: "Auditor General opens formal investigation of GTTA practices",

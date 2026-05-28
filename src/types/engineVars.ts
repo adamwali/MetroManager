@@ -29,4 +29,9 @@ export interface EngineVars {
    * Starts 15 (low background level).
    */
   auditorScrutiny: Score100;
+  /**
+   * Quarter (as number) at which the player last commissioned a voluntary
+   * value-for-money audit. Used to enforce 8Q cooldown. Undefined = never.
+   */
+  lastVoluntaryAuditQuarter?: number;
 }
