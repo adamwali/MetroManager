@@ -4,19 +4,16 @@ import { useGameStore, useHistory } from '@state/gameStore';
 import { TraceDrawer } from './TraceDrawer';
 import type { TraceMetric } from '@/utils/trace';
 import {
-  describeBoardConfidence,
   describeCashRunway,
   describeRidersDelta,
-  describeTrust,
   formatMoney,
   formatMoneyDelta,
   formatPctDelta,
   formatRiders,
   formatRidersDelta,
-  quartersUntilLabel,
 } from '@/utils/humanize';
 import { deriveKpis } from '@/utils/kpis';
-import { Kpi } from './Kpi';
+import { Kpi, StatBar } from './Kpi';
 import { Sparkline } from './Sparkline';
 
 /**
@@ -37,12 +34,32 @@ export function TopStrip() {
 
   const cashSpark = history.map((h) => h.cash);
   const ridersSpark = history.map((h) => h.totalRiders);
-  const currentQ = state.quarter as unknown as number;
 
   const cashBalance = state.cash.balance as unknown as number;
   const cashDelta = state.cash.lastQuarterDelta as unknown as number;
   const cashTone =
     cashBalance < 0 ? 'critical' : cashBalance < 500 ? 'warning' : 'neutral';
+
+  // Phase 10.9: confidence/support metrics as compact bars showing the
+  // change since last quarter close. Prev values come from the most recent
+  // quarter_summary's endOfQuarterMetrics; current values from live state
+  // (so mid-quarter events/actions visibly move the delta).
+  const board = state.boardConfidence.score as unknown as number;
+  const approval = state.engineVars.publicApproval as unknown as number;
+  const trustOttawa = state.politics.ottawa.trust as unknown as number;
+  const trustQp = state.politics.queensPark.trust as unknown as number;
+  const trustCity = state.politics.cityHall.trust as unknown as number;
+  const lastSummary = [...state.actionLog]
+    .reverse()
+    .find((e) => e.kind === 'quarter_summary');
+  const m = lastSummary?.kind === 'quarter_summary' ? lastSummary.breakdown.endOfQuarterMetrics : undefined;
+  const prev = {
+    board: m?.boardConfidence ?? board,
+    approval: m?.publicApproval ?? approval,
+    ottawa: m?.trustOttawa ?? trustOttawa,
+    queensPark: m?.trustQueensPark ?? trustQp,
+    cityHall: m?.trustCityHall ?? trustCity,
+  };
 
   return (
     <div className="flex flex-wrap items-stretch gap-2 px-3 py-2">
@@ -96,86 +113,51 @@ export function TopStrip() {
         />
       </Section>
 
-      {/* GROUP 3: Confidence + trust + approval */}
-      <Section label="Confidence" cols={5}>
-        <Kpi
-          label="Board"
-          value={`${(state.boardConfidence.score as unknown as number).toFixed(0)}`}
-          caption={describeBoardConfidence(state.boardConfidence.score as unknown as number)}
-          tone={
-            (state.boardConfidence.score as unknown as number) < 25
-              ? 'critical'
-              : (state.boardConfidence.score as unknown as number) < 40
-                ? 'warning'
-                : 'neutral'
-          }
-          onClick={() => setTraceMetric('boardConfidence')}
-          helpText="Board confidence 0-100. Below 20 for 4Q gets you fired. Driven by delivery wins, financial discipline, reliability, scandals."
-        />
-        <Kpi
-          label="Approval"
-          value={`${(state.engineVars.publicApproval as unknown as number).toFixed(0)}`}
-          caption={
-            (state.engineVars.publicApproval as unknown as number) < 35
-              ? 'hostile'
-              : (state.engineVars.publicApproval as unknown as number) < 50
-                ? 'cool'
-                : (state.engineVars.publicApproval as unknown as number) < 65
-                  ? 'mixed'
-                  : 'supportive'
-          }
-          tone={
-            (state.engineVars.publicApproval as unknown as number) < 30
-              ? 'critical'
-              : (state.engineVars.publicApproval as unknown as number) < 45
-                ? 'warning'
-                : 'neutral'
-          }
-          onClick={() => setTraceMetric('publicApproval')}
-          helpText="Public approval 0-100. Voter sentiment about the agency. Separate from Satisfaction (which is rider-experience derived). Drops on fare hikes, scandals, hostile op-eds. Affects ridership drift over time."
-        />
-        <Kpi
-          label="Ottawa"
-          value={`${(state.politics.ottawa.trust as unknown as number).toFixed(0)}`}
-          caption={`${describeTrust(state.politics.ottawa.trust as unknown as number)} · ${quartersUntilLabel((state.politics.ottawa.nextElectionAt as unknown as number) - currentQ)} to election`}
-          tone={
-            (state.politics.ottawa.trust as unknown as number) < 25
-              ? 'critical'
-              : (state.politics.ottawa.trust as unknown as number) < 40
-                ? 'warning'
-                : 'neutral'
-          }
-          onClick={() => setTraceMetric('trust:ottawa')}
-          helpText="Federal trust 0-100. Affects financing offer rates + ad-hoc funding eligibility. Built by quiet pitch (+3) or public lobby (+6, -5 approval)."
-        />
-        <Kpi
-          label="Queen's Park"
-          value={`${(state.politics.queensPark.trust as unknown as number).toFixed(0)}`}
-          caption={`${describeTrust(state.politics.queensPark.trust as unknown as number)} · ${quartersUntilLabel((state.politics.queensPark.nextElectionAt as unknown as number) - currentQ)} to election`}
-          tone={
-            (state.politics.queensPark.trust as unknown as number) < 25
-              ? 'critical'
-              : (state.politics.queensPark.trust as unknown as number) < 40
-                ? 'warning'
-                : 'neutral'
-          }
-          onClick={() => setTraceMetric('trust:queensPark')}
-          helpText="Provincial trust 0-100. Sets your operating allowance at Y4/Y8/Y12. Insider can call-in-favor for +$400M if ≥60."
-        />
-        <Kpi
-          label="City Hall"
-          value={`${(state.politics.cityHall.trust as unknown as number).toFixed(0)}`}
-          caption={`${describeTrust(state.politics.cityHall.trust as unknown as number)} · ${quartersUntilLabel((state.politics.cityHall.nextElectionAt as unknown as number) - currentQ)} to election`}
-          tone={
-            (state.politics.cityHall.trust as unknown as number) < 25
-              ? 'critical'
-              : (state.politics.cityHall.trust as unknown as number) < 40
-                ? 'warning'
-                : 'neutral'
-          }
-          onClick={() => setTraceMetric('trust:cityHall')}
-          helpText="City Hall trust 0-100. Sensitive to fare hikes + accessibility issues from Mayor Liang."
-        />
+      {/* GROUP 3: Confidence + trust + approval — compact fill-bars that
+          show quarter-over-quarter movement so decisions feel visible. */}
+      <Section label="Confidence + support" cols={1}>
+        <div className="grid gap-x-3 gap-y-0.5 sm:grid-cols-2 min-w-[280px]">
+          <StatBar
+            label="Board"
+            value={board}
+            delta={board - prev.board}
+            tone={board < 25 ? 'critical' : board < 40 ? 'warning' : 'neutral'}
+            onClick={() => setTraceMetric('boardConfidence')}
+            helpText="Board confidence 0-100. Below 25 for 2Q gets you fired. Drifts +1/Q toward 60. Driven by delivery wins, financial discipline, reliability, scandals."
+          />
+          <StatBar
+            label="Public approval"
+            value={approval}
+            delta={approval - prev.approval}
+            tone={approval < 30 ? 'critical' : approval < 45 ? 'warning' : 'neutral'}
+            onClick={() => setTraceMetric('publicApproval')}
+            helpText="Voter sentiment 0-100. Drops on fare hikes, scandals, hostile op-eds. Raised by cleanliness budgets, wins. Drifts ridership over time."
+          />
+          <StatBar
+            label="Ottawa"
+            value={trustOttawa}
+            delta={trustOttawa - prev.ottawa}
+            tone={trustOttawa < 25 ? 'critical' : trustOttawa < 40 ? 'warning' : 'neutral'}
+            onClick={() => setTraceMetric('trust:ottawa')}
+            helpText="Federal trust. Lowers project financing rates. Built by quiet pitch (+3) or public lobby (+6, -5 approval)."
+          />
+          <StatBar
+            label="Queen's Park"
+            value={trustQp}
+            delta={trustQp - prev.queensPark}
+            tone={trustQp < 25 ? 'critical' : trustQp < 40 ? 'warning' : 'neutral'}
+            onClick={() => setTraceMetric('trust:queensPark')}
+            helpText="Provincial trust. Sets your operating allowance at renegotiation. Insider can call-in-favor for cash if relationship is high."
+          />
+          <StatBar
+            label="City Hall"
+            value={trustCity}
+            delta={trustCity - prev.cityHall}
+            tone={trustCity < 25 ? 'critical' : trustCity < 40 ? 'warning' : 'neutral'}
+            onClick={() => setTraceMetric('trust:cityHall')}
+            helpText="City Hall trust. Sensitive to fare hikes + accessibility underfunding."
+          />
+        </div>
       </Section>
 
       <TraceDrawer metric={traceMetric} onClose={() => setTraceMetric(null)} />

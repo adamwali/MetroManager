@@ -115,3 +115,94 @@ export function Kpi({
     </Comp>
   );
 }
+
+interface StatBarProps {
+  label: string;
+  /** 0-100 value. */
+  value: number;
+  /** Change since last quarter (signed). Undefined = no history yet. */
+  delta?: number;
+  tone?: 'neutral' | 'positive' | 'warning' | 'critical';
+  onClick?: () => void;
+  helpText?: string;
+}
+
+const BAR_FILL: Record<NonNullable<StatBarProps['tone']>, string> = {
+  neutral: 'bg-blue-400',
+  positive: 'bg-emerald-400',
+  warning: 'bg-amber-400',
+  critical: 'bg-red-400',
+};
+
+/**
+ * Compact horizontal fill-bar for a 0-100 sentiment metric. Shows the value
+ * as a filled bar (so you can glance the level), plus the quarter-over-quarter
+ * delta as a colored arrow (so you can SEE your decisions move it). Phase 10.9
+ * — replaces the dense "67/100" number cells per player feedback that it was
+ * hard to feel cause→effect.
+ */
+export function StatBar({ label, value, delta, tone = 'neutral', onClick, helpText }: StatBarProps) {
+  const interactive = onClick !== undefined;
+  const Comp: 'button' | 'div' = interactive ? 'button' : 'div';
+  const [showHelp, setShowHelp] = useState(false);
+  const pct = Math.max(0, Math.min(100, value));
+  const hasDelta = delta !== undefined && Math.abs(delta) >= 0.5;
+  const deltaUp = (delta ?? 0) > 0;
+  return (
+    <Comp
+      type={interactive ? 'button' : undefined}
+      onClick={onClick}
+      className={`relative flex flex-col gap-1 rounded-md px-2 py-1.5 text-left w-full ${
+        interactive ? 'cursor-pointer hover:bg-neutral-50' : ''
+      }`}
+      title={interactive ? `Click to trace ${label}` : undefined}
+    >
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500 inline-flex items-center gap-0.5">
+          {label}
+          {helpText && (
+            <span
+              role="button"
+              tabIndex={0}
+              className="text-neutral-400 hover:text-blue-600 cursor-help"
+              onMouseEnter={() => setShowHelp(true)}
+              onMouseLeave={() => setShowHelp(false)}
+              onFocus={() => setShowHelp(true)}
+              onBlur={() => setShowHelp(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowHelp((v) => !v);
+              }}
+              aria-label={`Help: ${helpText}`}
+            >
+              ⓘ
+            </span>
+          )}
+        </span>
+        <span className="num inline-flex items-baseline gap-1 text-[11px] font-bold text-neutral-800">
+          {value.toFixed(0)}
+          {hasDelta && (
+            <span className={deltaUp ? 'text-emerald-600' : 'text-red-600'}>
+              {deltaUp ? '▲' : '▼'}
+              {Math.abs(delta!).toFixed(0)}
+            </span>
+          )}
+        </span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${BAR_FILL[tone]}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {helpText && showHelp && (
+        <div
+          className="absolute left-1/2 top-full z-30 mt-1 w-64 max-w-[16rem] -translate-x-1/2 rounded-md border border-neutral-200 bg-neutral-900 text-white px-3 py-2 text-[11px] leading-snug shadow-lg pointer-events-none"
+          role="tooltip"
+        >
+          {helpText}
+        </div>
+      )}
+    </Comp>
+  );
+}
