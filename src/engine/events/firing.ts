@@ -37,11 +37,12 @@ function applyElectionOutcome(state: GameState, templateId: string): GameState {
   const trustRoll = keyedFloat(state.rng.masterSeed, `election:${gov}:trust:q${q}`);
   const trustDelta = Math.round(trustRoll * 20 - 12);
   const currentTrust = state.politics[gov].trust as unknown as number;
-  const newTrust = Math.max(0, Math.min(100, currentTrust + trustDelta));
+  let newTrust = Math.max(0, Math.min(100, currentTrust + trustDelta));
 
-  // Party flip: 35% chance
+  // Party flip: 35% chance. Lower-trust incumbents flip more often.
   const flipRoll = keyedFloat(state.rng.masterSeed, `election:${gov}:flip:q${q}`);
-  const partyChanged = flipRoll < 0.35;
+  const flipProbability = currentTrust < 35 ? 0.55 : currentTrust < 50 ? 0.4 : 0.25;
+  const partyChanged = flipRoll < flipProbability;
   const PARTY_ORDER: ('liberal' | 'conservative' | 'other')[] = [
     'liberal',
     'conservative',
@@ -49,21 +50,39 @@ function applyElectionOutcome(state: GameState, templateId: string): GameState {
   ];
   const currentParty = state.politics[gov].partyInPower;
   let newParty = currentParty;
+  let nextCharacters = state.characters;
   if (partyChanged) {
     const alternates = PARTY_ORDER.filter((p) => p !== currentParty);
     const partyPickRoll = keyedFloat(state.rng.masterSeed, `election:${gov}:party:q${q}`);
     newParty = alternates[Math.floor(partyPickRoll * alternates.length)]!;
+
+    // Phase 10.7 audit fix: cabinet reshuffle on party flip. New ministers
+    // = relationships reset. Previously party could flip with no downstream
+    // effect on character relationships (which were already orphan-but-now-
+    // -consumed by callInFavor / adHocFunding).
+    nextCharacters = { ...state.characters };
+    for (const charId of state.politics[gov].cabinetCharacterIds) {
+      const char = nextCharacters[charId];
+      if (!char) continue;
+      nextCharacters[charId] = {
+        ...char,
+        relationship: 0 as unknown as typeof char.relationship,
+      };
+    }
+    // Trust also takes an extra -8 hit on a flip: new minister needs briefing.
+    newTrust = Math.max(0, newTrust - 8);
   }
 
   return {
     ...state,
+    characters: nextCharacters,
     politics: {
       ...state.politics,
       [gov]: {
         ...state.politics[gov],
         trust: score(newTrust),
         partyInPower: newParty,
-        // Re-arm the election clock: 8 quarters out (Phase 6.1 will refine)
+        // Re-arm the election clock: 8 quarters out
         nextElectionAt: ((q + 8) as unknown) as typeof state.politics[typeof gov]['nextElectionAt'],
       },
     },

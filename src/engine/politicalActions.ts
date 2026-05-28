@@ -228,7 +228,15 @@ export function adHocFunding(state: GameState, gov: GovernmentId): PoliticalActi
   }
   // Cash injection: $150M base, scaled by trust (high trust = more)
   const trust = state.politics[gov].trust as unknown as number;
-  const cashM = Math.round(100 + (trust / 100) * 150);
+  // Phase 10.7 audit fix: cabinet minister relationship adds a smaller bonus
+  // (up to +$50M). Acknowledges that personal ties speed up an ad-hoc ask.
+  const cabinetIds = state.politics[gov].cabinetCharacterIds;
+  const ministerId = cabinetIds[0];
+  const minister = ministerId ? state.characters[ministerId] : undefined;
+  const relationship = (minister?.relationship as unknown as number) ?? 0;
+  const baseCash = 100 + (trust / 100) * 150;
+  const relationshipBonus = Math.max(0, relationship) * 0.5; // up to +$50M at rel 100
+  const cashM = Math.round(baseCash + relationshipBonus);
   let s: GameState = {
     ...state,
     cash: {
@@ -248,17 +256,35 @@ export function callInFavor(state: GameState, gov: GovernmentId): PoliticalActio
   if (!isActionEligible(state, gov, 'callInFavor')) {
     return { state, logEntry: null, outcomeSummary: 'Action unavailable' };
   }
+  // Phase 10.7 audit fix: Character.relationship was previously written but
+  // never consumed. Now it gates and modulates callInFavor — the deepest /
+  // most personal political action. Below 0 relationship = locked
+  // (minister won't take the call). Above that, favor size scales linearly.
+  const cabinetIds = state.politics[gov].cabinetCharacterIds;
+  const ministerId = cabinetIds[0];
+  const minister = ministerId ? state.characters[ministerId] : undefined;
+  const relationship = (minister?.relationship as unknown as number) ?? 0;
+  if (relationship < 0) {
+    return {
+      state,
+      logEntry: null,
+      outcomeSummary: `Minister won't take the call — relationship is too poor (${relationship}).`,
+    };
+  }
+  // Base $250M + $3M per relationship point. Default (rel 50) = $400M
+  // (matches pre-Phase-10.7 favor size). rel 0 = $250M. rel 100 = $550M.
+  const favorM = Math.round(250 + Math.max(0, relationship) * 3);
   let s: GameState = {
     ...state,
     cash: {
       ...state.cash,
-      balance: cash((state.cash.balance as unknown as number) + 400),
+      balance: cash((state.cash.balance as unknown as number) + favorM),
     },
   };
   s = shiftTrust(s, gov, 5);
   s = shiftCabinetRelationship(s, gov, 8); // favor is intimate — big relationship boost
   s = setCooldown(s, gov, 'callInFavor');
-  const summary = `Called in favor with ${GOV_LABEL[gov]} → +$400M cash, +5 trust (limited use)`;
+  const summary = `Called in favor with ${GOV_LABEL[gov]} (rel ${relationship}) → +$${favorM}M cash, +5 trust`;
   const r = appendLog(s, 'callInFavor', gov, summary);
   return { state: r.state, logEntry: r.entry, outcomeSummary: summary };
 }

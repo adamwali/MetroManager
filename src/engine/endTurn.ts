@@ -272,17 +272,30 @@ export function endTurn(state: GameState): GameState {
         up: agenciesFinal.up.dailyRiders as unknown as number,
       },
       // Phase 10 financial overhaul: per-agency breakdown for drill-down.
-      // NOTE: lastQuarterOpex already includes service-quality budgets via
-      // cashflow.ts:quarterlyOperatingExpense, so DON'T add them again.
+      // Phase 10.7 audit fix: the audit comment WAS WRONG — lastQuarterOpex
+      // is just the base agency opex; service quality budgets are added on
+      // top in cashflow.ts:quarterlyOperatingExpense but NOT in this field.
+      // The per-agency P&L was previously showing ~$120M/Q TOO LITTLE on TTC
+      // because the security/cleanliness/accessibility line items were
+      // invisible. Now we sum them in for the breakdown view.
       perAgencyFareRevenue: {
         ttc: agenciesFinal.ttc.lastQuarterFareRevenue as unknown as number,
         go: agenciesFinal.go.lastQuarterFareRevenue as unknown as number,
         up: agenciesFinal.up.lastQuarterFareRevenue as unknown as number,
       },
       perAgencyOpex: {
-        ttc: agenciesFinal.ttc.lastQuarterOpex as unknown as number,
-        go: agenciesFinal.go.lastQuarterOpex as unknown as number,
-        up: agenciesFinal.up.lastQuarterOpex as unknown as number,
+        ttc: (agenciesFinal.ttc.lastQuarterOpex as unknown as number) +
+          (agenciesFinal.ttc.operatingParams.securityBudget as unknown as number) +
+          (agenciesFinal.ttc.operatingParams.cleanlinessBudget as unknown as number) +
+          (agenciesFinal.ttc.operatingParams.accessibilityBudget as unknown as number),
+        go: (agenciesFinal.go.lastQuarterOpex as unknown as number) +
+          (agenciesFinal.go.operatingParams.securityBudget as unknown as number) +
+          (agenciesFinal.go.operatingParams.cleanlinessBudget as unknown as number) +
+          (agenciesFinal.go.operatingParams.accessibilityBudget as unknown as number),
+        up: (agenciesFinal.up.lastQuarterOpex as unknown as number) +
+          (agenciesFinal.up.operatingParams.securityBudget as unknown as number) +
+          (agenciesFinal.up.operatingParams.cleanlinessBudget as unknown as number) +
+          (agenciesFinal.up.operatingParams.accessibilityBudget as unknown as number),
       },
       perAgencyMaintenance: {
         ttc: agenciesFinal.ttc.subsystems.reduce((a, s) => a + (s.maintenanceBudget as unknown as number), 0),
