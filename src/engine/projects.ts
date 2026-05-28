@@ -35,10 +35,17 @@ export function tickConstructingProject(
   const buildLength = Math.max(1, forecastOpenQ - brokeGroundQ);
   const baseBurn = (p.totalBudget as unknown as number) / buildLength;
   const engineerMul = Math.max(0.5, Math.min(1.5, engineers / BASELINE_ENGINEERS));
-  // Phase 6.3.2: Crosslinx leverage affects construction cost. 50 = neutral;
-  // 100 = -10% cost (contractor delivers efficiently); 0 = +10% cost
+  // Phase 10.7 audit fix: Crosslinx leverage was INVERTED at the construction
+  // burn site (high leverage = cheaper burn) while the cost estimate at the
+  // catalog correctly penalized high leverage (+9% at 100). The player saw
+  // a higher upfront cost AND a faster-burning project at high leverage,
+  // a contradiction. Now matches the catalog formula: high leverage = +%
+  // construction cost (consortium extracts change orders during build).
   // (contractor extracts rents). Wires the previously-orphan engineVar.
-  const leverageMul = 1 + ((50 - crosslinxLeverage) * 0.002);
+  // Baseline 55 (matches projectCatalog), max +9% premium at leverage=100.
+  // No discount below baseline (player can't bully past the alignment min).
+  const leveragePremium = Math.min(0.09, Math.max(0, (crosslinxLeverage - 55) * 0.002));
+  const leverageMul = 1 + leveragePremium;
   const burnPerQuarter = baseBurn * engineerMul * leverageMul;
   const spentSoFar = (p.spent as unknown as number) + burnPerQuarter;
   const remainingAfter = Math.max(0, (p.remainingFunding as unknown as number) - burnPerQuarter);

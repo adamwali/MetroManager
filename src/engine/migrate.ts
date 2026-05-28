@@ -58,7 +58,8 @@ export function migrateLoadedState(loaded: unknown): GameState {
     const ev = { ...next.engineVars };
     if (ev.crosslinxLeverage === undefined) ev.crosslinxLeverage = score(55);
     if (ev.consultantAlignment === undefined) ev.consultantAlignment = signed(0);
-    if (ev.nimbyOrganization === undefined) ev.nimbyOrganization = score(0);
+    // Phase 10.7 audit fix: migrate fallback was 0 but designed start is 25.
+    if (ev.nimbyOrganization === undefined) ev.nimbyOrganization = score(25);
     if (ev.templates === undefined) ev.templates = score(30);
     if (ev.engineers === undefined) ev.engineers = 180;
     if (ev.publicApproval === undefined) ev.publicApproval = score(50);

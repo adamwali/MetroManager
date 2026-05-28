@@ -459,6 +459,19 @@ export function endTurn(state: GameState): GameState {
     consultantAlignment: nextAlignment as unknown as typeof state.engineVars.consultantAlignment,
   };
 
+  // Phase 10.7 audit fix: board confidence now drifts +1/Q toward 60 (the
+  // designed "neutral" anchor). Previously the BoardConfidenceFactor enum
+  // had 'driftTowardSixty' but no code applied it — board could only crash
+  // via events, never passively recover. This created a death spiral risk:
+  // one bad quarter → low board → can't negotiate well → worse outcomes.
+  const curBoard = state.boardConfidence.score as unknown as number;
+  const boardDrift = curBoard < 60 ? 1 : curBoard > 60 ? -1 : 0;
+  const driftedBoardScore = Math.max(0, Math.min(100, curBoard + boardDrift));
+  const boardConfidenceWithDrift = {
+    ...state.boardConfidence,
+    score: score(driftedBoardScore),
+  };
+
   // Compose the post-tick state before event processing
   const postTick: GameState = {
     ...state,
@@ -473,6 +486,7 @@ export function endTurn(state: GameState): GameState {
     gameOverCounters: nextCounters,
     activeObligations,
     engineVars: engineVarsDecayed,
+    boardConfidence: boardConfidenceWithDrift,
     ...(gameOver ? { gameOver } : {}),
   };
 

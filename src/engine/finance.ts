@@ -21,7 +21,7 @@ const RATING_SPREAD: Record<CreditRating, number> = {
   BBB: 280,
   BB: 450,
   B: 700,
-  CCC: 1100,
+  CCC: 1000, // Phase 10.7 audit fix: was 1100, mismatched rating.ts:117 (1000)
 };
 
 export function ratingSpreadBp(rating: CreditRating): BasisPoints {

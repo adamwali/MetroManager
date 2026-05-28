@@ -1,5 +1,6 @@
 import type { GameState } from '@/types/gameState';
 import type { EventPredicate } from '@/types/events';
+import { reliabilityScore } from '../agencies';
 
 /**
  * Predicate evaluation. Pure function from (state, predicate) → boolean.
@@ -17,11 +18,11 @@ function checkRange(
 }
 
 function avgReliability(state: GameState, agencyId: 'ttc' | 'go' | 'up'): number {
-  const subs = state.agencies[agencyId].subsystems;
-  if (subs.length === 0) return 0;
-  return (
-    subs.reduce((acc, s) => acc + (s.condition as unknown as number), 0) / subs.length
-  );
+  // Phase 10.7 audit fix: was unweighted average, which let events miss the
+  // mark relative to what player saw in UI. Now uses the same weighted
+  // reliabilityScore() the UI displays, so event predicates and visible
+  // gauge agree.
+  return reliabilityScore(state.agencies[agencyId]);
 }
 
 export function evaluatePredicate(state: GameState, pred: EventPredicate): boolean {
