@@ -12,6 +12,7 @@ import {
   availableProjectCatalog,
 } from '@engine/projectActions';
 import { generateFinancingOffers } from '@engine/financing';
+import { lvcRevenuePerStation } from '@engine/cashflow';
 import {
   FINANCING_APPROACH_SOURCE,
   type FinancingApproach,
@@ -327,15 +328,31 @@ function LvcSlider({ project }: { project: ProposedProject }) {
     250,
   );
   const totalCapex = display * stations;
-  const quarterlyRevenue = totalCapex * 0.015;
+  // Phase 10.8: diminishing returns. Match the engine's lvcRevenuePerStation.
+  const revPerStation = lvcRevenuePerStation(display);
+  const quarterlyRevenue = revPerStation * stations;
+  // Blended annual yield on the LVC capex, and the marginal yield of the
+  // NEXT $20M tier — so the player can see when it stops paying for debt.
+  const blendedAnnualYield = display > 0 ? (revPerStation / display) * 4 * 100 : 0;
+  const marginalRate =
+    (lvcRevenuePerStation(display + 20) - lvcRevenuePerStation(display)) / 20;
+  const marginalAnnualYield = marginalRate * 4 * 100;
+  // Project debt costs ~5%/yr at neutral trust. If the marginal LVC yield
+  // is below that, the next dollar loses money.
+  const DEBT_COST_PCT = 5;
+  const marginalBelowDebt = display < 400 && marginalAnnualYield < DEBT_COST_PCT;
   return (
     <div className="rounded-md border border-emerald-200 bg-emerald-50/40 px-3 py-2">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800 mb-1">
         Land Value Capture (LVC)
       </div>
-      <div className="flex items-baseline gap-2 text-xs text-emerald-900">
-        <span className="num font-semibold">${display}M/station × {stations} = ${totalCapex}M</span>
-        <span className="text-emerald-700">→ +${quarterlyRevenue.toFixed(0)}M/Q revenue once operating (~6%/yr)</span>
+      <div className="flex items-baseline gap-2 text-xs text-emerald-900 flex-wrap">
+        <span className="num font-semibold">
+          ${display}M/station × {stations} = ${totalCapex}M
+        </span>
+        <span className="text-emerald-700">
+          → +${quarterlyRevenue.toFixed(0)}M/Q ({blendedAnnualYield.toFixed(1)}%/yr blended)
+        </span>
       </div>
       <input
         type="range"
@@ -348,13 +365,22 @@ function LvcSlider({ project }: { project: ProposedProject }) {
         aria-label="LVC capex per station"
       />
       <div className="flex justify-between text-[10px] text-emerald-700 num">
-        <span>$0 (skip LVC)</span>
-        <span>$200M (typical)</span>
+        <span>$0 (skip)</span>
+        <span>~$200M (sweet spot)</span>
         <span>$400M (max)</span>
       </div>
+      {display > 0 && (
+        <div className="mt-1 text-[10px] num">
+          <span className={marginalBelowDebt ? 'text-red-700 font-semibold' : 'text-emerald-700'}>
+            Next $20M tier yields {marginalAnnualYield.toFixed(1)}%/yr
+            {marginalBelowDebt ? ' — below ~5%/yr debt cost, you lose money here' : ' — still beats debt'}
+          </span>
+        </div>
+      )}
       <p className="mt-1 text-[10px] text-emerald-700">
-        Invest in transit-oriented development around stations. Adds to project cost at
-        break-ground; generates LVC revenue every quarter the project is operating.
+        Transit-oriented development around stations. Financed with the project (adds to debt).
+        Yields diminish per tier — prime parcels first, marginal land last. Find the point where
+        the next dollar stops beating your borrowing cost.
       </p>
     </div>
   );
@@ -946,15 +972,7 @@ function CapacityBar({
               : 'No procurement discount yet'}
           </div>
         </div>
-        <div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-xs font-medium text-neutral-700">In-house engineers</span>
-            <span className="num text-sm font-semibold">{engineers}</span>
-          </div>
-          <div className="text-[10px] text-neutral-500 mt-0.5">
-            Project {burnHint} per quarter
-          </div>
-        </div>
+        <EngineerHiringCell engineers={engineers} burnHint={burnHint} />
         <div>
           <div className="flex items-baseline justify-between">
             <span className="text-xs font-medium text-neutral-700">Crosslinx leverage</span>
@@ -974,5 +992,57 @@ function CapacityBar({
         </div>
       </div>
     </section>
+  );
+}
+
+// Phase 10.8: interactive engineer hiring. More staff = faster project
+// delivery (up to 1.5× burn at ~270) but ongoing salary ($0.1M/Q each above
+// the 180 baseline). Idle staff are pure cost — only worth it with projects.
+function EngineerHiringCell({ engineers, burnHint }: { engineers: number; burnHint: string }) {
+  const setHeadcount = useGameStore((s) => s.setEngineerHeadcount);
+  const frozen = useGameStore((s) =>
+    s.state.operatingAllowance.controls.some(
+      (c) => c.kind === 'hiringFreezeRoles' && c.roles.includes('engineers'),
+    ),
+  );
+  const deltaFromBaseline = engineers - 180;
+  const salaryNote =
+    deltaFromBaseline === 0
+      ? 'baseline (no extra salary)'
+      : deltaFromBaseline > 0
+        ? `+$${(deltaFromBaseline * 0.1).toFixed(1)}M/Q salary`
+        : `−$${(Math.abs(deltaFromBaseline) * 0.1).toFixed(1)}M/Q saved`;
+  const step = (delta: number) => setHeadcount(engineers + delta);
+  return (
+    <div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs font-medium text-neutral-700">In-house engineers</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => step(-30)}
+            disabled={engineers <= 90}
+            className="rounded bg-neutral-200 px-1.5 text-xs font-bold text-neutral-700 disabled:opacity-40 hover:bg-neutral-300"
+            aria-label="Release 30 engineers"
+          >
+            −
+          </button>
+          <span className="num text-sm font-semibold w-9 text-center">{engineers}</span>
+          <button
+            type="button"
+            onClick={() => step(30)}
+            disabled={engineers >= 360 || frozen}
+            className="rounded bg-blue-100 px-1.5 text-xs font-bold text-blue-700 disabled:opacity-40 hover:bg-blue-200"
+            aria-label="Hire 30 engineers"
+            title={frozen ? 'Hiring freeze in effect' : 'Hire 30 engineers'}
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <div className="text-[10px] text-neutral-500 mt-0.5">
+        Project {burnHint} · {frozen ? 'hiring frozen · ' : ''}{salaryNote}
+      </div>
+    </div>
   );
 }

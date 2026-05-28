@@ -21,6 +21,7 @@ import {
   toggleProjectPause,
   type FinancingSelection,
 } from '@engine/projectActions';
+import { setEngineerHeadcount } from '@engine/staffingActions';
 import { executePoliticalAction } from '@engine/politicalActions';
 import {
   issueOperatingBond,
@@ -120,6 +121,7 @@ export interface GameStore {
   reduceProjectScope: (catalogProjectId: string) => void;
   toggleProjectPause: (catalogProjectId: string) => void;
   setLvcCapex: (catalogProjectId: string, capexPerStationM: number) => void;
+  setEngineerHeadcount: (target: number) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
   /** Treasury actions (Phase 7). */
@@ -375,6 +377,14 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (next === get().state) return;
       set({ state: next, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, next)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    setEngineerHeadcount: (target) => {
+      const result = setEngineerHeadcount(get().state, target);
+      if (result.state === get().state) return;
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
         .then(() => set({ autosaveStatus: 'saved' }))
         .catch(() => set({ autosaveStatus: 'error' }));
     },

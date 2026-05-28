@@ -101,8 +101,13 @@ export function endTurn(state: GameState): GameState {
   // Phase 10.2: consultant engagement fee — flat $30M/Q while engaged.
   // Shown as a separate cash outflow so the cost is visible in the breakdown.
   const consultantFeeN = state.engineVars.consultantsEngaged ? 30 : 0;
+  // Phase 10.8: engineer salary — only the delta from the 180 baseline is
+  // charged (baseline is "included" in opex). Hiring above costs $0.1M/Q
+  // each; cutting below credits the same. Makes the staffing lever a real
+  // tradeoff (faster projects vs. ongoing cost).
+  const engineerSalaryN = (state.engineVars.engineers - 180) * 0.1;
   const netCashDelta =
-    allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN - consultantFeeN;
+    allowanceN + fareN - opexN - maintN - debtServiceN - refiFeeN - consultantFeeN - engineerSalaryN;
 
   // 4. Decay subsystems (archetype maintenance efficiency applied inside)
   const agenciesDecayed = applyToAgencies(state.agencies, (a) =>

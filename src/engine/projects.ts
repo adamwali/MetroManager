@@ -13,7 +13,15 @@ import { cash, quarter, riders } from '@/types/scalars';
  * Until then, projects tick at their forecast rate.
  */
 
-const BASELINE_ENGINEERS = 180;
+export const BASELINE_ENGINEERS = 180;
+
+/** Phase 10.8: salary per engineer per quarter ($M). Only the delta from
+ * baseline is charged/credited — the baseline 180 is "included" in opex,
+ * so hiring above costs more, cutting below saves. */
+export const ENGINEER_SALARY_PER_Q_M = 0.1;
+/** Hireable headcount range. */
+export const ENGINEER_MIN = 90;
+export const ENGINEER_MAX = 360;
 
 /**
  * Advance one constructing project by a quarter. May transition to operating.
