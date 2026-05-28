@@ -423,7 +423,13 @@ export function runPlaytest(opts: PlaytestOptions): PlaytestRun {
   for (let q = 0; q < opts.maxQuarters; q++) {
     if (state.gameOver) break;
 
-    // 1. Resolve all events in the inbox
+    // 1a. Count informational events fired this quarter (no decision needed)
+    for (const entry of state.actionLog) {
+      if (entry.kind !== 'event_informational') continue;
+      if ((entry.quarter as unknown as number) !== (state.quarter as unknown as number)) continue;
+      eventsFired[entry.eventTemplateId] = (eventsFired[entry.eventTemplateId] ?? 0) + 1;
+    }
+    // 1b. Resolve all decision events in the inbox
     for (const inboxItem of [...state.inbox]) {
       const template = eventTemplateById(inboxItem.templateId);
       if (!template) continue;
