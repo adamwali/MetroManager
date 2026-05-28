@@ -186,6 +186,6 @@ describe('rating + bond integration', () => {
     const s = createInitialGameState(0);
     const r = nextRatingFor(s);
     expect(r.rating).toBe('AA');
-    expect(r.metrics.cashM).toBe(1_000);
+    expect(r.metrics.cashM).toBe(1_400);
   });
 });

@@ -95,8 +95,8 @@ export function TopStrip() {
         />
       </Section>
 
-      {/* GROUP 3: Confidence + trust */}
-      <Section label="Confidence" cols={4}>
+      {/* GROUP 3: Confidence + trust + approval */}
+      <Section label="Confidence" cols={5}>
         <Kpi
           label="Board"
           value={`${(state.boardConfidence.score as unknown as number).toFixed(0)}`}
@@ -110,6 +110,28 @@ export function TopStrip() {
           }
           onClick={() => setTraceMetric('boardConfidence')}
           helpText="Board confidence 0-100. Below 20 for 4Q gets you fired. Driven by delivery wins, financial discipline, reliability, scandals."
+        />
+        <Kpi
+          label="Approval"
+          value={`${(state.engineVars.publicApproval as unknown as number).toFixed(0)}`}
+          caption={
+            (state.engineVars.publicApproval as unknown as number) < 35
+              ? 'hostile'
+              : (state.engineVars.publicApproval as unknown as number) < 50
+                ? 'cool'
+                : (state.engineVars.publicApproval as unknown as number) < 65
+                  ? 'mixed'
+                  : 'supportive'
+          }
+          tone={
+            (state.engineVars.publicApproval as unknown as number) < 30
+              ? 'critical'
+              : (state.engineVars.publicApproval as unknown as number) < 45
+                ? 'warning'
+                : 'neutral'
+          }
+          onClick={() => setTraceMetric('publicApproval')}
+          helpText="Public approval 0-100. Voter sentiment about the agency. Separate from Satisfaction (which is rider-experience derived). Drops on fare hikes, scandals, hostile op-eds. Affects ridership drift over time."
         />
         <Kpi
           label="Ottawa"

@@ -5,7 +5,7 @@ import { endTurn } from './endTurn';
 describe('archetype divergence', () => {
   it('Steady Operator default matches baseline', () => {
     const s = createInitialGameState(1, 'steadyOperator');
-    expect(s.cash.balance as unknown as number).toBe(1_000);
+    expect(s.cash.balance as unknown as number).toBe(1_400);
     expect(s.boardConfidence.score as unknown as number).toBe(60);
     expect(s.politics.ottawa.trust as unknown as number).toBe(50);
     expect(s.politics.queensPark.trust as unknown as number).toBe(50);

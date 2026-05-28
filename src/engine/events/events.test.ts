@@ -64,7 +64,7 @@ describe('effects', () => {
   it('cash effect adjusts balance and clamps nothing', () => {
     const s = createInitialGameState(0);
     const next = applyEffects(s, [{ kind: 'cash', deltaM: -100 }]);
-    expect(next.cash.balance as unknown as number).toBe(900);
+    expect(next.cash.balance as unknown as number).toBe(1_300);
   });
 
   it('governmentTrust delta clamps to 0-100', () => {

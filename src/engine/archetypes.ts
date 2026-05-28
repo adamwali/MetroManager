@@ -41,7 +41,7 @@ export interface ArchetypeStartingMods {
 
 export const ARCHETYPE_CONFIGS: Record<CeoArchetype, ArchetypeStartingMods> = {
   steadyOperator: {
-    startingCashM: 1_000,
+    startingCashM: 1_400,
     boardConfidence: 60,
     publicApproval: 50,
     trust: { ottawa: 50, queensPark: 50, cityHall: 50 },

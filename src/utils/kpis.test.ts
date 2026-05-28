@@ -14,16 +14,16 @@ function totalRidersAt(state: ReturnType<typeof createInitialGameState>): number
 describe('buildHistory', () => {
   it('returns starting point only when no quarters played', () => {
     const s = createInitialGameState(0);
-    const history = buildHistory(s, 1_000, totalRidersAt(s));
+    const history = buildHistory(s, 1_400, totalRidersAt(s));
     expect(history).toHaveLength(1);
-    expect(history[0]!.cash).toBe(1_000);
+    expect(history[0]!.cash).toBe(1_400);
   });
 
   it('appends one point per endTurn', () => {
     let s = createInitialGameState(0);
     const initialRiders = totalRidersAt(s);
     for (let i = 0; i < 5; i++) s = endTurn(s);
-    const history = buildHistory(s, 1_000, initialRiders);
+    const history = buildHistory(s, 1_400, initialRiders);
     expect(history).toHaveLength(6); // start + 5 quarters
     expect(history[5]!.quarter).toBe(5);
   });
@@ -32,7 +32,7 @@ describe('buildHistory', () => {
     let s = createInitialGameState(0);
     const initialRiders = totalRidersAt(s);
     for (let i = 0; i < 3; i++) s = endTurn(s);
-    const history = buildHistory(s, 1_000, initialRiders);
+    const history = buildHistory(s, 1_400, initialRiders);
     expect(history[history.length - 1]!.cash).toBeCloseTo(
       s.cash.balance as unknown as number,
       0,
@@ -43,7 +43,7 @@ describe('buildHistory', () => {
 describe('deriveKpis', () => {
   it('YoY is null before 4 quarters of history', () => {
     const s = createInitialGameState(0);
-    const history = buildHistory(s, 1_000, totalRidersAt(s));
+    const history = buildHistory(s, 1_400, totalRidersAt(s));
     const k = deriveKpis(s, history);
     expect(k.cashYoyPct).toBeNull();
     expect(k.ridersYoyPct).toBeNull();
@@ -53,7 +53,7 @@ describe('deriveKpis', () => {
     let s = createInitialGameState(0);
     const initialRiders = totalRidersAt(s);
     for (let i = 0; i < 5; i++) s = endTurn(s);
-    const history = buildHistory(s, 1_000, initialRiders);
+    const history = buildHistory(s, 1_400, initialRiders);
     const k = deriveKpis(s, history);
     expect(k.cashYoyPct).not.toBeNull();
     expect(k.ridersYoyPct).not.toBeNull();
@@ -61,7 +61,7 @@ describe('deriveKpis', () => {
 
   it('on-time scales with reliability', () => {
     const s = createInitialGameState(0);
-    const history = buildHistory(s, 1_000, totalRidersAt(s));
+    const history = buildHistory(s, 1_400, totalRidersAt(s));
     const k = deriveKpis(s, history);
     // TTC starts at avg ~68 reliability → on-time ~86%
     expect(k.ttcOnTime).toBeGreaterThan(0.8);
