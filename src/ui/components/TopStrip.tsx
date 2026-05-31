@@ -15,6 +15,7 @@ import {
 import { deriveKpis } from '@/utils/kpis';
 import { Kpi, StatBar } from './Kpi';
 import { Sparkline } from './Sparkline';
+import { metricSeries } from '@/utils/metricHistory';
 
 /**
  * Always-visible KPI strip per design doc §4. Phase 10 redesign — KPIs
@@ -121,6 +122,7 @@ export function TopStrip() {
             label="Board"
             value={board}
             delta={board - prev.board}
+            trend={metricSeries(state, 'board')}
             tone={board < 25 ? 'critical' : board < 40 ? 'warning' : 'neutral'}
             onClick={() => setTraceMetric('boardConfidence')}
             helpText="Board confidence 0-100. Below 25 for 2Q gets you fired. Drifts +1/Q toward 60. Driven by delivery wins, financial discipline, reliability, scandals."
@@ -129,6 +131,7 @@ export function TopStrip() {
             label="Public approval"
             value={approval}
             delta={approval - prev.approval}
+            trend={metricSeries(state, 'approval')}
             tone={approval < 30 ? 'critical' : approval < 45 ? 'warning' : 'neutral'}
             onClick={() => setTraceMetric('publicApproval')}
             helpText="Voter sentiment 0-100. Drops on fare hikes, scandals, hostile op-eds. Raised by cleanliness budgets, wins. Drifts ridership over time."
@@ -137,6 +140,7 @@ export function TopStrip() {
             label="Ottawa"
             value={trustOttawa}
             delta={trustOttawa - prev.ottawa}
+            trend={metricSeries(state, 'trustOttawa')}
             tone={trustOttawa < 25 ? 'critical' : trustOttawa < 40 ? 'warning' : 'neutral'}
             onClick={() => setTraceMetric('trust:ottawa')}
             helpText="Federal trust. Lowers project financing rates. Built by quiet pitch (+3) or public lobby (+6, -5 approval)."
@@ -145,6 +149,7 @@ export function TopStrip() {
             label="Queen's Park"
             value={trustQp}
             delta={trustQp - prev.queensPark}
+            trend={metricSeries(state, 'trustQueensPark')}
             tone={trustQp < 25 ? 'critical' : trustQp < 40 ? 'warning' : 'neutral'}
             onClick={() => setTraceMetric('trust:queensPark')}
             helpText="Provincial trust. Sets your operating allowance at renegotiation. Insider can call-in-favor for cash if relationship is high."
@@ -153,6 +158,7 @@ export function TopStrip() {
             label="City Hall"
             value={trustCity}
             delta={trustCity - prev.cityHall}
+            trend={metricSeries(state, 'trustCityHall')}
             tone={trustCity < 25 ? 'critical' : trustCity < 40 ? 'warning' : 'neutral'}
             onClick={() => setTraceMetric('trust:cityHall')}
             helpText="City Hall trust. Sensitive to fare hikes + accessibility underfunding."

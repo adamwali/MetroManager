@@ -122,9 +122,36 @@ interface StatBarProps {
   value: number;
   /** Change since last quarter (signed). Undefined = no history yet. */
   delta?: number;
+  /** Per-quarter series (0-100) for a sleek inline QoQ trend line. */
+  trend?: number[];
   tone?: 'neutral' | 'positive' | 'warning' | 'critical';
   onClick?: () => void;
   helpText?: string;
+}
+
+/** Tiny 0-100 trend line, fixed domain so the slope reads as real change. */
+function MiniTrend({ values }: { values: number[] }) {
+  if (values.length < 2) return null;
+  const w = 40;
+  const h = 12;
+  const stepX = w / (values.length - 1);
+  const pts = values
+    .map((v, i) => `${(i * stepX).toFixed(1)},${(h - (Math.max(0, Math.min(100, v)) / 100) * h).toFixed(1)}`)
+    .join(' ');
+  const down = values[values.length - 1]! < values[0]!;
+  return (
+    <svg width={w} height={h} aria-hidden="true" className="shrink-0">
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={down ? '#dc2626' : '#16a34a'}
+        strokeOpacity={0.7}
+        strokeWidth={1.25}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 const BAR_FILL: Record<NonNullable<StatBarProps['tone']>, string> = {
@@ -141,7 +168,7 @@ const BAR_FILL: Record<NonNullable<StatBarProps['tone']>, string> = {
  * — replaces the dense "67/100" number cells per player feedback that it was
  * hard to feel cause→effect.
  */
-export function StatBar({ label, value, delta, tone = 'neutral', onClick, helpText }: StatBarProps) {
+export function StatBar({ label, value, delta, trend, tone = 'neutral', onClick, helpText }: StatBarProps) {
   const interactive = onClick !== undefined;
   const Comp: 'button' | 'div' = interactive ? 'button' : 'div';
   const [showHelp, setShowHelp] = useState(false);
@@ -179,14 +206,17 @@ export function StatBar({ label, value, delta, tone = 'neutral', onClick, helpTe
             </span>
           )}
         </span>
-        <span className="num inline-flex items-baseline gap-1 text-[11px] font-bold text-neutral-800">
-          {value.toFixed(0)}
-          {hasDelta && (
-            <span className={deltaUp ? 'text-emerald-600' : 'text-red-600'}>
-              {deltaUp ? '▲' : '▼'}
-              {Math.abs(delta!).toFixed(0)}
-            </span>
-          )}
+        <span className="num inline-flex items-center gap-1.5 text-[11px] font-bold text-neutral-800">
+          {trend && trend.length >= 2 && <MiniTrend values={trend} />}
+          <span className="inline-flex items-baseline gap-1">
+            {value.toFixed(0)}
+            {hasDelta && (
+              <span className={deltaUp ? 'text-emerald-600' : 'text-red-600'}>
+                {deltaUp ? '▲' : '▼'}
+                {Math.abs(delta!).toFixed(0)}
+              </span>
+            )}
+          </span>
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200">

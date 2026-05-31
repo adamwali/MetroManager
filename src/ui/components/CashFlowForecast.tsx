@@ -15,6 +15,11 @@ export function CashFlowForecast({ compact = false }: { compact?: boolean }) {
   const state = useGameStore((s) => s.state);
   const f = projectQuarterlyCashFlow(state);
 
+  // Last quarter's actuals, to show what's moving the budget QoQ.
+  const lastSummary = [...state.actionLog].reverse().find((e) => e.kind === 'quarter_summary');
+  const prevCf =
+    lastSummary?.kind === 'quarter_summary' ? lastSummary.breakdown.cashFlow : undefined;
+
   const netPositive = f.net >= 0;
   const projNegative = f.projectedCashNextQuarter < 0;
 
@@ -56,17 +61,17 @@ export function CashFlowForecast({ compact = false }: { compact?: boolean }) {
       </header>
 
       <div className="space-y-1 text-xs num">
-        <Line label="Government allowance" value={f.allowance} positive />
-        <Line label="Fare revenue" value={f.fareRevenue} positive />
+        <Line label="Government allowance" value={f.allowance} positive qoq={prevCf ? f.allowance - prevCf.operatingAllowance : undefined} />
+        <Line label="Fare revenue" value={f.fareRevenue} positive qoq={prevCf ? f.fareRevenue - prevCf.fareRevenue : undefined} />
         {f.lvcRevenue > 0 && <Line label="LVC revenue" value={f.lvcRevenue} positive />}
         <div className="flex justify-between border-t border-neutral-100 pt-1 font-semibold">
           <span className="text-neutral-600">Total in</span>
           <span className="text-emerald-700">{formatMoney(f.totalInflow)}/Q</span>
         </div>
 
-        <Line label="Operating expense" value={-f.opex} />
-        <Line label="Maintenance" value={-f.maintenance} />
-        <Line label="Debt service" value={-f.debtService} />
+        <Line label="Operating expense" value={-f.opex} qoq={prevCf ? -(f.opex - prevCf.operatingExpense) : undefined} />
+        <Line label="Maintenance" value={-f.maintenance} qoq={prevCf ? -(f.maintenance - prevCf.maintenance) : undefined} />
+        <Line label="Debt service" value={-f.debtService} qoq={prevCf ? -(f.debtService - prevCf.debtService) : undefined} />
         {f.consultantFee > 0 && <Line label="Consultant retainer" value={-f.consultantFee} />}
         {Math.abs(f.engineerSalary) >= 0.05 && (
           <Line
@@ -105,14 +110,35 @@ export function CashFlowForecast({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function Line({ label, value, positive }: { label: string; value: number; positive?: boolean }) {
+function Line({
+  label,
+  value,
+  positive,
+  qoq,
+}: {
+  label: string;
+  value: number;
+  positive?: boolean;
+  qoq?: number | undefined;
+}) {
   const cls = positive ? 'text-emerald-700' : value < 0 ? 'text-red-700' : 'text-neutral-700';
+  const showQoq = qoq !== undefined && Math.abs(qoq) >= 1;
+  // For a QoQ change, "good" depends on direction: more revenue or less cost.
+  const qoqGood = qoq !== undefined && qoq > 0 === (value >= 0);
   return (
     <div className="flex justify-between">
       <span className="text-neutral-600">{label}</span>
-      <span className={cls}>
-        {value >= 0 ? (positive ? '' : '+') : ''}
-        {formatMoney(value)}
+      <span className="inline-flex items-baseline gap-1.5">
+        {showQoq && (
+          <span className={`text-[10px] ${qoqGood ? 'text-emerald-600' : 'text-red-600'}`}>
+            {qoq! > 0 ? '▲' : '▼'}
+            {formatMoney(Math.abs(qoq!))}
+          </span>
+        )}
+        <span className={cls}>
+          {value >= 0 ? (positive ? '' : '+') : ''}
+          {formatMoney(value)}
+        </span>
       </span>
     </div>
   );
