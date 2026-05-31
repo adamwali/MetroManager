@@ -341,6 +341,9 @@ function LvcSlider({ project }: { project: ProposedProject }) {
   // is below that, the next dollar loses money.
   const DEBT_COST_PCT = 5;
   const marginalBelowDebt = display < 400 && marginalAnnualYield < DEBT_COST_PCT;
+  // Downside framing: build duration + debt service on the LVC capex.
+  const buildQuarters = catalogEntry(project.templateId)?.buildDurationQuarters ?? 0;
+  const debtServicePerQ = (totalCapex * (DEBT_COST_PCT / 100)) / 4;
   return (
     <div className="rounded-md border border-emerald-200 bg-emerald-50/40 px-3 py-2">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-800 mb-1">
@@ -377,10 +380,19 @@ function LvcSlider({ project }: { project: ProposedProject }) {
           </span>
         </div>
       )}
+      {/* Phase 10.11: make the DOWNSIDE explicit — you pay debt service on the
+          LVC capex throughout construction, before any revenue arrives. */}
+      {display > 0 && buildQuarters > 0 && (
+        <div className="mt-1.5 rounded bg-amber-100/70 px-2 py-1 text-[10px] text-amber-900 num">
+          ⚠ Downside: adds ${totalCapex}M to debt → ~${debtServicePerQ.toFixed(0)}M/Q interest{' '}
+          <span className="font-semibold">starting now</span>. Revenue only after the line opens in
+          ~{buildQuarters}Q. You pay ≈${(debtServicePerQ * buildQuarters).toFixed(0)}M interest
+          before the first LVC dollar.
+        </div>
+      )}
       <p className="mt-1 text-[10px] text-emerald-700">
         Transit-oriented development around stations. Financed with the project (adds to debt).
-        Yields diminish per tier — prime parcels first, marginal land last. Find the point where
-        the next dollar stops beating your borrowing cost.
+        Yields diminish per tier — prime parcels first, marginal land last.
       </p>
     </div>
   );

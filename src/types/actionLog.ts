@@ -54,6 +54,15 @@ export interface QuarterSummaryBreakdown {
       templateId: string;
       from: 'proposed' | 'under_construction';
       to: 'under_construction' | 'operating';
+      /**
+       * Opening impact, set only when to === 'operating'. Phase 10.11 — so
+       * the player can see what a line actually delivered when it opened.
+       */
+      openingImpact?: {
+        primaryAgency: 'ttc' | 'go' | 'up';
+        fullRidership: number;
+        lvcRevenuePerQ: number;
+      };
     }>;
     constructionDraws: Array<{
       templateId: string;

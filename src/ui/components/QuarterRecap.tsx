@@ -120,6 +120,41 @@ export function QuarterRecap() {
           </span>
         )}
       </header>
+      {b.projects.transitions
+        .filter((t) => t.to === 'operating' && t.openingImpact)
+        .map((t) => {
+          const oi = t.openingImpact!;
+          const name = catalogEntry(t.templateId)?.name ?? t.templateId;
+          return (
+            <div
+              key={t.templateId}
+              className="mt-3 rounded-md border-2 border-emerald-300 bg-emerald-50 p-3"
+            >
+              <div className="text-sm font-bold text-emerald-900">🎉 {name} is now open!</div>
+              <div className="mt-1 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-emerald-700">Ramps to</div>
+                  <div className="num font-semibold text-emerald-900">
+                    +{(oi.fullRidership / 1000).toFixed(0)}k riders
+                  </div>
+                  <div className="text-[10px] text-emerald-600">{oi.primaryAgency.toUpperCase()}, over 8Q</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-emerald-700">LVC revenue</div>
+                  <div className="num font-semibold text-emerald-900">
+                    {oi.lvcRevenuePerQ > 0 ? `+$${oi.lvcRevenuePerQ}M/Q` : 'none'}
+                  </div>
+                  <div className="text-[10px] text-emerald-600">land value capture</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-emerald-700">Fare impact</div>
+                  <div className="num font-semibold text-emerald-900">grows w/ ridership</div>
+                  <div className="text-[10px] text-emerald-600">scales as riders ramp</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       {top5.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-500">No significant changes.</p>
       ) : (

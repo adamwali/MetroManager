@@ -17,10 +17,12 @@ import { bp as bpScalar } from '@/types/scalars';
 import {
   quarterlyFareRevenue,
   quarterlyLvcRevenue,
+  lvcRevenuePerStation,
   quarterlyMaintenanceExpense,
   quarterlyOperatingAllowance,
   quarterlyOperatingExpense,
 } from './cashflow';
+import { catalogEntry } from './projectCatalog';
 import {
   approvalRidershipDrift,
   accessibilityCityHallDrift,
@@ -165,10 +167,32 @@ export function endTurn(state: GameState): GameState {
     }
     // Record any state transition
     if (before.state !== r.project.state) {
+      const toState = r.project.state as 'under_construction' | 'operating';
+      // Phase 10.11: capture opening impact so the recap can show what the
+      // line delivered (riders + LVC revenue), and where.
+      let openingImpact: NonNullable<
+        QuarterSummaryBreakdown['projects']['transitions'][number]['openingImpact']
+      > | undefined;
+      if (toState === 'operating') {
+        const entry = catalogEntry(before.templateId);
+        const op = r.project.state === 'operating' ? r.project : null;
+        const lvcCapex = op ? (op.lvc.capexPerStation as unknown as number) : 0;
+        const lvcStations = op ? op.lvc.stationsCovered : 0;
+        if (entry) {
+          const alignment =
+            entry.alignments.find((a) => a.id === op?.chosenAlignment) ?? entry.alignments[0];
+          openingImpact = {
+            primaryAgency: entry.primaryAgency,
+            fullRidership: alignment?.fullRidership ?? 0,
+            lvcRevenuePerQ: Math.round(lvcRevenuePerStation(lvcCapex) * lvcStations),
+          };
+        }
+      }
       transitions.push({
         templateId: before.templateId,
         from: before.state as 'proposed' | 'under_construction',
-        to: r.project.state as 'under_construction' | 'operating',
+        to: toState,
+        ...(openingImpact ? { openingImpact } : {}),
       });
     }
     // Record construction draws (non-zero only)
