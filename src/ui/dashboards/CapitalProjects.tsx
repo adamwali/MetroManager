@@ -13,6 +13,7 @@ import {
 } from '@engine/projectActions';
 import { generateFinancingOffers } from '@engine/financing';
 import { lvcRevenuePerStation } from '@engine/cashflow';
+import { NetworkMap } from '@ui/components/NetworkMap';
 import {
   FINANCING_APPROACH_SOURCE,
   type FinancingApproach,
@@ -59,6 +60,8 @@ export function CapitalProjects() {
         engineers={state.engineVars.engineers}
         crosslinx={state.engineVars.crosslinxLeverage as unknown as number}
       />
+
+      <NetworkMap />
 
       <section className="space-y-3">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
