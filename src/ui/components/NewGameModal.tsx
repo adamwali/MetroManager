@@ -25,25 +25,31 @@ interface NewGameModalProps {
   onClose: () => void;
   /** If true, modal is dismissible (player already has a campaign). */
   dismissible?: boolean;
+  /** Called when a new campaign is actually started (not on cancel). */
+  onStarted?: () => void;
 }
 
 function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000) + 1;
 }
 
-export function NewGameModal({ onClose, dismissible = false }: NewGameModalProps) {
+const AGENCY_NAME_SUGGESTIONS = ['TNTA', 'Metrolinx 2.0', 'GTHA Transit', 'OneTransit', 'RegionRail'];
+
+export function NewGameModal({ onClose, dismissible = false, onStarted }: NewGameModalProps) {
   const newGame = useGameStore((s) => s.newGame);
   const [archetype, setArchetype] = useState<CeoArchetype>('steadyOperator');
   const [seed, setSeed] = useState<number>(randomSeed());
   const [name, setName] = useState<string>('');
+  const [agencyName, setAgencyName] = useState<string>('TNTA');
 
   const options = archetypeOptions();
   const selected = options.find((o) => o.id === archetype)!;
-  const canBegin = name.trim().length > 0;
+  const canBegin = name.trim().length > 0 && agencyName.trim().length > 0;
 
   const begin = () => {
     if (!canBegin) return;
-    newGame(seed, archetype, name.trim());
+    newGame(seed, archetype, name.trim(), agencyName.trim());
+    onStarted?.();
     onClose();
   };
 
@@ -63,25 +69,52 @@ export function NewGameModal({ onClose, dismissible = false }: NewGameModalProps
           )}
         </header>
 
-        {/* Step 1: Name */}
+        {/* Step 1: Names */}
         <div className="border-b border-neutral-200 bg-blue-50/30 px-6 py-4">
-          <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-blue-700">
-              Step 1 · Your name
-            </span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={40}
-              autoFocus
-              placeholder="e.g., Adam Walli"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-            />
-            <span className="mt-1 block text-[11px] text-neutral-500">
-              You're the new CEO of the integrated GTHA transit authority. 60 quarters to leave a legacy.
-            </span>
-          </label>
+          <span className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+            Step 1 · Name yourself & your authority
+          </span>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="text-[11px] font-medium text-neutral-600">Your name (CEO)</span>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={40}
+                autoFocus
+                placeholder="e.g., Adam Walli"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-medium text-neutral-600">Authority name</span>
+              <input
+                type="text"
+                value={agencyName}
+                onChange={(e) => setAgencyName(e.target.value)}
+                maxLength={28}
+                placeholder="e.g., TNTA"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              />
+              <div className="mt-1 flex flex-wrap gap-1">
+                {AGENCY_NAME_SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setAgencyName(s)}
+                    className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-200"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </label>
+          </div>
+          <span className="mt-2 block text-[11px] text-neutral-500">
+            You're the founding CEO of a new authority replacing the old, mismanaged regime.
+            60 quarters to leave a legacy.
+          </span>
         </div>
 
         {/* Step 2: Archetype */}

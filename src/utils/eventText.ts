@@ -10,7 +10,11 @@ import type { GameState } from '@/types/gameState';
  *  - {actorFirstName}: first word of actor name
  */
 export function interpolateEventText(text: string, state: GameState, actorId?: string): string {
-  let result = text.replace(/\{ceoName\}/g, state.ceo.name);
+  let result = text
+    .replace(/\{ceoName\}/g, state.ceo.name)
+    .replace(/\{agencyName\}/g, state.ceo.agencyName ?? 'GTTA')
+    // Legacy: any hardcoded "GTTA" in older event copy gets the chosen name.
+    .replace(/\bGTTA\b/g, state.ceo.agencyName ?? 'GTTA');
   if (actorId) {
     const actor = state.characters[actorId];
     if (actor) {

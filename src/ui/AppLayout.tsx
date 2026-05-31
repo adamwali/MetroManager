@@ -9,6 +9,7 @@ import { TopStrip } from './components/TopStrip';
 import { EndTurnButton } from './components/EndTurnButton';
 import { TimeJumpPreview } from './components/TimeJumpPreview';
 import { NewGameModal } from './components/NewGameModal';
+import { MandateScreen } from './components/MandateScreen';
 import { SaveLoadModal } from './components/SaveLoadModal';
 import { GameOverScreen } from './components/GameOverScreen';
 import { SavedToast } from './components/SavedToast';
@@ -50,13 +51,15 @@ export function AppLayout() {
   const [saveLoad, setSaveLoad] = useState<'save' | 'load' | null>(null);
   const [bootChecked, setBootChecked] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [showMandate, setShowMandate] = useState(false);
 
-  // Show welcome tour on first campaign start (LS-gated, never re-shows)
+  // Show welcome tour on first campaign start (LS-gated, never re-shows).
+  // Hold it behind the mandate screen so the briefing comes first.
   useEffect(() => {
-    if (campaignStarted && shouldShowWelcomeTour()) {
+    if (campaignStarted && !showMandate && shouldShowWelcomeTour()) {
       setShowTour(true);
     }
-  }, [campaignStarted]);
+  }, [campaignStarted, showMandate]);
 
   // On boot: try to load the autosave silently. If present, resume from it
   // (campaign was in progress). If not, show the new-game modal.
@@ -163,8 +166,10 @@ export function AppLayout() {
         <NewGameModal
           dismissible={campaignStarted && bootChecked}
           onClose={() => setShowNewGame(false)}
+          onStarted={() => setShowMandate(true)}
         />
       )}
+      {showMandate && <MandateScreen onBegin={() => setShowMandate(false)} />}
       {saveLoad !== null && (
         <SaveLoadModal mode={saveLoad} onClose={() => setSaveLoad(null)} />
       )}

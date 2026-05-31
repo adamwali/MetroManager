@@ -87,7 +87,7 @@ export interface GameStore {
   campaignStarted: boolean;
 
   endTurn: () => void;
-  newGame: (seed: number, archetype: CeoArchetype, ceoName: string) => void;
+  newGame: (seed: number, archetype: CeoArchetype, ceoName: string, agencyName?: string) => void;
   loadFromSlot: (slotId: SlotId) => Promise<void>;
   /** Forecast next N quarters without committing to state. */
   forecast: (quartersAhead: number) => GameState[];
@@ -146,8 +146,13 @@ export interface GameStore {
  */
 const DEFAULT_SEED = Math.floor(Math.random() * 1_000_000) + 1;
 
-function initialFor(seed: number, archetype: CeoArchetype, ceoName: string): GameState {
-  return createInitialGameState(seed, archetype, ceoName);
+function initialFor(
+  seed: number,
+  archetype: CeoArchetype,
+  ceoName: string,
+  agencyName?: string,
+): GameState {
+  return createInitialGameState(seed, archetype, ceoName, agencyName);
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
@@ -167,8 +172,8 @@ export const useGameStore = create<GameStore>((set, get) => {
         .catch(() => set({ autosaveStatus: 'error' }));
     },
 
-    newGame: (seed, archetype, ceoName) => {
-      const next = initialFor(seed, archetype, ceoName);
+    newGame: (seed, archetype, ceoName, agencyName) => {
+      const next = initialFor(seed, archetype, ceoName, agencyName);
       set({
         state: next,
         initialState: next,

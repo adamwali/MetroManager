@@ -26,6 +26,7 @@ export function createInitialGameState(
   seed: number,
   archetype: CeoArchetype = 'steadyOperator',
   ceoName: string = 'CEO',
+  agencyName: string = 'GTTA',
 ): GameState {
   const mods = ARCHETYPE_CONFIGS[archetype];
   // Archetype opex multiplier — applied to baseline per-agency opex.
@@ -34,7 +35,7 @@ export function createInitialGameState(
   const opex = (baseM: number): number => Math.round(baseM * opexMul);
   return {
     schemaVersion: 1,
-    ceo: { archetype, name: ceoName },
+    ceo: { archetype, name: ceoName, agencyName },
     quarter: quarter(0),
     // Starting cash modulated by archetype. Default $1B (Steady Operator)
     // is realistic working capital for a transit agency — not coast money.

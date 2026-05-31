@@ -18,4 +18,10 @@ export interface Ceo {
   name: string;
   /** Optional portrait reference (asset id). */
   portraitId?: string;
+  /**
+   * Name of the transit authority the player leads. Chosen at new-game.
+   * Defaults to "GTTA". Interpolated into event copy via {agencyName} and
+   * shown in the news ticker. Phase 10.11.
+   */
+  agencyName?: string;
 }
