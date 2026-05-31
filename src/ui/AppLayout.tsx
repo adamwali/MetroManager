@@ -6,6 +6,7 @@ import { AUTOSAVE_SLOT, readSlot } from '@state/saveSlots';
 import type { CeoArchetype } from '@/types/ceo';
 import { quarterLabel } from '@/utils/humanize';
 import { TopStrip } from './components/TopStrip';
+import { NewsTicker } from './components/NewsTicker';
 import { EndTurnButton } from './components/EndTurnButton';
 import { TimeJumpPreview } from './components/TimeJumpPreview';
 import { NewGameModal } from './components/NewGameModal';
@@ -157,6 +158,7 @@ export function AppLayout() {
         <div className="border-t border-neutral-100">
           <TopStrip />
         </div>
+        {campaignStarted && <NewsTicker />}
       </header>
       <main className="flex-1 px-4 py-6">
         <Outlet />
