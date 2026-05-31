@@ -76,7 +76,6 @@ export type EventEffect =
   | { kind: 'crosslinxLeverage'; delta: number }
   | { kind: 'consultantAlignment'; delta: number }
   | { kind: 'auditorScrutiny'; delta: number }
-  | { kind: 'reEngageConsultants' }
   | { kind: 'opex'; agency: AgencyId; deltaM: number }
   | { kind: 'fareRevenue'; agency: AgencyId; deltaM: number }
   | { kind: 'reliability'; agency: AgencyId; delta: number }

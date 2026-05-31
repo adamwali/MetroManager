@@ -109,9 +109,6 @@ function applyOne(state: GameState, e: EventEffect): GameState {
       );
       return { ...state, engineVars: { ...state.engineVars, auditorScrutiny: score(next) } };
     }
-    case 'reEngageConsultants': {
-      return { ...state, engineVars: { ...state.engineVars, consultantsEngaged: true } };
-    }
     case 'opex':
       return {
         ...state,
