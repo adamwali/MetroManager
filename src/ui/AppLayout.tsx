@@ -5,6 +5,7 @@ import { ARCHETYPE_CONFIGS } from '@engine/archetypes';
 import { AUTOSAVE_SLOT, readSlot } from '@state/saveSlots';
 import type { CeoArchetype } from '@/types/ceo';
 import { quarterLabel } from '@/utils/humanize';
+import { computeScore } from '@/utils/score';
 import { TopStrip } from './components/TopStrip';
 import { NewsTicker } from './components/NewsTicker';
 import { EndTurnButton } from './components/EndTurnButton';
@@ -93,13 +94,16 @@ export function AppLayout() {
       <header className="border-b border-neutral-200 bg-white">
         <div className="px-4 py-2 flex items-center justify-between gap-6">
           <div className="flex items-baseline gap-4">
-            <span className="text-sm font-semibold tracking-tight text-neutral-900">METRO</span>
+            <span className="text-sm font-semibold tracking-tight text-neutral-900">
+              {campaignStarted ? ceo.agencyName ?? 'METRO' : 'METRO'}
+            </span>
             <span className="num text-xs text-neutral-500">{quarterLabel(quarter)}</span>
             {campaignStarted && (
               <span className="text-xs text-neutral-500">
                 {ceo.name} · {archetypeName}
               </span>
             )}
+            {campaignStarted && <ScorePill />}
           </div>
           <div className="flex items-center gap-2">
             {autosaveStatus !== 'idle' && (
@@ -190,5 +194,18 @@ export function AppLayout() {
       <SavedToast />
       {showTour && <WelcomeTour onClose={() => setShowTour(false)} />}
     </div>
+  );
+}
+
+function ScorePill() {
+  const state = useGameStore((s) => s.state);
+  const score = computeScore(state);
+  return (
+    <span
+      className="num rounded-full bg-neutral-900 px-2 py-0.5 text-[11px] font-bold text-white"
+      title={`Legacy score ${score.total} · ${score.grade}`}
+    >
+      ★ {score.total}
+    </span>
   );
 }
