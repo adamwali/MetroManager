@@ -5,6 +5,7 @@ import { QuarterRecap } from '@ui/components/QuarterRecap';
 import { StandingOrdersPanel } from '@ui/components/StandingOrdersPanel';
 import { CashFlowForecast } from '@ui/components/CashFlowForecast';
 import { StrategicPriority } from '@ui/components/StrategicPriority';
+import { TuneOperationsCard } from '@ui/components/TuneOperationsCard';
 
 /**
  * Mission Control home dashboard. Per design doc §4. The top strip with
@@ -23,6 +24,7 @@ export function MissionControl() {
       </div>
       <div className="flex flex-col gap-4">
         <CashFlowForecast />
+        <TuneOperationsCard />
         <StandingOrdersPanel />
         <NewsRail />
       </div>
