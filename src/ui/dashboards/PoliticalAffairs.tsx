@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useGameStore } from '@state/gameStore';
+import { MeetingModal } from '@ui/components/MeetingModal';
 import {
   POLITICAL_ACTION_META,
   cooldownQuartersLeft,
@@ -57,9 +59,13 @@ export function PoliticalAffairs() {
   const state = useGameStore((s) => s.state);
   const execute = useGameStore((s) => s.executePoliticalAction);
   const currentQ = state.quarter as unknown as number;
+  const [meetingFor, setMeetingFor] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      {meetingFor && (
+        <MeetingModal characterId={meetingFor} onClose={() => setMeetingFor(null)} />
+      )}
       <header>
         <h1 className="text-xl font-semibold">Political Affairs</h1>
         <p className="mt-1 text-sm text-neutral-600">
@@ -101,10 +107,21 @@ export function PoliticalAffairs() {
                 <p className="mt-0.5 text-xs text-neutral-500">{meta.subtitle}</p>
                 {cabinetCharacter && (
                   <div className="mt-2 rounded-md border border-neutral-100 bg-neutral-50/60 p-2">
-                    <div className="text-[10px] uppercase tracking-wider text-neutral-500">
-                      Your contact
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                          Your contact · rel {(cabinetCharacter.relationship as unknown as number).toFixed(0)}
+                        </div>
+                        <div className="mt-0.5 text-sm font-semibold">{cabinetCharacter.name}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setMeetingFor(cabinetCharacter.id)}
+                        className="rounded-md bg-blue-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-blue-700 shrink-0"
+                      >
+                        Meet 1-on-1
+                      </button>
                     </div>
-                    <div className="mt-0.5 text-sm font-semibold">{cabinetCharacter.name}</div>
                     <p className="mt-1 text-[11px] text-neutral-600 leading-snug">
                       {cabinetCharacter.bio[0]}
                     </p>

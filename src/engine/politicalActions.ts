@@ -2,6 +2,7 @@ import type { GameState } from '@/types/gameState';
 import type { GovernmentId, PoliticalActionKind } from '@/types/politics';
 import type { ActionLogEntry } from '@/types/actionLog';
 import type { CeoArchetype } from '@/types/ceo';
+import type { Character } from '@/types/characters';
 import { cash, quarter, score } from '@/types/scalars';
 
 /**
@@ -287,6 +288,95 @@ export function callInFavor(state: GameState, gov: GovernmentId): PoliticalActio
   const summary = `Called in favor with ${GOV_LABEL[gov]} (rel ${relationship}) → +$${favorM}M cash, +5 trust`;
   const r = appendLog(s, 'callInFavor', gov, summary);
   return { state: r.state, logEntry: r.entry, outcomeSummary: summary };
+}
+
+/**
+ * Phase 10.12: 1-on-1 private meeting with a named character. Builds
+ * relationship slowly (no political-action cooldown — has its own 8Q
+ * cooldown per character via lobbyingCooldownUntil) and adds an
+ * interaction record so future events have memory.
+ *
+ * Cost + relationship outcome shift by character mood; the dialogue UI
+ * (MeetingModal) drives the choice between 3 response options.
+ */
+export function requestPrivateMeeting(
+  state: GameState,
+  characterId: string,
+  responseId: 'warm' | 'transactional' | 'cold',
+): { state: GameState; logEntry: ActionLogEntry | null; outcomeSummary: string } {
+  const character = state.characters[characterId];
+  if (!character) {
+    return { state, logEntry: null, outcomeSummary: 'No such contact.' };
+  }
+  const q = state.quarter as unknown as number;
+  const cooldownUntil = character.lobbyingCooldownUntil as unknown as number | undefined;
+  if (cooldownUntil !== undefined && cooldownUntil > q) {
+    const wait = cooldownUntil - q;
+    return {
+      state,
+      logEntry: null,
+      outcomeSummary: `${character.name} won't take another meeting for ${wait}Q.`,
+    };
+  }
+
+  // Response → relationship delta. Warm builds; transactional is neutral
+  // unless they're aligned; cold burns a little for a downstream lever.
+  let relDelta = 0;
+  let cashDelta = 0;
+  if (responseId === 'warm') relDelta = 6;
+  if (responseId === 'transactional') relDelta = 2;
+  if (responseId === 'cold') {
+    relDelta = -4;
+    // Cold meeting can extract a small concession from a hostile contact:
+    // if relationship is low they confide something useful (small cash).
+    if ((character.relationship as unknown as number) <= 30) cashDelta = 25;
+  }
+
+  const newRel = Math.max(
+    0,
+    Math.min(100, (character.relationship as unknown as number) + relDelta),
+  );
+  const newCash = (state.cash.balance as unknown as number) + cashDelta;
+
+  const cooldownTarget = quarter(q + 8);
+  const updatedCharacter = {
+    ...character,
+    relationship: score(newRel),
+    lobbyingCooldownUntil: cooldownTarget,
+    interactions: [
+      ...character.interactions,
+      {
+        quarter: state.quarter,
+        kind: 'lobby_privateMeeting' as const,
+        delta: relDelta,
+        note: responseId,
+      },
+    ],
+  } as Character;
+
+  const summary = `Private meeting with ${character.name} (${responseId}) → ${
+    relDelta >= 0 ? '+' : ''
+  }${relDelta} relationship${cashDelta > 0 ? `, +$${cashDelta}M cash` : ''}`;
+  const entry: ActionLogEntry = {
+    kind: 'player_action',
+    id: `q${q}-${state.nextLogId}`,
+    quarter: state.quarter,
+    cause: { kind: 'player' },
+    action: `privateMeeting:${characterId}:${responseId}`,
+    summary,
+  };
+
+  return {
+    state: {
+      ...state,
+      cash: { ...state.cash, balance: cash(newCash) },
+      characters: { ...state.characters, [characterId]: updatedCharacter },
+      actionLog: [...state.actionLog, entry],
+      nextLogId: state.nextLogId + 1,
+    },
+    logEntry: entry,
+    outcomeSummary: summary,
+  };
 }
 
 /**

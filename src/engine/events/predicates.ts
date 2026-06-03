@@ -74,6 +74,12 @@ export function evaluatePredicate(state: GameState, pred: EventPredicate): boole
       }
       return false;
     }
+    case 'characterRelationship': {
+      // Phase 10.12: gate event branches on a specific character relationship.
+      const c = state.characters[pred.characterId];
+      if (!c) return false;
+      return checkRange(c.relationship as unknown as number, pred);
+    }
     case 'projectFundingShortfall': {
       // True if any under-construction project has < 4Q of funding remaining
       // at current burn rate. Triggers EV043 funding-shortfall crisis event.

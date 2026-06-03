@@ -1,4 +1,5 @@
 import type { GameState } from '@/types/gameState';
+import { memoryCallbackFor } from './characterMood';
 
 /**
  * Interpolate placeholder tokens in event copy. Shared between Inbox preview
@@ -21,6 +22,10 @@ export function interpolateEventText(text: string, state: GameState, actorId?: s
       result = result.replace(/\{actorName\}/g, actor.name);
       const first = actor.name.split(' ')[0] ?? actor.name;
       result = result.replace(/\{actorFirstName\}/g, first);
+      result = result.replace(
+        /\{actorMemory\}/g,
+        memoryCallbackFor(actor, state.quarter as unknown as number),
+      );
     }
   }
   return result;

@@ -436,6 +436,51 @@ export function resolveEventChoice(
 
   s = applyEffects(s, choice.effects);
 
+  // Phase 10.12: if the event has an actorCharacterId, append an
+  // interaction record so the character remembers the choice. Drives
+  // {actorMemory} callback in future event copy + the mood derivation.
+  if (template.actorCharacterId) {
+    const actor = s.characters[template.actorCharacterId];
+    if (actor) {
+      // Derive a small relationship delta from cash + trust effects on the
+      // actor's home government. Negative cash on the actor's gov = bad;
+      // positive trust = good. Heuristic, not strict.
+      let valenceDelta = 0;
+      for (const e of choice.effects) {
+        if (e.kind === 'governmentTrust' && actor.role.startsWith('politician_')) {
+          valenceDelta += e.delta * 0.3;
+        }
+        if (e.kind === 'cash' && e.deltaM > 0 && actor.role.startsWith('politician_')) {
+          valenceDelta += 1; // accepting their cash offer = warmer
+        }
+      }
+      const newRel = Math.max(
+        0,
+        Math.min(100, (actor.relationship as unknown as number) + valenceDelta),
+      );
+      s = {
+        ...s,
+        characters: {
+          ...s.characters,
+          [template.actorCharacterId]: {
+            ...actor,
+            relationship: newRel as unknown as typeof actor.relationship,
+            interactions: [
+              ...actor.interactions,
+              {
+                quarter: s.quarter,
+                kind: 'event_choice',
+                eventId: template.id,
+                choiceLabel: choice.label,
+                delta: valenceDelta,
+              },
+            ],
+          },
+        },
+      };
+    }
+  }
+
   const logId = `q${s.quarter as unknown as number}-${s.nextLogId}`;
   const logEntry: ActionLogEntry = {
     kind: 'player_decision',

@@ -22,7 +22,7 @@ import {
   type FinancingSelection,
 } from '@engine/projectActions';
 import { setEngineerHeadcount } from '@engine/staffingActions';
-import { executePoliticalAction } from '@engine/politicalActions';
+import { executePoliticalAction, requestPrivateMeeting } from '@engine/politicalActions';
 import {
   issueOperatingBond,
   refinanceTranche,
@@ -124,6 +124,7 @@ export interface GameStore {
   setEngineerHeadcount: (target: number) => void;
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
+  requestPrivateMeeting: (characterId: string, response: 'warm' | 'transactional' | 'cold') => void;
   /** Treasury actions (Phase 7). */
   issueOperatingBond: (creditor: CreditorType, amountM: number) => void;
   refinanceTranche: (trancheId: string) => void;
@@ -396,6 +397,14 @@ export const useGameStore = create<GameStore>((set, get) => {
     executePoliticalAction: (gov, kind) => {
       const result = executePoliticalAction(get().state, gov, kind);
       if (result.state === get().state) return; // No-op (ineligible)
+      set({ state: result.state, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    requestPrivateMeeting: (characterId, response) => {
+      const result = requestPrivateMeeting(get().state, characterId, response);
+      if (result.state === get().state) return;
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)
         .then(() => set({ autosaveStatus: 'saved' }))

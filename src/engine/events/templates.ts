@@ -28,7 +28,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     outlet: 'CBC',
     actorCharacterId: 'c_tremblay',
     headline: 'Tremblay: "Prove the new authority isn\'t just the old boys\' club"',
-    body: 'Minister Tremblay\'s office calls personally. Ottawa wants assurance that {agencyName} isn\'t inheriting the previous regime\'s habits. She offers three paths — and each one shapes how the federal government will judge your tenure for years.',
+    body: 'Minister Tremblay\'s office calls personally. Ottawa wants assurance that {agencyName} isn\'t inheriting the previous regime\'s habits. She offers three paths — and each one shapes how the federal government will judge your tenure for years. {actorMemory}',
     urgency: 70,
     choices: [
       {
@@ -134,7 +134,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     outlet: 'Globe',
     actorCharacterId: 'c_hartwell',
     headline: 'Hartwell names his preferred vendor for upcoming TTC contract',
-    body: 'Minister Hartwell — in a Globe op-ed, no less — names {agencyName}\'s ideal partner on the next signals contract. He doesn\'t pretend it\'s subtle. Bow and Queen\'s Park warms; reject publicly and you\'ll have an enemy who controls your operating allowance.',
+    body: 'Minister Hartwell — in a Globe op-ed, no less — names {agencyName}\'s ideal partner on the next signals contract. He doesn\'t pretend it\'s subtle. Bow and Queen\'s Park warms; reject publicly and you\'ll have an enemy who controls your operating allowance. {actorMemory}',
     urgency: 80,
     noGoodOptions: true,
     choices: [
@@ -163,6 +163,15 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
         tradeoff: '-$15M legal review, neutral trust + board (everyone confused)',
         effects: [
           { kind: 'cash', deltaM: -15 },
+        ],
+      },
+      {
+        id: 'call_in_personal_favor',
+        label: '[Hartwell relationship ≥60] "Patrick, let\'s talk privately first"',
+        tradeoff: 'You cash a personal chit: -3 Hartwell relationship, no public mess, +5 QP trust',
+        requires: { kind: 'characterRelationship', characterId: 'c_hartwell', gte: 60 },
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
         ],
       },
     ],
