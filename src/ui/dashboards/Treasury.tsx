@@ -351,13 +351,31 @@ function InstitutionalPressurePanel() {
             ? 'Need $15M cash'
             : null;
 
+  // Headline tone for the collapsed summary — red if any gauge is critical.
+  const anyCritical =
+    scrutiny >= 50 || nimby >= 60 || crosslinx >= 70 || consultant <= -40;
+  const anyWarning =
+    scrutiny >= 30 || nimby >= 40 || crosslinx >= 55 || consultant >= 30;
+  const summaryDot = anyCritical ? 'bg-red-500' : anyWarning ? 'bg-amber-400' : 'bg-emerald-400';
+
   return (
-    <section className="rounded-md border border-neutral-200 bg-white p-4">
-      <header className="mb-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-          Institutional pressure
-        </h3>
-        <p className="text-[11px] text-neutral-500 mt-0.5">
+    <details className="rounded-md border border-neutral-200 bg-white p-4">
+      <summary className="cursor-pointer list-none -m-1 p-1 hover:bg-neutral-50 rounded">
+        <div className="flex items-baseline justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`inline-block h-2 w-2 rounded-full ${summaryDot}`} />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Institutional pressure
+            </h3>
+            <span className="text-[10px] text-neutral-400">
+              audit {scrutiny.toFixed(0)} · NIMBY {nimby.toFixed(0)} · Crosslinx {crosslinx.toFixed(0)} · consultants {consultant > 0 ? '+' : ''}{consultant.toFixed(0)}
+            </span>
+          </div>
+          <span className="text-[10px] text-neutral-400">click to expand</span>
+        </div>
+      </summary>
+      <header className="mt-3 mb-2">
+        <p className="text-[11px] text-neutral-500">
           Background forces that don't show up in the P&L but shape what events fire and how costly they get.
         </p>
       </header>
@@ -486,7 +504,7 @@ function InstitutionalPressurePanel() {
           )}
         </div>
       </div>
-    </section>
+    </details>
   );
 }
 

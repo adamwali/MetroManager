@@ -972,40 +972,49 @@ function CapacityBar({
     engineers >= 200 ? 'fast burn' : engineers >= 150 ? 'normal burn' : 'slow burn';
   return (
     <section className="rounded-md border border-neutral-200 bg-neutral-50/60 p-3">
-      <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold mb-2">
-        Delivery capacity (affects every new project)
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-xs font-medium text-neutral-700">Data Systems</span>
-            <span className="num text-sm font-semibold">{templates.toFixed(0)}/100</span>
-          </div>
-          <div className="text-[10px] text-neutral-500 mt-0.5">
-            {Number(templateDiscountPct) > 0
-              ? `−${templateDiscountPct}% project cost`
-              : 'No procurement discount yet'}
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-semibold">
+          Delivery capacity
         </div>
-        <EngineerHiringCell engineers={engineers} burnHint={burnHint} />
-        <div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-xs font-medium text-neutral-700">Crosslinx leverage</span>
-            <span
-              className={`num text-sm font-semibold ${
-                Number(leveragePremiumPct) > 5 ? 'text-red-700' : Number(leveragePremiumPct) > 2 ? 'text-amber-700' : 'text-neutral-800'
-              }`}
-            >
-              {crosslinx.toFixed(0)}/100
-            </span>
-          </div>
-          <div className="text-[10px] text-neutral-500 mt-0.5">
-            {Number(leveragePremiumPct) > 0
-              ? `+${leveragePremiumPct}% project cost premium`
-              : 'No consortium premium yet'}
-          </div>
+        <div className="flex-1 max-w-md">
+          <EngineerHiringCell engineers={engineers} burnHint={burnHint} />
         </div>
       </div>
+      <details className="mt-2">
+        <summary className="cursor-pointer text-[10px] text-neutral-500 hover:text-neutral-700 list-none">
+          ▸ Other delivery factors (Data Systems {templates.toFixed(0)} · Crosslinx {crosslinx.toFixed(0)})
+        </summary>
+        <div className="grid gap-3 sm:grid-cols-2 mt-2">
+          <div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium text-neutral-700">Data Systems</span>
+              <span className="num text-sm font-semibold">{templates.toFixed(0)}/100</span>
+            </div>
+            <div className="text-[10px] text-neutral-500 mt-0.5">
+              {Number(templateDiscountPct) > 0
+                ? `−${templateDiscountPct}% project cost`
+                : 'No procurement discount yet'}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium text-neutral-700">Crosslinx leverage</span>
+              <span
+                className={`num text-sm font-semibold ${
+                  Number(leveragePremiumPct) > 5 ? 'text-red-700' : Number(leveragePremiumPct) > 2 ? 'text-amber-700' : 'text-neutral-800'
+                }`}
+              >
+                {crosslinx.toFixed(0)}/100
+              </span>
+            </div>
+            <div className="text-[10px] text-neutral-500 mt-0.5">
+              {Number(leveragePremiumPct) > 0
+                ? `+${leveragePremiumPct}% project cost premium`
+                : 'No consortium premium yet'}
+            </div>
+          </div>
+        </div>
+      </details>
     </section>
   );
 }

@@ -78,11 +78,19 @@ export function StandingOrdersPanel() {
   };
 
   return (
-    <section className="rounded-md border border-neutral-200 bg-white p-4">
-      <header className="flex items-baseline justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-          Standing orders {orders.length > 0 && `(${orders.length})`}
-        </h2>
+    <details className="rounded-md border border-neutral-200 bg-white p-4">
+      <summary className="cursor-pointer list-none -m-1 p-1 hover:bg-neutral-50 rounded">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Standing orders {orders.length > 0 && `(${orders.length})`}
+          </h2>
+          <span className="text-[10px] text-neutral-400">click to expand</span>
+        </div>
+      </summary>
+      <header className="mt-3 flex items-baseline justify-between">
+        <span className="text-[11px] text-neutral-500">
+          Automate routine plays so the bigger decisions are louder.
+        </span>
         <button
           type="button"
           onClick={() => setShowAdd((v) => !v)}
@@ -199,7 +207,7 @@ export function StandingOrdersPanel() {
       )}
 
       {showAdd && <AddRuleForm onClose={() => setShowAdd(false)} />}
-    </section>
+    </details>
   );
 }
 

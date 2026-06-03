@@ -53,17 +53,28 @@ export function TuneOperationsCard() {
   const projectChange = (next: typeof state) =>
     projectQuarterlyCashFlow(next).net - current.net;
 
+  // Compact stance summary derived from current settings.
+  const stance = describeOperationsStance(state);
+
   return (
-    <section className="rounded-md border border-neutral-200 bg-white p-4">
-      <header className="mb-2 flex items-baseline justify-between">
-        <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Tune operations
-          </h2>
-          <p className="text-[11px] text-neutral-500 mt-0.5">
-            Highest-impact agency levers, with cash impact next to each. Click for full controls.
-          </p>
+    <details className="rounded-md border border-neutral-200 bg-white p-4">
+      <summary className="cursor-pointer list-none -m-1 p-1 hover:bg-neutral-50 rounded">
+        <div className="flex items-baseline justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Tune operations
+            </h2>
+            <span className="text-[10px] text-neutral-500">
+              Stance: <span className="font-semibold text-neutral-700">{stance}</span>
+            </span>
+          </div>
+          <span className="text-[10px] text-neutral-400">click to tune</span>
         </div>
+      </summary>
+      <header className="mt-3 mb-2 flex items-baseline justify-between">
+        <p className="text-[11px] text-neutral-500">
+          Highest-impact agency levers, with cash impact next to each.
+        </p>
         <button
           type="button"
           onClick={() => navigate('/network')}
@@ -180,8 +191,30 @@ export function TuneOperationsCard() {
           );
         })}
       </div>
-    </section>
+    </details>
   );
+}
+
+function describeOperationsStance(state: ReturnType<typeof useGameStore.getState>['state']): string {
+  // Derive an at-a-glance stance from the policies actually in effect.
+  let aggressive = 0;
+  let cautious = 0;
+  for (const id of ['ttc', 'go', 'up'] as const) {
+    const a = state.agencies[id];
+    const fare = a.operatingParams.farePolicy;
+    const freq = a.operatingParams.frequencyPolicy;
+    if (fare === 'modestIncrease' || fare === 'aggressiveIncrease') aggressive++;
+    if (fare === 'reduced') cautious++;
+    if (freq === 'enhanced') aggressive++;
+    if (freq === 'reduced') cautious++;
+    const required = requiredMaintenanceFor(id);
+    const avg = a.subsystems.reduce((s, sub) => s + (sub.maintenanceBudget as unknown as number), 0) / a.subsystems.length;
+    if (avg > required * 1.05) aggressive++;
+    if (avg < required * 0.95) cautious++;
+  }
+  if (aggressive >= cautious + 2) return 'aggressive';
+  if (cautious >= aggressive + 2) return 'cautious';
+  return 'balanced';
 }
 
 function LeverRow({
