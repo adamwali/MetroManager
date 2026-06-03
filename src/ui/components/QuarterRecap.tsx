@@ -1,5 +1,6 @@
 import { useGameStore } from '@state/gameStore';
 import { catalogEntry } from '@engine/projectCatalog';
+import { briefingFor } from '@/utils/narrativeRecap';
 import {
   formatMoneyDelta,
   formatRidersDelta,
@@ -108,11 +109,13 @@ export function QuarterRecap() {
       (e.quarter as unknown as number) === q,
   );
 
+  const briefing = briefingFor(state);
+
   return (
     <section className="rounded-md border border-neutral-200 bg-white p-4">
       <header className="flex items-baseline justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-          What just changed — {quarterLabel(q)}
+          State of the agency — {quarterLabel(q)}
         </h2>
         {decisionsAndActions.length > 0 && (
           <span className="text-[10px] text-blue-700 num">
@@ -120,6 +123,12 @@ export function QuarterRecap() {
           </span>
         )}
       </header>
+      <p className="mt-2 rounded-md border-l-2 border-blue-300 bg-blue-50/40 px-3 py-2 text-[13px] leading-relaxed text-neutral-700 italic">
+        {briefing}
+      </p>
+      <div className="mt-2 text-[10px] uppercase tracking-wider text-neutral-500">
+        Top changes
+      </div>
       {b.projects.transitions
         .filter((t) => t.to === 'operating' && t.openingImpact)
         .map((t) => {

@@ -17,6 +17,158 @@ import type { EventTemplate } from '@/types/events';
 
 export const EVENT_TEMPLATES: EventTemplate[] = [
   // ────────────────────────────────────────────────────────────────────
+  // Phase 10.12 — early-game conflict events. Give the first two years
+  // teeth so the player isn't just learning the UI; they're surviving
+  // pressure from named NPCs from Q2 onward.
+  // ────────────────────────────────────────────────────────────────────
+  {
+    id: 'EV070_federalAuditThreat',
+    category: 'federal_pressure',
+    trigger: { kind: 'scheduled', quarters: [2] },
+    outlet: 'CBC',
+    actorCharacterId: 'c_tremblay',
+    headline: 'Tremblay: "Prove the new authority isn\'t just the old boys\' club"',
+    body: 'Minister Tremblay\'s office calls personally. Ottawa wants assurance that {agencyName} isn\'t inheriting the previous regime\'s habits. She offers three paths — and each one shapes how the federal government will judge your tenure for years.',
+    urgency: 70,
+    choices: [
+      {
+        id: 'invite_full_audit',
+        label: 'Invite a full federal audit',
+        tradeoff: '-$30M audit cost, +12 Ottawa trust, +10 board (decisive transparency)',
+        effects: [
+          { kind: 'cash', deltaM: -30 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 12 },
+          { kind: 'boardConfidence', delta: 10, reason: 'Voluntary federal audit signals discipline' },
+          { kind: 'auditorScrutiny', delta: -10 },
+        ],
+      },
+      {
+        id: 'cooperate_key_files',
+        label: 'Cooperate on key files only',
+        tradeoff: '-$10M, +5 Ottawa trust, neutral else',
+        effects: [
+          { kind: 'cash', deltaM: -10 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 5 },
+        ],
+      },
+      {
+        id: 'stonewall',
+        label: 'Stonewall — "we\'ll cooperate when subpoenaed"',
+        tradeoff: '+5 board (firmness), -8 Ottawa trust, +10 auditor scrutiny',
+        effects: [
+          { kind: 'boardConfidence', delta: 5, reason: 'Stood firm vs federal pressure' },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -8 },
+          { kind: 'auditorScrutiny', delta: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'EV071_unionStrikeThreat',
+    category: 'internal_politics',
+    trigger: { kind: 'scheduled', quarters: [5] },
+    outlet: 'Star',
+    headline: 'TTC union: "6% wage increase or we walk in 30 days"',
+    body: 'The transit operators\' union just delivered a 6% wage demand. The negotiation rep — a tough Local 113 veteran — wants an answer before next quarter. Cave and you bleed opex for four quarters. Counter and you might trigger a strike. Refuse and you definitely do.',
+    urgency: 85,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'accept_six',
+        label: 'Accept 6% — close the file fast',
+        tradeoff: '-$25M/Q TTC opex for 4Q, +5 approval',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: 25 },
+          { kind: 'publicApproval', delta: 5 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 4,
+            cause: 'Wage settlement reverts to baseline',
+            effects: [{ kind: 'opex', agency: 'ttc', deltaM: -25 }],
+          },
+        ],
+      },
+      {
+        id: 'counter_three',
+        label: 'Counter at 3% with a longer term',
+        tradeoff: '-$12M/Q TTC opex for 4Q, -3 reliability for 2Q (work-to-rule)',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: 12 },
+          { kind: 'reliability', agency: 'ttc', delta: -3 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 2,
+            cause: 'Work-to-rule ends',
+            effects: [{ kind: 'reliability', agency: 'ttc', delta: 3 }],
+          },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 4,
+            cause: 'Wage settlement reverts to baseline',
+            effects: [{ kind: 'opex', agency: 'ttc', deltaM: -12 }],
+          },
+        ],
+      },
+      {
+        id: 'refuse',
+        label: 'Refuse and force the strike',
+        tradeoff: '-15 approval, -8 board, -8 reliability for 3Q (strike)',
+        effects: [
+          { kind: 'publicApproval', delta: -15 },
+          { kind: 'boardConfidence', delta: -8, reason: 'Triggered TTC strike' },
+          { kind: 'reliability', agency: 'ttc', delta: -8 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 3,
+            cause: 'Strike resolved',
+            effects: [{ kind: 'reliability', agency: 'ttc', delta: 8 }],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'EV072_hartwellVendorDemand',
+    category: 'premier_pressure',
+    trigger: { kind: 'scheduled', quarters: [8] },
+    outlet: 'Globe',
+    actorCharacterId: 'c_hartwell',
+    headline: 'Hartwell names his preferred vendor for upcoming TTC contract',
+    body: 'Minister Hartwell — in a Globe op-ed, no less — names {agencyName}\'s ideal partner on the next signals contract. He doesn\'t pretend it\'s subtle. Bow and Queen\'s Park warms; reject publicly and you\'ll have an enemy who controls your operating allowance.',
+    urgency: 80,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'bow_to_it',
+        label: 'Bow to it — "we appreciate the Minister\'s input"',
+        tradeoff: '-3 board (procurement integrity), +8 Queen\'s Park trust',
+        effects: [
+          { kind: 'boardConfidence', delta: -3, reason: 'Bowed to ministerial vendor pick' },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 8 },
+        ],
+      },
+      {
+        id: 'reject_publicly',
+        label: 'Reject publicly — "procurement is independent"',
+        tradeoff: '-12 Queen\'s Park trust, +5 board, +10 approval',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -12 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Defended procurement independence' },
+          { kind: 'publicApproval', delta: 10 },
+        ],
+      },
+      {
+        id: 'defer_to_procurement',
+        label: 'Defer to procurement; signal nothing publicly',
+        tradeoff: '-$15M legal review, neutral trust + board (everyone confused)',
+        effects: [
+          { kind: 'cash', deltaM: -15 },
+        ],
+      },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────────────
   // EV001 — Signal failure (conditional on TTC reliability low)
   // ────────────────────────────────────────────────────────────────────
   {

@@ -101,6 +101,51 @@ export function buildNewsTicker(state: GameState): TickerHeadline[] {
     out.push({ outlet: 'CBC', text: `Record ridership: ${(totalRiders / 1_000_000).toFixed(1)}M daily trips on the network`, tone: 'good' });
   }
 
+  // Phase 10.12: archetype-flavored chatter so the player's choice of
+  // archetype shapes the world's tone, not just their stats. One line per
+  // archetype, drawn at most once per ticker render.
+  const q = state.quarter as unknown as number;
+  if (q >= 1 && q % 3 === 0) {
+    const ceoName = ceoLast(state);
+    switch (state.ceo.archetype) {
+      case 'insider':
+        out.push({
+          outlet: 'Globe',
+          text: `Sources: ${ceoName} spotted at private donor reception in Yorkville`,
+          tone: 'neutral',
+        });
+        break;
+      case 'disruptor':
+        out.push({
+          outlet: 'CP24',
+          text: `Critics: ${agency} CEO "moves fast, breaks things — and now breaks our subway"`,
+          tone: 'bad',
+        });
+        break;
+      case 'internationalTechnocrat':
+        out.push({
+          outlet: 'Globe',
+          text: `Bond markets cite ${agency}'s open-books posture as a stabilizing signal`,
+          tone: 'good',
+        });
+        break;
+      case 'coalitionBuilder':
+        out.push({
+          outlet: 'The Star',
+          text: `${agency} convenes another tri-government roundtable — substance or theater?`,
+          tone: 'neutral',
+        });
+        break;
+      case 'steadyOperator':
+        out.push({
+          outlet: 'CBC',
+          text: `${ceoName}'s ${agency} runs on quiet competence — boring is the new bold`,
+          tone: 'neutral',
+        });
+        break;
+    }
+  }
+
   // Always have something — fall back to a neutral status line.
   if (out.length === 0) {
     out.push({

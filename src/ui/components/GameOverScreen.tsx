@@ -8,6 +8,7 @@ import {
   quarterLabel,
 } from '@/utils/humanize';
 import { computeScore } from '@/utils/score';
+import { vignetteFor } from '@/utils/endgameVignette';
 
 interface GameOverScreenProps {
   onStartNew: () => void;
@@ -28,10 +29,11 @@ export function GameOverScreen({ onStartNew, onLoad }: GameOverScreenProps) {
   const arch = ARCHETYPE_CONFIGS[state.ceo.archetype as CeoArchetype];
   const agencyName = state.ceo.agencyName ?? 'GTTA';
   const score = computeScore(state);
+  const vignette = vignetteFor(state);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 p-4">
-      <div className={`w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-lg border-2 bg-white p-6 shadow-2xl ${style.accent}`}>
+      <div className={`w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-lg border-2 bg-white p-6 shadow-2xl ${style.accent}`}>
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
             {agencyName} · Campaign ended · {quarterLabel(go.endedAt as unknown as number)}
@@ -39,6 +41,26 @@ export function GameOverScreen({ onStartNew, onLoad }: GameOverScreenProps) {
           <h1 className={`mt-1 text-2xl font-bold ${style.color}`}>{go.headline}</h1>
           <p className="mt-2 text-sm text-neutral-700">{go.detail}</p>
         </div>
+
+        {/* 3-act vignette — narrative close before the stats */}
+        {vignette.length > 0 && (
+          <div className="mb-4 space-y-3">
+            {vignette.map((act, i) => (
+              <div
+                key={i}
+                className="rounded-md border border-neutral-200 bg-neutral-50/60 p-3"
+              >
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
+                  Act {i + 1} · {act.speakerRole}
+                </div>
+                <p className="text-[13px] leading-relaxed text-neutral-800 italic">
+                  "{act.text}"
+                </p>
+                <p className="mt-1 text-[11px] text-neutral-500">— {act.speaker}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Score headline */}
         <div className="mb-4 flex items-center justify-between rounded-md bg-neutral-900 px-4 py-3 text-white">
