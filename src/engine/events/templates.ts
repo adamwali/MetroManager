@@ -141,20 +141,22 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'bow_to_it',
         label: 'Bow to it — "we appreciate the Minister\'s input"',
-        tradeoff: '-3 board (procurement integrity), +8 Queen\'s Park trust',
+        tradeoff: '-3 board, +8 Queen\'s Park trust · plants vendor scandal seed (Q+6)',
         effects: [
           { kind: 'boardConfidence', delta: -3, reason: 'Bowed to ministerial vendor pick' },
           { kind: 'governmentTrust', gov: 'queensPark', delta: 8 },
+          { kind: 'queueDelayedEvent', eventId: 'EV074_vendorScandal', quartersOut: 6, cause: 'Hartwell\'s vendor pick lands' },
         ],
       },
       {
         id: 'reject_publicly',
         label: 'Reject publicly — "procurement is independent"',
-        tradeoff: '-12 Queen\'s Park trust, +5 board, +10 approval',
+        tradeoff: '-12 QP trust, +5 board, +10 approval · plants Hartwell retaliation (Q+4)',
         effects: [
           { kind: 'governmentTrust', gov: 'queensPark', delta: -12 },
           { kind: 'boardConfidence', delta: 5, reason: 'Defended procurement independence' },
           { kind: 'publicApproval', delta: 10 },
+          { kind: 'queueDelayedEvent', eventId: 'EV075_hartwellRetaliation', quartersOut: 4, cause: 'Public rebuke of Hartwell' },
         ],
       },
       {
@@ -172,6 +174,142 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
         requires: { kind: 'characterRelationship', characterId: 'c_hartwell', gte: 60 },
         effects: [
           { kind: 'governmentTrust', gov: 'queensPark', delta: 5 },
+        ],
+      },
+    ],
+  },
+
+  // ── Phase 10.12: cascade target events. Fired only by queueDelayedEvent
+  //    payloads from upstream player choices. ────────────────────────────
+  {
+    id: 'EV073_hartwellCollects',
+    category: 'premier_pressure',
+    trigger: { kind: 'random', baseWeight: 0, cooldownQuarters: 999 },
+    outlet: 'Globe',
+    actorCharacterId: 'c_hartwell',
+    headline: 'Hartwell wants his concession',
+    body: 'A few quarters back you let Queen\'s Park solve a problem the federal way. Minister Hartwell has not forgotten — and now he wants his concession. Quietly named, professionally delivered.',
+    urgency: 70,
+    choices: [
+      {
+        id: 'deliver',
+        label: 'Deliver the concession quietly',
+        tradeoff: '-$60M cash · +8 QP trust · +3 Hartwell relationship',
+        effects: [
+          { kind: 'cash', deltaM: -60 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 8 },
+        ],
+      },
+      {
+        id: 'stall',
+        label: 'Stall — "the file is moving"',
+        tradeoff: '-6 Hartwell relationship · -4 QP trust · queues retaliation Q+4',
+        effects: [
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -4 },
+          { kind: 'queueDelayedEvent', eventId: 'EV075_hartwellRetaliation', quartersOut: 4, cause: 'Stalled the concession' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'EV074_vendorScandal',
+    category: 'auditor_oversight',
+    trigger: { kind: 'random', baseWeight: 0, cooldownQuarters: 999 },
+    outlet: 'CBC',
+    headline: 'The vendor Hartwell picked is in the papers — and not in a good way',
+    body: 'The signals contractor you accepted under Hartwell\'s pressure has a CFO under investigation and a 6-month delivery slip on a parallel contract in Alberta. The Star wants comment by 6PM.',
+    urgency: 85,
+    noGoodOptions: true,
+    choices: [
+      {
+        id: 'distance',
+        label: 'Distance fast: "Procurement followed the rules"',
+        tradeoff: '-10 approval · -5 QP trust · +5 board',
+        effects: [
+          { kind: 'publicApproval', delta: -10 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -5 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Maintained procurement defense' },
+        ],
+      },
+      {
+        id: 'defend_vendor',
+        label: 'Defend the vendor — buy time for delivery',
+        tradeoff: '-$40M contingency · +10 auditor scrutiny · -3 board',
+        effects: [
+          { kind: 'cash', deltaM: -40 },
+          { kind: 'auditorScrutiny', delta: 10 },
+          { kind: 'boardConfidence', delta: -3, reason: 'Tied agency reputation to a wobbly vendor' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'EV075_hartwellRetaliation',
+    category: 'premier_pressure',
+    trigger: { kind: 'random', baseWeight: 0, cooldownQuarters: 999 },
+    outlet: 'Globe',
+    actorCharacterId: 'c_hartwell',
+    headline: 'Queen\'s Park claws back $80M from {agencyName} envelope',
+    body: 'Minister Hartwell announces a mid-year "reprofiling" of the {agencyName} operating envelope. Eighty million dollars, redirected to highways. The press release thanks {ceoName} for their cooperation. {actorMemory}',
+    urgency: 80,
+    choices: [
+      {
+        id: 'absorb',
+        label: 'Absorb the hit',
+        tradeoff: '-$80M cash',
+        effects: [{ kind: 'cash', deltaM: -80 }],
+      },
+      {
+        id: 'public_fight',
+        label: 'Public fight: name the politics',
+        tradeoff: '-$80M cash · -8 QP trust · +5 approval · -4 Hartwell relationship',
+        effects: [
+          { kind: 'cash', deltaM: -80 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -8 },
+          { kind: 'publicApproval', delta: 5 },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'EV079_lineOpeningPhotoOp',
+    category: 'mayor_city',
+    trigger: { kind: 'random', baseWeight: 0, cooldownQuarters: 999 },
+    outlet: 'CBC',
+    headline: 'New line ribbon-cutting — every politician wants a photo',
+    body: 'The new line opened last quarter and now every government wants their face next to {ceoName} on the dais. How you stage the ceremony will telegraph who you owe and who you don\'t.',
+    urgency: 50,
+    choices: [
+      {
+        id: 'share_credit',
+        label: 'Share the dais — all three governments',
+        tradeoff: '+4 to each gov trust',
+        effects: [
+          { kind: 'governmentTrust', gov: 'ottawa', delta: 4 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: 4 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 4 },
+        ],
+      },
+      {
+        id: 'lean_into_city',
+        label: 'Lean into City Hall — local pride',
+        tradeoff: '+10 City Hall trust · -2 Ottawa · -2 QP',
+        effects: [
+          { kind: 'governmentTrust', gov: 'cityHall', delta: 10 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -2 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -2 },
+        ],
+      },
+      {
+        id: 'agency_first',
+        label: 'No politicians — {agencyName} staff cuts the ribbon',
+        tradeoff: '+10 board · +8 approval · -3 to each gov trust',
+        effects: [
+          { kind: 'boardConfidence', delta: 10, reason: 'Foregrounded the agency, not the politicians' },
+          { kind: 'publicApproval', delta: 8 },
+          { kind: 'governmentTrust', gov: 'ottawa', delta: -3 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -3 },
+          { kind: 'governmentTrust', gov: 'cityHall', delta: -3 },
         ],
       },
     ],
@@ -208,10 +346,11 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
       {
         id: 'deflect_to_province',
         label: 'Deflect: "Province underfunds rolling stock"',
-        tradeoff: '-12 Queen\'s Park trust, -3 public approval, no cash hit',
+        tradeoff: '-12 QP trust, -3 approval, no cash · Hartwell collects in 3Q',
         effects: [
           { kind: 'governmentTrust', gov: 'queensPark', delta: -12 },
           { kind: 'publicApproval', delta: -3 },
+          { kind: 'queueDelayedEvent', eventId: 'EV073_hartwellCollects', quartersOut: 3, cause: 'Deflected to province in public' },
         ],
       },
       {

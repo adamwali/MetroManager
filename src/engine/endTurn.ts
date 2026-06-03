@@ -146,6 +146,9 @@ export function endTurn(state: GameState): GameState {
   const cannibalizationByAgency: Record<AgencyId, number> = { ttc: 0, go: 0, up: 0 };
   const transitions: QuarterSummaryBreakdown['projects']['transitions'] = [];
   const constructionDraws: QuarterSummaryBreakdown['projects']['constructionDraws'] = [];
+  // Phase 10.12: cascade events triggered by this quarter's mechanical
+  // transitions (line openings etc). Spliced into delayedQueue below.
+  const cascadeQueueAdditions: import('@/types/events').DelayedConsequence[] = [];
 
   const tickedProjects = state.projects.map((p, idx) => {
     const before = state.projects[idx]!;
@@ -194,6 +197,16 @@ export function endTurn(state: GameState): GameState {
         to: toState,
         ...(openingImpact ? { openingImpact } : {}),
       });
+      // Phase 10.12 cascade: when a line opens, queue the ribbon-cutting
+      // photo-op event 2 quarters later so the player sees the political
+      // afterglow as a story beat.
+      if (toState === 'operating' && before.templateId !== 'P00') {
+        cascadeQueueAdditions.push({
+          firesAt: quarter((nextQuarter as unknown as number) + 2),
+          cause: `${before.templateId} ribbon-cutting`,
+          payload: { kind: 'event', templateId: 'EV079_lineOpeningPhotoOp' },
+        });
+      }
     }
     // Record construction draws (non-zero only)
     const drawn = r.drawFromFunding as unknown as number;
@@ -529,6 +542,10 @@ export function endTurn(state: GameState): GameState {
     activeObligations,
     engineVars: engineVarsDecayed,
     boardConfidence: boardConfidenceWithDrift,
+    delayedQueue:
+      cascadeQueueAdditions.length > 0
+        ? [...state.delayedQueue, ...cascadeQueueAdditions]
+        : state.delayedQueue,
     ...(gameOver ? { gameOver } : {}),
   };
 
