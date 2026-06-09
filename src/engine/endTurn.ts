@@ -586,7 +586,14 @@ function detectGameOver(
     boardConfidence < BOARD_FIRING_CONFIDENCE_THRESHOLD
       ? prev.quartersWithFiringBoard + 1
       : 0;
-  const counters: GameOverCounters = { quartersInDeepDeficit, quartersWithFiringBoard };
+  // Phase 11: track ANY negative cash so the credit-watch event has a
+  // counter to fire on, and rating drift can pressure earlier.
+  const quartersNegativeCash = nextCashM < 0 ? prev.quartersNegativeCash + 1 : 0;
+  const counters: GameOverCounters = {
+    quartersInDeepDeficit,
+    quartersWithFiringBoard,
+    quartersNegativeCash,
+  };
 
   if (quartersInDeepDeficit >= FISCAL_FAILURE_CONSECUTIVE_QUARTERS) {
     return {

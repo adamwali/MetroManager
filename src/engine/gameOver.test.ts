@@ -75,15 +75,15 @@ describe('game over detection', () => {
     expect(s.gameOver?.kind).toBe('campaignWon');
   });
 
-  it('triggers fiscalFailure after 4 consecutive quarters below -$5B', () => {
+  it('triggers fiscalFailure after 3 consecutive quarters below -$2B', () => {
     let s = createInitialGameState(0);
-    // Force cash into deep deficit; endTurn will continue to bleed
+    // Phase 11: terminal cliff moved from -$5B/4Q to -$2B/3Q.
     s = {
       ...s,
-      cash: { ...s.cash, balance: -5_500 as unknown as typeof s.cash.balance },
+      cash: { ...s.cash, balance: -2_500 as unknown as typeof s.cash.balance },
     };
     let firedAt: number | null = null;
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 8; i++) {
       s = endTurn(s);
       if (s.gameOver?.kind === 'fiscalFailure') {
         firedAt = s.quarter as unknown as number;

@@ -117,14 +117,21 @@ export const RATING_SPREAD_BP: Record<CreditRating, number> = {
   CCC: 1_000,
 };
 
-/** Operating bond issuance caps by rating ($M per quarter, $M total outstanding). */
+/** Operating bond issuance caps by rating ($M per quarter, $M total outstanding).
+ *
+ * Phase 11: caps halved (AAA total $10B → $4B etc.). The previous caps were
+ * so generous that "issue a bond" was the universal answer to any cash
+ * problem, defusing pressure that should have forced engagement with
+ * fares, opex, or political tradeoffs. With tighter caps, the player runs
+ * out of borrowing headroom and has to actually decide.
+ */
 export const RATING_OPERATING_BOND_CAPS: Record<
   CreditRating,
   { perQuarterM: number; totalOutstandingM: number }
 > = {
-  AAA: { perQuarterM: 3_000, totalOutstandingM: 10_000 },
-  AA: { perQuarterM: 2_000, totalOutstandingM: 6_000 },
-  A: { perQuarterM: 1_000, totalOutstandingM: 3_000 },
+  AAA: { perQuarterM: 1_500, totalOutstandingM: 4_000 },
+  AA: { perQuarterM: 1_000, totalOutstandingM: 2_500 },
+  A: { perQuarterM: 500, totalOutstandingM: 1_500 },
   BBB: { perQuarterM: 0, totalOutstandingM: 0 }, // blocked
   BB: { perQuarterM: 0, totalOutstandingM: 0 },
   B: { perQuarterM: 0, totalOutstandingM: 0 },

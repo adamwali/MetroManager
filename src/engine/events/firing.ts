@@ -156,6 +156,21 @@ function withinCooldown(state: GameState, template: EventTemplate): boolean {
   return quartersSinceLastFire(state, template.id) < cooldown;
 }
 
+function timesFiredThisCampaign(state: GameState, templateId: string): number {
+  // Phase 11: count how many times a template has fired this campaign so we
+  // can cap repetition.
+  let n = 0;
+  for (const e of state.actionLog) {
+    if (
+      (e.kind === 'player_decision' && e.eventTemplateId === templateId) ||
+      (e.kind === 'event_informational' && e.eventTemplateId === templateId)
+    ) {
+      n++;
+    }
+  }
+  return n;
+}
+
 function templateEligible(state: GameState, template: EventTemplate): boolean {
   // Skip if already in inbox
   if (state.inbox.some((e) => e.templateId === template.id)) return false;
@@ -168,6 +183,13 @@ function templateEligible(state: GameState, template: EventTemplate): boolean {
     return false;
   }
   if (withinCooldown(state, template)) return false;
+  // Phase 11: per-campaign cap
+  if (
+    template.maxFiresPerCampaign !== undefined &&
+    timesFiredThisCampaign(state, template.id) >= template.maxFiresPerCampaign
+  ) {
+    return false;
+  }
 
   const t = template.trigger;
   switch (t.kind) {

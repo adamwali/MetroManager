@@ -80,6 +80,9 @@ export function evaluatePredicate(state: GameState, pred: EventPredicate): boole
       if (!c) return false;
       return checkRange(c.relationship as unknown as number, pred);
     }
+    case 'quartersNegativeCash':
+      // Phase 11: stakes-band predicate. Drives EV080 credit watch.
+      return checkRange(state.gameOverCounters.quartersNegativeCash, pred);
     case 'projectFundingShortfall': {
       // True if any under-construction project has < 4Q of funding remaining
       // at current burn rate. Triggers EV043 funding-shortfall crisis event.

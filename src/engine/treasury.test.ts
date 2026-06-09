@@ -92,10 +92,10 @@ describe('operating bond issuance', () => {
   });
 
   it('per-quarter cap enforced at AA', () => {
-    let s = createInitialGameState(0); // AA → $2B/Q cap
-    const r1 = issueOperatingBond(s, 'pension', 2_000);
+    let s = createInitialGameState(0); // Phase 11: AA → $1B/Q cap
+    const r1 = issueOperatingBond(s, 'pension', 1_000);
     expect(r1.state.cash.balance as unknown as number).toBe(
-      (s.cash.balance as unknown as number) + 2_000,
+      (s.cash.balance as unknown as number) + 1_000,
     );
     s = r1.state;
     const r2 = issueOperatingBond(s, 'institutional', 500);
@@ -104,8 +104,9 @@ describe('operating bond issuance', () => {
   });
 
   it('rating-gated caps match table', () => {
-    expect(RATING_OPERATING_BOND_CAPS.AA.perQuarterM).toBe(2_000);
-    expect(RATING_OPERATING_BOND_CAPS.A.perQuarterM).toBe(1_000);
+    // Phase 11: caps halved to keep bonds from being a universal escape valve.
+    expect(RATING_OPERATING_BOND_CAPS.AA.perQuarterM).toBe(1_000);
+    expect(RATING_OPERATING_BOND_CAPS.A.perQuarterM).toBe(500);
     expect(RATING_OPERATING_BOND_CAPS.BBB.perQuarterM).toBe(0);
   });
 

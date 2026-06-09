@@ -61,6 +61,7 @@ export type EventPredicate =
   | { kind: 'projectFundingShortfall' }
   | { kind: 'directorTolerance'; gte?: number; lte?: number }
   | { kind: 'characterRelationship'; characterId: string; gte?: number; lte?: number }
+  | { kind: 'quartersNegativeCash'; gte?: number; lte?: number }
   | { kind: 'and'; predicates: EventPredicate[] }
   | { kind: 'or'; predicates: EventPredicate[] }
   | { kind: 'not'; predicate: EventPredicate };
@@ -139,6 +140,13 @@ export interface EventTemplate {
   urgency: number;
   /** Optional flag: if true, all branches have a meaningful downside ("no good options" event per §0 P5). */
   noGoodOptions?: boolean;
+  /**
+   * Phase 11: maximum times this template may fire per campaign. Default
+   * unlimited. Set to 2-3 for random events you don't want repeating
+   * every other quarter (signal failure, weather, etc.). Drains repetition
+   * fatigue and forces the catalog to rotate.
+   */
+  maxFiresPerCampaign?: number;
   /** Telegraph signal — surfaces as news 2-4 quarters before the event fires. */
   telegraph?: {
     headline: string;

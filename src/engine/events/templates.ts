@@ -179,6 +179,71 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     ],
   },
 
+  // ── Phase 11: stakes-band event. Fires when the player has been cash-
+  //    negative for 3 quarters but isn't yet terminal. This is the
+  //    consequence layer between "fine" and "fired." Forces engagement
+  //    with the actual problem instead of letting the player auto-bond
+  //    through 15 quarters of zombie deficit. ────────────────────────────
+  {
+    id: 'EV080_creditWatch',
+    category: 'auditor_oversight',
+    trigger: {
+      kind: 'conditional',
+      predicate: { kind: 'quartersNegativeCash', gte: 3 },
+      cooldownQuarters: 12,
+    },
+    outlet: 'Globe',
+    headline: 'Moody\'s puts {agencyName} on credit watch — negative',
+    body: 'After three quarters of cash deficit, Moody\'s and S&P have moved {agencyName} to credit watch negative. The bond market is going to want a story before the next issuance, and the board is going to want a plan before the next meeting. There is no "do nothing" choice here.',
+    urgency: 95,
+    noGoodOptions: true,
+    maxFiresPerCampaign: 3,
+    choices: [
+      {
+        id: 'austerity',
+        label: 'Public austerity plan — cut opex, defer projects',
+        tradeoff: 'Each agency loses $40M/Q opex headroom for 4Q · +12 board · -15 approval',
+        effects: [
+          { kind: 'opex', agency: 'ttc', deltaM: -40 },
+          { kind: 'opex', agency: 'go', deltaM: -40 },
+          { kind: 'opex', agency: 'up', deltaM: -40 },
+          { kind: 'boardConfidence', delta: 12, reason: 'Credible austerity response to credit watch' },
+          { kind: 'publicApproval', delta: -15 },
+          {
+            kind: 'queueDelayedEffect',
+            quartersOut: 4,
+            cause: 'Austerity cycle ends',
+            effects: [
+              { kind: 'opex', agency: 'ttc', deltaM: 40 },
+              { kind: 'opex', agency: 'go', deltaM: 40 },
+              { kind: 'opex', agency: 'up', deltaM: 40 },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'emergency_levy',
+        label: 'Emergency provincial levy — ask Hartwell publicly',
+        tradeoff: '+$600M cash · -15 QP trust · -8 board (begging is a bad look)',
+        effects: [
+          { kind: 'cash', deltaM: 600 },
+          { kind: 'governmentTrust', gov: 'queensPark', delta: -15 },
+          { kind: 'boardConfidence', delta: -8, reason: 'Begged province in public' },
+        ],
+      },
+      {
+        id: 'restructure',
+        label: 'Restructure long-term debt with creditors',
+        tradeoff: '-$250M restructuring fees · -1 rating notch (forced) · +5 board (decisive)',
+        effects: [
+          { kind: 'cash', deltaM: -250 },
+          { kind: 'boardConfidence', delta: 5, reason: 'Decisive debt restructuring' },
+          { kind: 'auditorScrutiny', delta: 12 },
+        ],
+      },
+    ],
+  },
+
   // ── Phase 10.12: cascade target events. Fired only by queueDelayedEvent
   //    payloads from upstream player choices. ────────────────────────────
   {
@@ -190,6 +255,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Hartwell wants his concession',
     body: 'A few quarters back you let Queen\'s Park solve a problem the federal way. Minister Hartwell has not forgotten — and now he wants his concession. Quietly named, professionally delivered.',
     urgency: 70,
+    maxFiresPerCampaign: 1,
     choices: [
       {
         id: 'deliver',
@@ -219,6 +285,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'The vendor Hartwell picked is in the papers — and not in a good way',
     body: 'The signals contractor you accepted under Hartwell\'s pressure has a CFO under investigation and a 6-month delivery slip on a parallel contract in Alberta. The Star wants comment by 6PM.',
     urgency: 85,
+    maxFiresPerCampaign: 1,
     noGoodOptions: true,
     choices: [
       {
@@ -252,6 +319,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Queen\'s Park claws back $80M from {agencyName} envelope',
     body: 'Minister Hartwell announces a mid-year "reprofiling" of the {agencyName} operating envelope. Eighty million dollars, redirected to highways. The press release thanks {ceoName} for their cooperation. {actorMemory}',
     urgency: 80,
+    maxFiresPerCampaign: 1,
     choices: [
       {
         id: 'absorb',
@@ -331,6 +399,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Bloor-Yonge signal failure strands 40k at morning rush',
     body: '3-hour service halt on Lines 1 and 2 after legacy interlocking system faults. Riders trapped between stations; mayor calls it "unacceptable." Reporters want to know your plan.',
     urgency: 80,
+    maxFiresPerCampaign: 3,
     choices: [
       {
         id: 'apologize_capital',
@@ -389,6 +458,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Ottawa opens $4B infrastructure top-up; deadline 60 days',
     body: 'Federal Transport Minister announces a competitive top-up envelope. Agencies must submit project pitches with environmental commitments. Decision falls to you.',
     urgency: 55,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'ambitious_bid',
@@ -526,6 +596,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Board: fare evasion estimated $80M/yr — recommend gate retrofit',
     body: 'Audit committee circulates a memo on TTC fare-gate vulnerabilities. Multiple paths exist; each has different optics and revenue trajectories.',
     urgency: 50,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'gate_retrofit',
@@ -572,7 +643,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'climate_environmental',
     trigger: {
       kind: 'random',
-      baseWeight: 0.14,
+      baseWeight: 0.07,
       predicate: { kind: 'quarter', gte: 2 },
       cooldownQuarters: 8,
     },
@@ -581,6 +652,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: '42°C heat dome warps Lakeshore East track; GO halted 2 days',
     body: 'Heat-related rail buckling forces emergency speed restrictions and a full 48-hour shutdown on Lakeshore East. Climate adaptation pressure from environmental groups.',
     urgency: 70,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'adapt_budget',
@@ -822,7 +894,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'media',
     trigger: {
       kind: 'random',
-      baseWeight: 0.10,
+      baseWeight: 0,
       predicate: {
         kind: 'and',
         predicates: [
@@ -890,6 +962,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Streetcar derailment on Spadina; 12 injured, no fatalities',
     body: 'Wheel-bearing failure on a 510 streetcar at Spadina + Bremner. Service halted 6 hours. Riders union calls for "full audit of TTC rolling stock."',
     urgency: 88,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'full_audit',
@@ -937,6 +1010,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'GO Lakeshore signals fail at peak; 28k commuters delayed 2 hours',
     body: 'Aging signal interlocking on Lakeshore West causes cascading delays. Suburban riders flood social media. MPPs from affected ridings demand answers.',
     urgency: 75,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'signal_modernization',
@@ -973,7 +1047,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'operations_crisis',
     trigger: {
       kind: 'random',
-      baseWeight: 0.10,
+      baseWeight: 0.025,
       predicate: { kind: 'reliability', agency: 'ttc', lte: 70 },
       cooldownQuarters: 8,
     },
@@ -1082,6 +1156,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Snowstorm closes Line 1, GO Lakeshore for 36 hours',
     body: 'Worst storm in 5 years. Switches frozen, signals offline. City effectively shut down. Mayor on television demanding "resilience plan."',
     urgency: 60,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'snow_resilience',
@@ -1117,7 +1192,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'premier_pressure',
     trigger: {
       kind: 'random',
-      baseWeight: 0.10,
+      baseWeight: 0,
       predicate: { kind: 'trust', gov: 'queensPark', gte: 55 },
       cooldownQuarters: 12,
     },
@@ -1168,6 +1243,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Mayor demands fare freeze pledge before fall election',
     body: 'Mayor Liang requests public commitment to no fare increases through next term. Polls say this is a winning issue.',
     urgency: 70,
+    maxFiresPerCampaign: 2,
     telegraph: {
       headline: 'Mayor likely to campaign on transit-fare stability',
       body: 'Polling firms report fare-affordability is the #2 issue heading into the city campaign.',
@@ -1278,6 +1354,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Opposition leader: "GTTA leadership has failed Ontario taxpayers"',
     body: "Provincial opposition attacks agency in question period. Public-relations cycle expected to last 2-3 weeks.",
     urgency: 60,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'counter_facts',
@@ -1317,7 +1394,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'mayor_city',
     trigger: {
       kind: 'random',
-      baseWeight: 0.08,
+      baseWeight: 0,
       predicate: { kind: 'trust', gov: 'cityHall', lte: 50 },
       cooldownQuarters: 10,
     },
@@ -1510,7 +1587,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
   {
     id: 'EV024_heritageBuilding',
     category: 'construction_crisis',
-    trigger: { kind: 'random', baseWeight: 0.04, cooldownQuarters: 16 },
+    trigger: { kind: 'random', baseWeight: 0, cooldownQuarters: 16 },
     outlet: 'Star',
     headline: 'Heritage Toronto designates Bloor structure on planned alignment',
     body: 'A turn-of-the-century commercial block on the planned Line 5 western extension was just protected. Workaround alignment adds $400M; demolition fight could last 2Q.',
@@ -1546,7 +1623,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'media',
     trigger: {
       kind: 'random',
-      baseWeight: 0.08,
+      baseWeight: 0,
       predicate: { kind: 'or', predicates: [{ kind: 'cash', gte: 2000 }, { kind: 'publicApproval', lte: 45 }] },
       cooldownQuarters: 12,
     },
@@ -1587,7 +1664,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'auditor_oversight',
     trigger: {
       kind: 'random',
-      baseWeight: 0.04,
+      baseWeight: 0,
       predicate: { kind: 'openBooks', equals: false },
       cooldownQuarters: 24,
     },
@@ -1679,7 +1756,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'media',
     trigger: {
       kind: 'random',
-      baseWeight: 0.06,
+      baseWeight: 0,
       predicate: {
         kind: 'and',
         predicates: [
@@ -1706,6 +1783,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Ottawa announces $2B climate adaptation envelope for transit agencies',
     body: 'Federal Climate Bank releases competitive funding for transit climate resilience. Submissions in 90 days.',
     urgency: 55,
+    maxFiresPerCampaign: 2,
     telegraph: {
       headline: 'Climate Bank signals transit-resilience funding for next budget',
       body: 'Federal departments forecasting climate adaptation grants for transit infrastructure.',
@@ -1829,7 +1907,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'internal_politics',
     trigger: {
       kind: 'random',
-      baseWeight: 0.06,
+      baseWeight: 0,
       predicate: { kind: 'engineers', gte: 200 },
       cooldownQuarters: 12,
     },
@@ -1885,6 +1963,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Moody\'s puts GTTA on credit watch',
     body: 'Rating agency flags concerns about cash trajectory + governance. Downgrade decision in 60 days.',
     urgency: 80,
+    maxFiresPerCampaign: 2,
     noGoodOptions: true,
     choices: [
       {
@@ -1934,7 +2013,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
   {
     id: 'EV040_accessibilityLawsuit',
     category: 'auditor_oversight',
-    trigger: { kind: 'random', baseWeight: 0.04, cooldownQuarters: 20 },
+    trigger: { kind: 'random', baseWeight: 0, cooldownQuarters: 20 },
     outlet: 'CityNews',
     headline: 'Accessibility class-action: GTTA fails AODA compliance at 18 stations',
     body: 'Disability advocacy groups file suit over inaccessible legacy stations. Discovery process will be public.',
@@ -1993,6 +2072,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     body:
       "The four-year operating-allowance pact is up. Combined trust, board confidence, and delivery wins set the baseline outcome. You can accept what they offer, lobby aggressively to push for better terms (at political cost), or open the books and let the data speak (if you've maintained transparency).",
     urgency: 95,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'accept',
@@ -2163,7 +2243,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'federal_pressure',
     trigger: {
       kind: 'random',
-      baseWeight: 6,
+      baseWeight: 1.5,
       cooldownQuarters: 14,
     },
     outlet: 'Globe',
@@ -2171,6 +2251,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Federal Transport Minister demands net-zero commitment for funding',
     body: "Tremblay won't sign next year's transit fund disbursement without a public net-zero pledge tied to GO + UP electrification. She wants {ceoName} on stage with her in Ottawa next month. The pension funds want it too before increasing positions.",
     urgency: 65,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'sign_pledge',
@@ -2221,6 +2302,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Crosslinx demands contract renegotiation on cost escalators',
     body: 'The prime contractor for Ontario Line + future megaprojects is seeking a 12% cost escalator citing inflation + labor. Refusing risks contractor walk-out mid-project.',
     urgency: 75,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'accept_escalator',
@@ -2314,6 +2396,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'TTC operators threaten strike over pay + safety',
     body: "Director Ramanathan says the union won't budge: 8% raise + reformed safety protocol or walkout. \"{ceoName}, I've been clear with them: I can't get them what they want without your sign-off.\" A strike would hit ridership for weeks. Concessions cost opex forever.",
     urgency: 88,
+    maxFiresPerCampaign: 2,
     noGoodOptions: true,
     choices: [
       {
@@ -2360,13 +2443,14 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'bond_market',
     trigger: {
       kind: 'random',
-      baseWeight: 5,
+      baseWeight: 2.5,
       cooldownQuarters: 14,
     },
     outlet: 'Globe',
     headline: 'Pension fund consortium offers preferential financing terms',
     body: 'A consortium of Canadian pension funds (CPPIB, OTPP, OMERS) offers to underwrite future project bonds at -25bp to market — IF you commit to a five-year preferred-partner agreement.',
     urgency: 60,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'sign_partnership',
@@ -2549,6 +2633,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: "Auditor General opens formal investigation of GTTA practices",
     body: "Months of accumulated scrutiny tips the Office of the Auditor General into a formal investigation. They want documents, depositions, and budget recovery. {ceoName} now has a target on their back.",
     urgency: 88,
+    maxFiresPerCampaign: 2,
     noGoodOptions: true,
     choices: [
       {
@@ -2602,6 +2687,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Agency director resigning over fundamental disagreements',
     body: "An operating director has informed the board of their resignation, citing 'fundamental disagreements with strategic direction' under {ceoName}. Replacement search begins immediately, but interim period will be rocky.",
     urgency: 90,
+    maxFiresPerCampaign: 2,
     noGoodOptions: true,
     choices: [
       {
@@ -2649,6 +2735,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Anonymous staff complaint claims "{ceoName} hides budget overruns"',
     body: 'A senior staffer has filed a complaint with the Auditor General citing budget reporting irregularities. The Globe wants comment by 6PM. Public denial protects reputation but invites scrutiny. Admission is honest but costly.',
     urgency: 92,
+    maxFiresPerCampaign: 2,
     noGoodOptions: true,
     choices: [
       {
@@ -2694,13 +2781,14 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'climate_environmental',
     trigger: {
       kind: 'random',
-      baseWeight: 4,
+      baseWeight: 2,
       cooldownQuarters: 12,
     },
     outlet: 'CBC',
     headline: 'Atmospheric river damages subway tunnel ventilation',
     body: '24-hour deluge overwhelms drainage at three downtown stations. Tunnels are flooded; ventilation electrical damaged. Service restored after 5 days but ridership trust hits.',
     urgency: 80,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'emergency_climate_capex',
@@ -2824,13 +2912,14 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'demographics_community',
     trigger: {
       kind: 'random',
-      baseWeight: 4,
+      baseWeight: 0,
       cooldownQuarters: 18,
     },
     outlet: 'CBC',
     headline: 'Equity advocates: "GTTA prioritizes wealthy ridings"',
     body: 'A coalition of equity-deserving community groups has produced a study showing 73% of capital spend goes to median-income-above-average wards. They want a public commitment to balance.',
     urgency: 60,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'commit_equity',
@@ -2875,7 +2964,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     category: 'mayor_city',
     trigger: {
       kind: 'random',
-      baseWeight: 5,
+      baseWeight: 2.5,
       cooldownQuarters: 8,
     },
     outlet: 'Star',
@@ -2883,6 +2972,7 @@ export const EVENT_TEMPLATES: EventTemplate[] = [
     headline: 'Mayor Liang requests joint ribbon-cutting at busiest station',
     body: 'Liang wants a photo op announcing accessibility upgrades + free transit week. Costs $20M, but the optics help both of you. "{ceoName}, I\'m not demanding — but you\'d be doing me a real solid." Mayor\'s asking, not demanding.',
     urgency: 35,
+    maxFiresPerCampaign: 2,
     choices: [
       {
         id: 'partner',
