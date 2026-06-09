@@ -47,6 +47,7 @@ import type { GovernmentId, PoliticalActionKind } from '@/types/politics';
 import type { GameState } from '@/types/gameState';
 import type { AgencyId, FarePolicyTier, SubsystemId } from '@/types/agency';
 import type { CeoArchetype } from '@/types/ceo';
+import type { MandateId } from '@/types/mandate';
 import type { HistoryPoint } from '@/utils/kpis';
 import { buildHistory } from '@/utils/kpis';
 import { AUTOSAVE_SLOT, writeSlot, readSlot, type SlotId } from './saveSlots';
@@ -125,6 +126,7 @@ export interface GameStore {
   /** Political actions (Phase 6.1). */
   executePoliticalAction: (gov: GovernmentId, kind: PoliticalActionKind) => void;
   requestPrivateMeeting: (characterId: string, response: 'warm' | 'transactional' | 'cold') => void;
+  setMandate: (mandate: MandateId) => void;
   /** Treasury actions (Phase 7). */
   issueOperatingBond: (creditor: CreditorType, amountM: number) => void;
   refinanceTranche: (trancheId: string) => void;
@@ -407,6 +409,15 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (result.state === get().state) return;
       set({ state: result.state, autosaveStatus: 'saving' });
       void writeSlot(AUTOSAVE_SLOT, result.state)
+        .then(() => set({ autosaveStatus: 'saved' }))
+        .catch(() => set({ autosaveStatus: 'error' }));
+    },
+    setMandate: (mandate) => {
+      const cur = get().state;
+      if (cur.mandate === mandate) return;
+      const next: GameState = { ...cur, mandate };
+      set({ state: next, autosaveStatus: 'saving' });
+      void writeSlot(AUTOSAVE_SLOT, next)
         .then(() => set({ autosaveStatus: 'saved' }))
         .catch(() => set({ autosaveStatus: 'error' }));
     },

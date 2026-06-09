@@ -1,6 +1,7 @@
 import type { GameState } from '@/types/gameState';
 import { projectQuarterlyCashFlow } from './cashFlowForecast';
 import { reliabilityScore } from '@engine/agencies';
+import { MANDATES } from '@/types/mandate';
 
 /**
  * "State of the Agency" narrative briefing. Phase 10.12. Pure derivation —
@@ -72,7 +73,31 @@ export function briefingFor(state: GameState): string {
     sentences.push(`${building} ${building === 1 ? 'project is' : 'projects are'} mid-build. We're spending now; the payoff is years out.`);
   }
 
-  // 5. Closer — quarters left in the campaign frames urgency.
+  // 5. Mandate tracker — surface progress against the player's Q0 bet.
+  if (state.mandate) {
+    const m = MANDATES[state.mandate];
+    const ridersNow =
+      (state.agencies.ttc.dailyRiders as unknown as number) +
+      (state.agencies.go.dailyRiders as unknown as number) +
+      (state.agencies.up.dailyRiders as unknown as number);
+    if (state.mandate === 'ridership') {
+      const pct = (ridersNow / 2_450_000) * 100;
+      sentences.push(
+        `On your ${m.shortLabel} mandate: ${(ridersNow / 1_000_000).toFixed(2)}M daily riders — ${pct.toFixed(0)}% of target.`,
+      );
+    } else if (state.mandate === 'reliability') {
+      const avg = (ttcRel + goRel) / 2;
+      sentences.push(
+        `On your ${m.shortLabel} mandate: TTC+GO reliability avg ${avg.toFixed(0)}/80 needed.`,
+      );
+    } else if (state.mandate === 'affordability') {
+      sentences.push(
+        `On your ${m.shortLabel} mandate: approval ${approval.toFixed(0)}/65 target, watch the fare-hike events.`,
+      );
+    }
+  }
+
+  // 6. Closer — quarters left in the campaign frames urgency.
   const q = state.quarter as unknown as number;
   const left = Math.max(0, 60 - q);
   if (q === 0) {

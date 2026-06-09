@@ -14,6 +14,7 @@ import type { Project } from './projects';
 import type { RngSeeds } from './rng';
 import type { QuarterIndex } from './scalars';
 import type { StandingOrders } from './standingOrders';
+import type { MandateId } from './mandate';
 
 /**
  * GameState. The root object. Fully serializable to JSON for save/load.
@@ -57,4 +58,12 @@ export interface GameState {
   gameOver?: GameOver;
   /** Running counters for game-over detection (consecutive-quarter rules). */
   gameOverCounters: GameOverCounters;
+
+  /**
+   * Phase 11: the Mandate Bet. Player picks one of three pitches at Q0;
+   * progress is tracked across the campaign and the final grade is
+   * mandate-weighted. Optional for legacy saves (loader defaults to
+   * 'reliability' if missing).
+   */
+  mandate?: MandateId;
 }

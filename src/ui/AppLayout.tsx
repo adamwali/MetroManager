@@ -200,12 +200,27 @@ export function AppLayout() {
 function ScorePill() {
   const state = useGameStore((s) => s.state);
   const score = computeScore(state);
+  const mandate = state.mandate;
+  // Phase 11: show the player's mandate next to the score. Reminds them
+  // what they're being graded on; clickable in future to view progress.
   return (
-    <span
-      className="num rounded-full bg-neutral-900 px-2 py-0.5 text-[11px] font-bold text-white"
-      title={`Legacy score ${score.total} · ${score.grade}`}
-    >
-      ★ {score.total}
-    </span>
+    <div className="flex items-center gap-1">
+      {mandate && (
+        <span
+          className="rounded-full border border-blue-300 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700"
+          title={`Your mandate: ${mandate}. Q60 grade is weighted toward this pillar.`}
+        >
+          {mandate === 'ridership' ? '↗ Ridership'
+            : mandate === 'reliability' ? '⚙ Reliability'
+            : '◎ Affordability'}
+        </span>
+      )}
+      <span
+        className="num rounded-full bg-neutral-900 px-2 py-0.5 text-[11px] font-bold text-white"
+        title={`Legacy score ${score.total} · ${score.grade}`}
+      >
+        ★ {score.total}
+      </span>
+    </div>
   );
 }
