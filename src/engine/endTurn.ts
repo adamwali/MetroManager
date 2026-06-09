@@ -37,6 +37,7 @@ import { tickProject } from './projects';
 import { ridershipModelFor } from './data';
 import { processEventsForQuarter } from './events/firing';
 import { applyStandingOrders } from './standingOrderActions';
+import { networkTrajectory } from '@/utils/agencyTrajectory';
 import {
   snapshotAgenciesForTolerance,
   tickDirectorTolerance,
@@ -149,6 +150,9 @@ export function endTurn(state: GameState): GameState {
   // Phase 10.12: cascade events triggered by this quarter's mechanical
   // transitions (line openings etc). Spliced into delayedQueue below.
   const cascadeQueueAdditions: import('@/types/events').DelayedConsequence[] = [];
+  // Phase 11: opening bumps. Accumulate so a multi-line quarter compounds.
+  let lineOpeningTrustBump = 0;
+  let lineOpeningApprovalBump = 0;
 
   const tickedProjects = state.projects.map((p, idx) => {
     const before = state.projects[idx]!;
@@ -206,6 +210,11 @@ export function endTurn(state: GameState): GameState {
           cause: `${before.templateId} ribbon-cutting`,
           payload: { kind: 'event', templateId: 'EV079_lineOpeningPhotoOp' },
         });
+        // Phase 11: line openings actually shift politics. Each
+        // government gets +4 trust because they all funded it; approval
+        // gets +6 (permanent baseline, not just a single-Q wiggle).
+        lineOpeningTrustBump += 4;
+        lineOpeningApprovalBump += 6;
       }
     }
     // Record construction draws (non-zero only)
@@ -441,6 +450,24 @@ export function endTurn(state: GameState): GameState {
     cleanlinessApprovalDrift(agenciesFinal.go) +
     cleanlinessApprovalDrift(agenciesFinal.up);
 
+  // Phase 11: ridership trend drives approval. The trace showed approval
+  // was decoupled from operations — players could let trajectories rot
+  // and only see board/event hits. Now: total ridership growth feeds
+  // approval directly, so the game's main throughput stat actually
+  // matters to the political layer.
+  const prevTotalRiders =
+    (state.agencies.ttc.dailyRiders as unknown as number) +
+    (state.agencies.go.dailyRiders as unknown as number) +
+    (state.agencies.up.dailyRiders as unknown as number);
+  const newTotalRiders =
+    (agenciesFinal.ttc.dailyRiders as unknown as number) +
+    (agenciesFinal.go.dailyRiders as unknown as number) +
+    (agenciesFinal.up.dailyRiders as unknown as number);
+  const ridersDeltaPct =
+    prevTotalRiders > 0 ? (newTotalRiders - prevTotalRiders) / prevTotalRiders : 0;
+  // ±2%/Q is a big swing in ridership. Scale: 1% riders growth = +1 approval/Q.
+  const ridershipApprovalDelta = Math.max(-2, Math.min(2, ridersDeltaPct * 100));
+
   // Phase 10.2: consultant relationship dynamics.
   // - Engaged: alignment drifts +5/Q toward +50 cap
   // - Terminated: alignment drifts +3/Q back toward 0 (slow recovery from
@@ -475,18 +502,33 @@ export function endTurn(state: GameState): GameState {
     0,
     Math.min(
       100,
-      (state.politics.cityHall.trust as unknown as number) + accessibilityCityHallDelta,
+      (state.politics.cityHall.trust as unknown as number) +
+        accessibilityCityHallDelta +
+        lineOpeningTrustBump,
     ),
   );
   const newQpTrust = Math.max(
     0,
     Math.min(
       100,
-      (state.politics.queensPark.trust as unknown as number) + consultantQpDelta,
+      (state.politics.queensPark.trust as unknown as number) +
+        consultantQpDelta +
+        lineOpeningTrustBump,
+    ),
+  );
+  const newOttawaTrust = Math.max(
+    0,
+    Math.min(
+      100,
+      (state.politics.ottawa.trust as unknown as number) + lineOpeningTrustBump,
     ),
   );
   const politicsWithAccessibility = {
     ...state.politics,
+    ottawa: {
+      ...state.politics.ottawa,
+      trust: score(newOttawaTrust),
+    },
     queensPark: {
       ...state.politics.queensPark,
       trust: score(newQpTrust),
@@ -502,7 +544,9 @@ export function endTurn(state: GameState): GameState {
       100,
       (state.engineVars.publicApproval as unknown as number) +
         cleanlinessApprovalDelta +
-        consultantApprovalDelta,
+        consultantApprovalDelta +
+        ridershipApprovalDelta +
+        lineOpeningApprovalBump,
     ),
   );
 
@@ -520,7 +564,15 @@ export function endTurn(state: GameState): GameState {
   // via events, never passively recover. This created a death spiral risk:
   // one bad quarter → low board → can't negotiate well → worse outcomes.
   const curBoard = state.boardConfidence.score as unknown as number;
-  const boardDrift = curBoard < 60 ? 1 : curBoard > 60 ? -1 : 0;
+  const meanReversion = curBoard < 60 ? 1 : curBoard > 60 ? -1 : 0;
+  // Phase 11: network trajectory drives board drift. Only big network-wide
+  // swings nudge the board (single declining agency doesn't move them);
+  // this avoids tail-wagging-dog where one quarter of low reliability
+  // tanks confidence ahead of any narrative beat.
+  const postAgencyState: GameState = { ...state, agencies: agenciesFinal };
+  const traj = networkTrajectory(postAgencyState);
+  const trajectoryDrift = traj.net <= -2 ? -1 : traj.net >= 2 ? 1 : 0;
+  const boardDrift = meanReversion + trajectoryDrift;
   const driftedBoardScore = Math.max(0, Math.min(100, curBoard + boardDrift));
   const boardConfidenceWithDrift = {
     ...state.boardConfidence,

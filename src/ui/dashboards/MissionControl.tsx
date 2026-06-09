@@ -5,6 +5,7 @@ import { QuarterRecap } from '@ui/components/QuarterRecap';
 import { StandingOrdersPanel } from '@ui/components/StandingOrdersPanel';
 import { CashFlowForecast } from '@ui/components/CashFlowForecast';
 import { StrategicPriority } from '@ui/components/StrategicPriority';
+import { TrajectoryStrip } from '@ui/components/TrajectoryStrip';
 import { TuneOperationsCard } from '@ui/components/TuneOperationsCard';
 
 /**
@@ -18,6 +19,7 @@ export function MissionControl() {
     <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-3">
       <div className="lg:col-span-2 flex flex-col gap-4">
         <StrategicPriority />
+        <TrajectoryStrip />
         <Inbox />
         <QuarterRecap />
         <WhatsComing />

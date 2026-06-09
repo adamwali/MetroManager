@@ -1,13 +1,13 @@
 {
   "totalRuns": 150,
   "outcomes": {
-    "won": 31,
+    "won": 27,
     "fiscalFailure": 112,
     "boardFired": 0,
-    "inProgress": 7
+    "inProgress": 11
   },
   "medianQuartersPlayed": 32,
-  "medianFinalCash": -3180.343500000001,
+  "medianFinalCash": -3151.5805,
   "cashByQuarter": [
     {
       "quarter": 0,
@@ -85,25 +85,25 @@
       "quarter": 12,
       "p10": -528.9590000000001,
       "p50": 666.5034999999998,
-      "p90": 1840.4774999999993
+      "p90": 1780.8380000000002
     },
     {
       "quarter": 13,
       "p10": -1005.1630000000004,
       "p50": 630.1129999999998,
-      "p90": 1530.129
+      "p90": 1508.4904999999999
     },
     {
       "quarter": 14,
       "p10": -1444.7675000000004,
       "p50": 676.4834999999998,
-      "p90": 1330.533
+      "p90": 1323.8010000000002
     },
     {
       "quarter": 15,
       "p10": -1895.2965,
       "p50": 722.5260000000002,
-      "p90": 1828.5134999999993
+      "p90": 1731.4895
     },
     {
       "quarter": 16,
@@ -121,7 +121,7 @@
       "quarter": 18,
       "p10": -2401.0165,
       "p50": 1389.836,
-      "p90": 3208.3489999999993
+      "p90": 3206.209
     },
     {
       "quarter": 19,
@@ -133,7 +133,7 @@
       "quarter": 20,
       "p10": -227.04999999999995,
       "p50": 900.1585,
-      "p90": 3667.5055
+      "p90": 3672.6650000000004
     },
     {
       "quarter": 21,
@@ -143,237 +143,237 @@
     },
     {
       "quarter": 22,
-      "p10": -530.7990000000007,
-      "p50": 694.8715,
-      "p90": 3484.9410000000003
+      "p10": -595.8865000000002,
+      "p50": 692.2935000000001,
+      "p90": 3493.8730000000005
     },
     {
       "quarter": 23,
-      "p10": -856.6525000000004,
+      "p10": -949.0274999999999,
       "p50": 638.6814999999997,
       "p90": 3611.7000000000003
     },
     {
       "quarter": 24,
-      "p10": -1386.7689999999998,
+      "p10": -1392.3564999999996,
       "p50": 354.58450000000005,
-      "p90": 3226.192
+      "p90": 3216.192
     },
     {
       "quarter": 25,
-      "p10": -1696.3984999999998,
-      "p50": 306.0274999999998,
+      "p10": -1719.5330000000001,
+      "p50": 263.2359999999995,
       "p90": 3251.2360000000003
     },
     {
       "quarter": 26,
-      "p10": -2192.6629999999996,
-      "p50": -30.4975000000004,
+      "p10": -2197.6755000000003,
+      "p50": -138.59749999999997,
       "p90": 3088.2525000000005
     },
     {
       "quarter": 27,
-      "p10": -2790.5684999999994,
-      "p50": -198.43050000000017,
+      "p10": -2793.9435,
+      "p50": -221.40000000000026,
       "p90": 2937.2690000000007
     },
     {
       "quarter": 28,
-      "p10": -3404.5254999999997,
-      "p50": -632.3160000000007,
+      "p10": -3370.463,
+      "p50": -308.0020000000003,
       "p90": 2753.692000000001
     },
     {
       "quarter": 29,
-      "p10": -3098.835000000001,
-      "p50": -571.3504999999999,
-      "p90": 3354.2605000000017
+      "p10": -3239.3145000000004,
+      "p50": -422.88050000000004,
+      "p90": 3452.3080000000014
     },
     {
       "quarter": 30,
-      "p10": -3552.031,
-      "p50": -449.60599999999954,
+      "p10": -3628.5435000000007,
+      "p50": -363.1725000000004,
       "p90": 3294.5240000000013
     },
     {
       "quarter": 31,
-      "p10": -3332.5420000000004,
-      "p50": 233.3154999999997,
+      "p10": -3277.9159999999993,
+      "p50": 433.91850000000056,
       "p90": 3836.5934999999986
     },
     {
       "quarter": 32,
-      "p10": -2327.518499999999,
-      "p50": 626.3884999999999,
+      "p10": -2282.4535,
+      "p50": 629.7084999999998,
       "p90": 3930.758999999999
     },
     {
       "quarter": 33,
-      "p10": -2453.0225,
-      "p50": 722.0215000000002,
-      "p90": 4099.6905000000015
+      "p10": -2394.0694999999996,
+      "p50": 556.0215000000002,
+      "p90": 4059.188000000001
     },
     {
       "quarter": 34,
-      "p10": -2144.129,
-      "p50": 683.1034999999999,
-      "p90": 4174.281000000001
+      "p10": -2134.085000000001,
+      "p50": 637.2104999999999,
+      "p90": 4040.3535000000015
     },
     {
       "quarter": 35,
-      "p10": -2277.0834999999997,
-      "p50": 733.259,
-      "p90": 4059.8160000000016
+      "p10": -2201.1715,
+      "p50": 708.1380000000003,
+      "p90": 3989.759500000002
     },
     {
       "quarter": 36,
-      "p10": -2594.7679999999996,
-      "p50": 654.0370000000005,
+      "p10": -2510.1055000000006,
+      "p50": 558.8535000000002,
       "p90": 4039.3785000000016
     },
     {
       "quarter": 37,
-      "p10": -2511.5649999999996,
-      "p50": 738.9829999999998,
+      "p10": -2714.7649999999994,
+      "p50": 737.9519999999997,
       "p90": 4303.841000000001
     },
     {
       "quarter": 38,
       "p10": -2797.0020000000004,
-      "p50": 860.9539999999998,
+      "p50": 830.2295000000003,
       "p90": 5315.303500000001
     },
     {
       "quarter": 39,
       "p10": -3048.9804999999997,
-      "p50": 809.4710000000001,
+      "p50": 791.4409999999998,
       "p90": 5310.7660000000005
     },
     {
       "quarter": 40,
       "p10": -3463.5465,
-      "p50": 873.221,
-      "p90": 6915.863
+      "p50": 764.4344999999996,
+      "p90": 6899.863
     },
     {
       "quarter": 41,
-      "p10": -1568.2505,
-      "p50": 1189.5919999999999,
-      "p90": 6714.438
+      "p10": -1532.259,
+      "p50": 757.742,
+      "p90": 6696.438
     },
     {
       "quarter": 42,
       "p10": -1326.1744999999999,
-      "p50": 1333.6055000000001,
-      "p90": 7036.013
+      "p50": 796.3535000000003,
+      "p90": 7016.013
     },
     {
       "quarter": 43,
-      "p10": -1261.0369999999998,
-      "p50": 1461.6464999999998,
-      "p90": 7371.588
+      "p10": -897.2544999999998,
+      "p50": 920.7909999999999,
+      "p90": 7349.588
     },
     {
       "quarter": 44,
       "p10": -993.8269999999998,
-      "p50": 1590.8610000000003,
-      "p90": 7705.163
+      "p50": 913.6445000000004,
+      "p90": 7681.163
     },
     {
       "quarter": 45,
       "p10": -617.8529999999994,
-      "p50": 1589.538,
-      "p90": 8287.738
+      "p50": 815.5880000000002,
+      "p90": 8261.738
     },
     {
       "quarter": 46,
       "p10": -801.6379999999995,
-      "p50": 1579.5155,
-      "p90": 8618.313
+      "p50": 788.4535000000005,
+      "p90": 8590.313
     },
     {
       "quarter": 47,
       "p10": -953.4229999999995,
-      "p50": 1502.493,
-      "p90": 8867.888
+      "p50": 762.0825000000004,
+      "p90": 8837.888
     },
     {
       "quarter": 48,
       "p10": -1150.1169999999997,
-      "p50": 1504.4705,
-      "p90": 9196.463000000002
+      "p50": 772.801,
+      "p90": 9164.463000000002
     },
     {
       "quarter": 49,
       "p10": -1322.6894999999997,
-      "p50": 1504.4479999999999,
-      "p90": 9523.038000000002
+      "p50": 680.9944999999999,
+      "p90": 9489.038000000002
     },
     {
       "quarter": 50,
-      "p10": -548.1189999999986,
-      "p50": 1494.4425000000003,
-      "p90": 10365.340999999993
+      "p10": -120.58150000000035,
+      "p50": 600.5719999999992,
+      "p90": 10403.840999999993
     },
     {
       "quarter": 51,
-      "p10": -40.25949999999892,
-      "p50": 1499.4029999999998,
-      "p90": 10677.175999999992
+      "p10": -319.59800000000035,
+      "p50": 681.699500000002,
+      "p90": 10719.175999999992
     },
     {
       "quarter": 52,
-      "p10": -276.3444999999989,
-      "p50": 1518.6465000000003,
-      "p90": 10923.010999999991
+      "p10": -570.6145000000004,
+      "p50": 577.2854999999995,
+      "p90": 10968.510999999991
     },
     {
       "quarter": 53,
-      "p10": -93.7390000000001,
-      "p50": 1594.2255000000005,
-      "p90": 11246.84599999999
+      "p10": -187.65900000000002,
+      "p50": 672.007999999998,
+      "p90": 11295.84599999999
     },
     {
       "quarter": 54,
-      "p10": 169.87300000000036,
-      "p50": 1759.3754999999987,
-      "p90": 11554.68099999999
+      "p10": -129.64750000000038,
+      "p50": 766.2069999999992,
+      "p90": 11607.18099999999
     },
     {
       "quarter": 55,
-      "p10": -2.599499999998841,
-      "p50": 1860.510999999999,
-      "p90": 11760.515999999989
+      "p10": -192.06,
+      "p50": 721.0400000000006,
+      "p90": 11816.515999999989
     },
     {
       "quarter": 56,
-      "p10": -161.93800000000005,
-      "p50": 1820.146999999999,
-      "p90": 12065.350999999988
+      "p10": -249.68449999999882,
+      "p50": 551.4720000000002,
+      "p90": 12124.850999999988
     },
     {
       "quarter": 57,
-      "p10": -251.38100000000014,
-      "p50": 1696.5270000000005,
-      "p90": 12384.185999999987
+      "p10": -377.6444999999995,
+      "p50": 578.3190000000006,
+      "p90": 12447.185999999987
     },
     {
       "quarter": 58,
-      "p10": -270.04150000000016,
-      "p50": 1700.5920000000006,
-      "p90": 12365.213000000009
+      "p10": -437.0965000000002,
+      "p50": 646.4585000000006,
+      "p90": 12313.213000000009
     },
     {
       "quarter": 59,
-      "p10": -290.70200000000017,
-      "p50": 2268.3685,
-      "p90": 12682.78800000001
+      "p10": -473.80499999999864,
+      "p50": 708.5980000000006,
+      "p90": 12628.78800000001
     },
     {
       "quarter": 60,
-      "p10": -596.1589999999983,
-      "p50": 2261.3589999999995,
-      "p90": 12999.36300000001
+      "p10": -896.1535000000001,
+      "p50": 594.8160000000017,
+      "p90": 12943.36300000001
     }
   ],
   "approvalByQuarter": [
@@ -385,363 +385,363 @@
     },
     {
       "quarter": 1,
-      "p10": 40,
-      "p50": 55,
-      "p90": 70
+      "p10": 40.09622919738782,
+      "p50": 55.054244786180746,
+      "p90": 70.13509585001053
     },
     {
       "quarter": 2,
-      "p10": 47,
-      "p50": 60,
-      "p90": 70
+      "p10": 47.101006799489895,
+      "p50": 60.12696629480269,
+      "p90": 70.29031052485335
     },
     {
       "quarter": 3,
-      "p10": 50,
-      "p50": 65,
-      "p90": 78
+      "p10": 50.28878869346231,
+      "p50": 65.18272021509225,
+      "p90": 78.44070570078105
     },
     {
       "quarter": 4,
-      "p10": 49,
-      "p50": 64,
-      "p90": 79
+      "p10": 49.4445240777076,
+      "p50": 64.4430216204288,
+      "p90": 79.64016476141029
     },
     {
       "quarter": 5,
-      "p10": 47,
-      "p50": 64,
-      "p90": 84
+      "p10": 47.28375306778361,
+      "p50": 64.56831353654151,
+      "p90": 84.65754142195138
     },
     {
       "quarter": 6,
-      "p10": 50,
-      "p50": 69,
-      "p90": 89
+      "p10": 50.48929152865822,
+      "p50": 69.23815938617018,
+      "p90": 89.84534911557914
     },
     {
       "quarter": 7,
-      "p10": 47,
-      "p50": 69,
-      "p90": 89
+      "p10": 47.67430688778217,
+      "p50": 69.81899225965347,
+      "p90": 90.23592998959256
     },
     {
       "quarter": 8,
-      "p10": 47,
-      "p50": 69,
-      "p90": 94
+      "p10": 47.69195280127963,
+      "p50": 69.94435754274708,
+      "p90": 95.24437027694175
     },
     {
       "quarter": 9,
-      "p10": 47,
-      "p50": 71,
+      "p10": 47.372340943801326,
+      "p50": 71.98769554655318,
       "p90": 100
     },
     {
       "quarter": 10,
-      "p10": 35,
-      "p50": 69,
+      "p10": 34.249862096948945,
+      "p50": 70.23799702156478,
       "p90": 100
     },
     {
       "quarter": 11,
-      "p10": 29,
-      "p50": 64,
+      "p10": 28.726343390678117,
+      "p50": 65.24737458946574,
       "p90": 100
     },
     {
       "quarter": 12,
-      "p10": 21,
-      "p50": 63,
+      "p10": 19.814754426922683,
+      "p50": 63.9717787204166,
       "p90": 100
     },
     {
       "quarter": 13,
-      "p10": 20,
-      "p50": 61,
-      "p90": 97
+      "p10": 19.4341758232738,
+      "p50": 62.08277416961992,
+      "p90": 97.37046745046244
     },
     {
       "quarter": 14,
-      "p10": 19,
-      "p50": 62,
-      "p90": 97
+      "p10": 18.796809195702046,
+      "p50": 62.39245507003266,
+      "p90": 97.55527008824228
     },
     {
       "quarter": 15,
-      "p10": 6,
-      "p50": 55,
-      "p90": 97
+      "p10": 5.722639352761826,
+      "p50": 55.602343157908685,
+      "p90": 97.67652803658851
     },
     {
       "quarter": 16,
-      "p10": 1,
-      "p50": 52,
-      "p90": 98
+      "p10": 0,
+      "p50": 52.856902464104536,
+      "p90": 99.15646221958791
     },
     {
       "quarter": 17,
       "p10": 0,
-      "p50": 47,
+      "p50": 48.28186663485984,
       "p90": 100
     },
     {
       "quarter": 18,
       "p10": 0,
-      "p50": 45,
+      "p50": 46.75702609130769,
       "p90": 100
     },
     {
       "quarter": 19,
       "p10": 0,
-      "p50": 43,
-      "p90": 93
+      "p50": 44.32149299238532,
+      "p90": 95.32695410803098
     },
     {
       "quarter": 20,
       "p10": 0,
-      "p50": 34,
-      "p90": 88
+      "p50": 35.4158804694004,
+      "p90": 88.17623948638546
     },
     {
       "quarter": 21,
-      "p10": 0,
-      "p50": 33,
-      "p90": 87
+      "p10": 2,
+      "p50": 36.34699625300743,
+      "p90": 90.24298102707256
     },
     {
       "quarter": 22,
-      "p10": 0,
-      "p50": 30,
-      "p90": 84
+      "p10": 1.3875441243844844,
+      "p50": 33.27784905464986,
+      "p90": 89.37561563182483
     },
     {
       "quarter": 23,
-      "p10": 5,
-      "p50": 24,
-      "p90": 87
+      "p10": 4.517737668590784,
+      "p50": 24.94780505813374,
+      "p90": 92.05570244987139
     },
     {
       "quarter": 24,
-      "p10": 5,
-      "p50": 24,
-      "p90": 87
+      "p10": 3.9656573547771625,
+      "p50": 25.414261838678236,
+      "p90": 91.16701963031214
     },
     {
       "quarter": 25,
-      "p10": 4,
-      "p50": 27,
-      "p90": 87
+      "p10": 2.7702194981898614,
+      "p50": 28.55829045432375,
+      "p90": 91.34830255593782
     },
     {
       "quarter": 26,
       "p10": 0,
-      "p50": 19,
-      "p90": 79
+      "p50": 20.749630925526404,
+      "p90": 82.58007377887306
     },
     {
       "quarter": 27,
       "p10": 0,
-      "p50": 17,
-      "p90": 69
+      "p50": 17.48896300994265,
+      "p90": 73.69312552534998
     },
     {
       "quarter": 28,
       "p10": 0,
-      "p50": 17,
-      "p90": 69
+      "p50": 17.653351325308936,
+      "p90": 74.16623122458758
     },
     {
       "quarter": 29,
       "p10": 0,
-      "p50": 14,
-      "p90": 68
+      "p50": 15.886013333024895,
+      "p90": 73.38587780888744
     },
     {
       "quarter": 30,
       "p10": 0,
-      "p50": 13,
-      "p90": 64
+      "p50": 15.070496349130767,
+      "p90": 70.01158958915696
     },
     {
       "quarter": 31,
       "p10": 0,
-      "p50": 12,
-      "p90": 59
+      "p50": 12.32090254759503,
+      "p90": 64.1874001324147
     },
     {
       "quarter": 32,
       "p10": 0,
-      "p50": 12,
-      "p90": 61
+      "p50": 14.544130161094735,
+      "p90": 64.24474957255445
     },
     {
       "quarter": 33,
       "p10": 0,
-      "p50": 14,
-      "p90": 59
+      "p50": 14.24192131191856,
+      "p90": 63.698926210621174
     },
     {
       "quarter": 34,
       "p10": 0,
-      "p50": 14,
-      "p90": 59
+      "p50": 14.720638205247983,
+      "p90": 60.66962704527369
     },
     {
       "quarter": 35,
       "p10": 0,
-      "p50": 17,
-      "p90": 54
+      "p50": 14.598747782200624,
+      "p90": 55.70955447127535
     },
     {
       "quarter": 36,
       "p10": 0,
-      "p50": 15,
-      "p90": 50
+      "p50": 15.673208560916235,
+      "p90": 58.50769126578857
     },
     {
       "quarter": 37,
       "p10": 0,
-      "p50": 14,
-      "p90": 54
+      "p50": 13.634267732247828,
+      "p90": 58.49400504742918
     },
     {
       "quarter": 38,
       "p10": 0,
-      "p50": 10,
-      "p90": 56
+      "p50": 9.670874063805584,
+      "p90": 62.70628583833515
     },
     {
       "quarter": 39,
       "p10": 0,
-      "p50": 10,
-      "p90": 51
+      "p50": 9.111278438169451,
+      "p90": 55.812821113439604
     },
     {
       "quarter": 40,
       "p10": 0,
-      "p50": 10,
-      "p90": 57
+      "p50": 8.989445562730337,
+      "p90": 58.965801521063504
     },
     {
       "quarter": 41,
       "p10": 0,
-      "p50": 10,
-      "p90": 53
+      "p50": 8.102572961031731,
+      "p90": 61.12127188018727
     },
     {
       "quarter": 42,
       "p10": 0,
-      "p50": 9,
-      "p90": 53
+      "p50": 5.7999317344338746,
+      "p90": 57.538636831538014
     },
     {
       "quarter": 43,
       "p10": 0,
-      "p50": 5,
-      "p90": 48
+      "p50": 0.9947461604430348,
+      "p90": 52.50098639814815
     },
     {
       "quarter": 44,
       "p10": 0,
-      "p50": 2,
-      "p90": 47
+      "p50": 0,
+      "p90": 52.46310700379671
     },
     {
       "quarter": 45,
       "p10": 0,
-      "p50": 2,
-      "p90": 47
+      "p50": 0,
+      "p90": 52.42495932834377
     },
     {
       "quarter": 46,
       "p10": 0,
-      "p50": 2,
-      "p90": 47
+      "p50": 0,
+      "p90": 52.38656261111654
     },
     {
       "quarter": 47,
       "p10": 0,
-      "p50": 2,
-      "p90": 43
+      "p50": 0.642039075722203,
+      "p90": 49.6131635897443
     },
     {
       "quarter": 48,
       "p10": 0,
-      "p50": 2,
-      "p90": 43
+      "p50": 1.756549193262486,
+      "p90": 48.47140434892301
     },
     {
       "quarter": 49,
       "p10": 0,
-      "p50": 2,
-      "p90": 43
+      "p50": 6.988676655633243,
+      "p90": 48.52725378042889
     },
     {
       "quarter": 50,
       "p10": 0,
-      "p50": 5,
-      "p90": 53
+      "p50": 3.6510720874740574,
+      "p90": 57.23061667176087
     },
     {
       "quarter": 51,
       "p10": 0,
-      "p50": 5,
-      "p90": 42
+      "p50": 4.321495652238841,
+      "p90": 48.63911451913841
     },
     {
       "quarter": 52,
       "p10": 0,
-      "p50": 5,
-      "p90": 42
+      "p50": 3.5329058792751615,
+      "p90": 48.69510597828133
     },
     {
       "quarter": 53,
       "p10": 0,
-      "p50": 5,
-      "p90": 42
+      "p50": 3.3620447007412944,
+      "p90": 47.20743615336096
     },
     {
       "quarter": 54,
       "p10": 0,
-      "p50": 2,
-      "p90": 35
+      "p50": 2.8775534891507597,
+      "p90": 45.64776437837804
     },
     {
       "quarter": 55,
       "p10": 0,
-      "p50": 2,
-      "p90": 35
+      "p50": 0,
+      "p90": 39.03446413122065
     },
     {
       "quarter": 56,
       "p10": 0,
       "p50": 0,
-      "p90": 35
+      "p90": 38.99528941709602
     },
     {
       "quarter": 57,
       "p10": 0,
       "p50": 0,
-      "p90": 35
+      "p90": 42.01053807429291
     },
     {
       "quarter": 58,
       "p10": 0,
       "p50": 0,
-      "p90": 35
+      "p90": 42.10332876205107
     },
     {
       "quarter": 59,
       "p10": 0,
       "p50": 0,
-      "p90": 34
+      "p90": 38.87790878919612
     },
     {
       "quarter": 60,
       "p10": 0,
       "p50": 0,
-      "p90": 30
+      "p90": 38.83881021757107
     }
   ],
   "eventsNeverFired": [
@@ -761,11 +761,11 @@
   "eventsFiredCount": [
     {
       "id": "EV039_bocRateDecision",
-      "count": 765
+      "count": 764
     },
     {
       "id": "EV046_consultantAlignment",
-      "count": 385,
+      "count": 383,
       "cooldownQ": 12
     },
     {
@@ -779,7 +779,7 @@
     },
     {
       "id": "EV033_provincialElection",
-      "count": 311
+      "count": 310
     },
     {
       "id": "EV052_extremeWeatherTrack",
@@ -788,11 +788,11 @@
     },
     {
       "id": "EV032_federalElection",
-      "count": 294
+      "count": 292
     },
     {
       "id": "EV049_mayorPhotoOp",
-      "count": 284,
+      "count": 282,
       "cooldownQ": 8
     },
     {
@@ -815,17 +815,17 @@
       "count": 271
     },
     {
-      "id": "EV037_boardMemberRetires",
-      "count": 270
-    },
-    {
-      "id": "EV007_allowanceRenegotiationPrompt",
-      "count": 270
-    },
-    {
       "id": "EV048_pensionRelationshipBuild",
       "count": 268,
       "cooldownQ": 14
+    },
+    {
+      "id": "EV007_allowanceRenegotiationPrompt",
+      "count": 268
+    },
+    {
+      "id": "EV037_boardMemberRetires",
+      "count": 267
     },
     {
       "id": "EV051_whistleblower",
@@ -834,7 +834,7 @@
     },
     {
       "id": "EV017_mayorFareFreezePreElection",
-      "count": 264
+      "count": 263
     },
     {
       "id": "EV075_hartwellRetaliation",
@@ -843,16 +843,16 @@
     },
     {
       "id": "EV019_oppositionAttack",
-      "count": 238,
+      "count": 240,
       "cooldownQ": 10
     },
     {
       "id": "EV029_climateAdaptationFunding",
-      "count": 232
+      "count": 234
     },
     {
       "id": "EV009_constructionInflation",
-      "count": 228,
+      "count": 227,
       "cooldownQ": 10
     },
     {
@@ -861,36 +861,36 @@
       "cooldownQ": 999
     },
     {
-      "id": "EV018_federalMinisterVisit",
-      "count": 223
-    },
-    {
-      "id": "EV041_allowanceRenegotiation",
-      "count": 218
-    },
-    {
-      "id": "EV021_olDesignFlaw",
-      "count": 212,
-      "cooldownQ": 20
-    },
-    {
       "id": "EV004_fareEvasionCrackdown",
-      "count": 212,
+      "count": 222,
       "cooldownQ": 12
     },
     {
+      "id": "EV018_federalMinisterVisit",
+      "count": 222
+    },
+    {
+      "id": "EV041_allowanceRenegotiation",
+      "count": 217
+    },
+    {
+      "id": "EV021_olDesignFlaw",
+      "count": 211,
+      "cooldownQ": 20
+    },
+    {
       "id": "EV027_documentaryExposesBacklog",
-      "count": 202,
+      "count": 201,
       "cooldownQ": 16
     },
     {
       "id": "EV006_provincialWindfall",
-      "count": 182,
+      "count": 179,
       "cooldownQ": 16
     },
     {
       "id": "EV011_streetcarDerailment",
-      "count": 166,
+      "count": 165,
       "cooldownQ": 8
     },
     {
@@ -905,7 +905,7 @@
     },
     {
       "id": "EV008_cyberattack",
-      "count": 156,
+      "count": 153,
       "cooldownQ": 20
     },
     {
@@ -926,18 +926,18 @@
       "cooldownQ": 8
     },
     {
-      "id": "EV023_contractorStrikeThreat",
-      "count": 131,
-      "cooldownQ": 16
-    },
-    {
       "id": "EV038_creditRatingReview",
-      "count": 125,
+      "count": 131,
       "cooldownQ": 8
     },
     {
+      "id": "EV023_contractorStrikeThreat",
+      "count": 130,
+      "cooldownQ": 16
+    },
+    {
       "id": "EV080_creditWatch",
-      "count": 125,
+      "count": 129,
       "cooldownQ": 12
     },
     {
@@ -946,14 +946,14 @@
       "cooldownQ": 16
     },
     {
+      "id": "EV003_mayorEglintonCrowding",
+      "count": 110,
+      "cooldownQ": 8
+    },
+    {
       "id": "EV061_crosslinxChangeOrder",
       "count": 106,
       "cooldownQ": 10
-    },
-    {
-      "id": "EV003_mayorEglintonCrowding",
-      "count": 106,
-      "cooldownQ": 8
     },
     {
       "id": "EV042_subsystemReplacement",
@@ -962,7 +962,7 @@
     },
     {
       "id": "EV030_floodingTunnel",
-      "count": 85,
+      "count": 84,
       "cooldownQ": 20
     },
     {
@@ -982,7 +982,7 @@
     },
     {
       "id": "EV056_auditorInvestigation",
-      "count": 59,
+      "count": 56,
       "cooldownQ": 6
     },
     {
@@ -992,7 +992,7 @@
     },
     {
       "id": "EV062_crosslinxSlowWalk",
-      "count": 52,
+      "count": 51,
       "cooldownQ": 12
     },
     {
@@ -1019,14 +1019,14 @@
   ],
   "choicesPickedCount": [
     {
-      "eventId": "EV007_allowanceRenegotiationPrompt",
-      "choiceId": "lead_with_delivery",
-      "count": 238
-    },
-    {
       "eventId": "EV048_pensionRelationshipBuild",
       "choiceId": "sign_partnership",
       "count": 237
+    },
+    {
+      "eventId": "EV007_allowanceRenegotiationPrompt",
+      "choiceId": "lead_with_delivery",
+      "count": 236
     },
     {
       "eventId": "EV001_signalFailure",
@@ -1036,7 +1036,7 @@
     {
       "eventId": "EV017_mayorFareFreezePreElection",
       "choiceId": "public_pledge",
-      "count": 220
+      "count": 218
     },
     {
       "eventId": "EV073_hartwellCollects",
@@ -1051,17 +1051,17 @@
     {
       "eventId": "EV046_consultantAlignment",
       "choiceId": "demand_value",
-      "count": 203
+      "count": 199
     },
     {
       "eventId": "EV009_constructionInflation",
       "choiceId": "fight_claim",
-      "count": 193
+      "count": 192
     },
     {
       "eventId": "EV027_documentaryExposesBacklog",
       "choiceId": "defend",
-      "count": 190
+      "count": 188
     },
     {
       "eventId": "EV019_oppositionAttack",
@@ -1076,7 +1076,7 @@
     {
       "eventId": "EV041_allowanceRenegotiation",
       "choiceId": "accept",
-      "count": 178
+      "count": 177
     },
     {
       "eventId": "EV047_ttcLaborAction",
@@ -1121,7 +1121,7 @@
     {
       "eventId": "EV046_consultantAlignment",
       "choiceId": "fire_them",
-      "count": 137
+      "count": 139
     },
     {
       "eventId": "EV018_federalMinisterVisit",
@@ -1131,17 +1131,12 @@
     {
       "eventId": "EV006_provincialWindfall",
       "choiceId": "aggressive_lobby",
-      "count": 131
+      "count": 127
     },
     {
       "eventId": "EV029_climateAdaptationFunding",
       "choiceId": "no_bid",
       "count": 126
-    },
-    {
-      "eventId": "EV049_mayorPhotoOp",
-      "choiceId": "decline_politely",
-      "count": 125
     },
     {
       "eventId": "EV002_federalInfraCall",
@@ -1154,6 +1149,11 @@
       "count": 123
     },
     {
+      "eventId": "EV049_mayorPhotoOp",
+      "choiceId": "decline_politely",
+      "count": 123
+    },
+    {
       "eventId": "EV052_extremeWeatherTrack",
       "choiceId": "emergency_climate_capex",
       "count": 122
@@ -1161,7 +1161,7 @@
     {
       "eventId": "EV004_fareEvasionCrackdown",
       "choiceId": "more_inspectors",
-      "count": 118
+      "count": 117
     },
     {
       "eventId": "EV051_whistleblower",
@@ -1189,23 +1189,23 @@
       "count": 98
     },
     {
+      "eventId": "EV029_climateAdaptationFunding",
+      "choiceId": "ambitious_bid",
+      "count": 92
+    },
+    {
       "eventId": "EV061_crosslinxChangeOrder",
       "choiceId": "threaten_termination",
       "count": 92
     },
     {
-      "eventId": "EV029_climateAdaptationFunding",
-      "choiceId": "ambitious_bid",
-      "count": 90
-    },
-    {
       "eventId": "EV023_contractorStrikeThreat",
       "choiceId": "hardball",
-      "count": 87
+      "count": 86
     },
     {
-      "eventId": "EV063_crosslinxBackOff",
-      "choiceId": "extract_more",
+      "eventId": "EV004_fareEvasionCrackdown",
+      "choiceId": "amnesty_campaign",
       "count": 85
     },
     {
@@ -1214,9 +1214,19 @@
       "count": 83
     },
     {
+      "eventId": "EV038_creditRatingReview",
+      "choiceId": "open_books_briefing",
+      "count": 82
+    },
+    {
       "eventId": "EV044_climateDisclosurePressure",
       "choiceId": "negotiate_terms",
       "count": 82
+    },
+    {
+      "eventId": "EV063_crosslinxBackOff",
+      "choiceId": "extract_more",
+      "count": 80
     },
     {
       "eventId": "EV074_vendorScandal",
@@ -1229,19 +1239,9 @@
       "count": 77
     },
     {
-      "eventId": "EV038_creditRatingReview",
-      "choiceId": "open_books_briefing",
-      "count": 76
-    },
-    {
       "eventId": "EV047_ttcLaborAction",
       "choiceId": "split_4pct",
       "count": 75
-    },
-    {
-      "eventId": "EV004_fareEvasionCrackdown",
-      "choiceId": "amnesty_campaign",
-      "count": 74
     },
     {
       "eventId": "EV001_signalFailure",
@@ -1254,24 +1254,24 @@
       "count": 72
     },
     {
-      "eventId": "EV008_cyberattack",
-      "choiceId": "refuse_quiet",
-      "count": 71
-    },
-    {
       "eventId": "EV030_floodingTunnel",
       "choiceId": "patch_pumps",
-      "count": 71
+      "count": 70
+    },
+    {
+      "eventId": "EV008_cyberattack",
+      "choiceId": "refuse_quiet",
+      "count": 69
     },
     {
       "eventId": "EV018_federalMinisterVisit",
       "choiceId": "standard_briefing",
-      "count": 64
+      "count": 63
     },
     {
       "eventId": "EV011_streetcarDerailment",
       "choiceId": "targeted_inspection",
-      "count": 62
+      "count": 61
     },
     {
       "eventId": "EV003_mayorEglintonCrowding",
@@ -1294,24 +1294,24 @@
       "count": 52
     },
     {
-      "eventId": "EV008_cyberattack",
-      "choiceId": "refuse_disclose",
-      "count": 51
-    },
-    {
       "eventId": "EV075_hartwellRetaliation",
       "choiceId": "public_fight",
       "count": 50
     },
     {
-      "eventId": "EV019_oppositionAttack",
-      "choiceId": "counter_facts",
-      "count": 47
+      "eventId": "EV008_cyberattack",
+      "choiceId": "refuse_disclose",
+      "count": 50
     },
     {
       "eventId": "EV006_provincialWindfall",
       "choiceId": "decline",
-      "count": 46
+      "count": 47
+    },
+    {
+      "eventId": "EV019_oppositionAttack",
+      "choiceId": "counter_facts",
+      "count": 47
     },
     {
       "eventId": "EV043_projectFundingShortfall",
@@ -1324,13 +1324,13 @@
       "count": 45
     },
     {
-      "eventId": "EV038_creditRatingReview",
-      "choiceId": "request_provincial_backstop",
-      "count": 44
-    },
-    {
       "eventId": "EV014_stationFire",
       "choiceId": "reopen_quickly",
+      "count": 43
+    },
+    {
+      "eventId": "EV038_creditRatingReview",
+      "choiceId": "request_provincial_backstop",
       "count": 43
     },
     {
@@ -1346,22 +1346,17 @@
     {
       "eventId": "EV062_crosslinxSlowWalk",
       "choiceId": "cure_notice",
-      "count": 40
-    },
-    {
-      "eventId": "EV056_auditorInvestigation",
-      "choiceId": "fight_jurisdiction",
-      "count": 39
-    },
-    {
-      "eventId": "EV050_directorQuits",
-      "choiceId": "public_dispute",
       "count": 39
     },
     {
       "eventId": "EV054_internationalAward",
       "choiceId": "accept_graciously",
       "count": 39
+    },
+    {
+      "eventId": "EV050_directorQuits",
+      "choiceId": "public_dispute",
+      "count": 38
     },
     {
       "eventId": "EV023_contractorStrikeThreat",
@@ -1376,6 +1371,11 @@
     {
       "eventId": "EV042_subsystemReplacement",
       "choiceId": "defer",
+      "count": 36
+    },
+    {
+      "eventId": "EV056_auditorInvestigation",
+      "choiceId": "fight_jurisdiction",
       "count": 36
     },
     {
@@ -1396,7 +1396,7 @@
     {
       "eventId": "EV017_mayorFareFreezePreElection",
       "choiceId": "refuse_publicly",
-      "count": 30
+      "count": 31
     },
     {
       "eventId": "EV005_heatDome",
@@ -1441,7 +1441,7 @@
     {
       "eventId": "EV021_olDesignFlaw",
       "choiceId": "exception_waiver",
-      "count": 22
+      "count": 21
     },
     {
       "eventId": "EV004_fareEvasionCrackdown",
@@ -1464,6 +1464,11 @@
       "count": 19
     },
     {
+      "eventId": "EV063_crosslinxBackOff",
+      "choiceId": "refuse",
+      "count": 19
+    },
+    {
       "eventId": "EV044_climateDisclosurePressure",
       "choiceId": "refuse",
       "count": 18
@@ -1476,6 +1481,11 @@
     {
       "eventId": "EV071_unionStrikeThreat",
       "choiceId": "counter_three",
+      "count": 17
+    },
+    {
+      "eventId": "EV080_creditWatch",
+      "choiceId": "emergency_levy",
       "count": 17
     },
     {
@@ -1524,18 +1534,8 @@
       "count": 14
     },
     {
-      "eventId": "EV063_crosslinxBackOff",
-      "choiceId": "refuse",
-      "count": 14
-    },
-    {
       "eventId": "EV072_hartwellVendorDemand",
       "choiceId": "defer_to_procurement",
-      "count": 13
-    },
-    {
-      "eventId": "EV080_creditWatch",
-      "choiceId": "emergency_levy",
       "count": 13
     },
     {
@@ -1544,8 +1544,8 @@
       "count": 13
     },
     {
-      "eventId": "EV056_auditorInvestigation",
-      "choiceId": "cooperate_fully",
+      "eventId": "EV003_mayorEglintonCrowding",
+      "choiceId": "technocrat_data_pitch",
       "count": 12
     },
     {
@@ -1564,6 +1564,11 @@
       "count": 11
     },
     {
+      "eventId": "EV056_auditorInvestigation",
+      "choiceId": "cooperate_fully",
+      "count": 11
+    },
+    {
       "eventId": "EV070_federalAuditThreat",
       "choiceId": "cooperate_key_files",
       "count": 10
@@ -1571,6 +1576,11 @@
     {
       "eventId": "EV071_unionStrikeThreat",
       "choiceId": "refuse",
+      "count": 10
+    },
+    {
+      "eventId": "EV019_oppositionAttack",
+      "choiceId": "private_negotiate",
       "count": 10
     },
     {
@@ -1584,9 +1594,9 @@
       "count": 9
     },
     {
-      "eventId": "EV003_mayorEglintonCrowding",
-      "choiceId": "technocrat_data_pitch",
-      "count": 8
+      "eventId": "EV056_auditorInvestigation",
+      "choiceId": "admit_findings",
+      "count": 9
     },
     {
       "eventId": "EV012_goSignalFailure",
@@ -1599,16 +1609,6 @@
       "count": 8
     },
     {
-      "eventId": "EV019_oppositionAttack",
-      "choiceId": "private_negotiate",
-      "count": 8
-    },
-    {
-      "eventId": "EV056_auditorInvestigation",
-      "choiceId": "admit_findings",
-      "count": 8
-    },
-    {
       "eventId": "EV007_allowanceRenegotiationPrompt",
       "choiceId": "open_books_pitch",
       "count": 7
@@ -1616,6 +1616,11 @@
     {
       "eventId": "EV023_contractorStrikeThreat",
       "choiceId": "partial_offer",
+      "count": 7
+    },
+    {
+      "eventId": "EV027_documentaryExposesBacklog",
+      "choiceId": "modest_commitment",
       "count": 7
     },
     {
@@ -1644,8 +1649,8 @@
       "count": 6
     },
     {
-      "eventId": "EV027_documentaryExposesBacklog",
-      "choiceId": "modest_commitment",
+      "eventId": "EV038_creditRatingReview",
+      "choiceId": "fight_perception",
       "count": 6
     },
     {
@@ -1656,11 +1661,6 @@
     {
       "eventId": "EV006_provincialWindfall",
       "choiceId": "quiet_inquiry",
-      "count": 5
-    },
-    {
-      "eventId": "EV038_creditRatingReview",
-      "choiceId": "fight_perception",
       "count": 5
     },
     {
@@ -1704,6 +1704,11 @@
       "count": 2
     },
     {
+      "eventId": "EV050_directorQuits",
+      "choiceId": "negotiate_stay",
+      "count": 2
+    },
+    {
       "eventId": "EV072_hartwellVendorDemand",
       "choiceId": "call_in_personal_favor",
       "count": 1
@@ -1716,11 +1721,6 @@
     {
       "eventId": "EV014_stationFire",
       "choiceId": "spot_repair",
-      "count": 1
-    },
-    {
-      "eventId": "EV050_directorQuits",
-      "choiceId": "negotiate_stay",
       "count": 1
     }
   ],
@@ -1735,7 +1735,7 @@
     "steadyOperator": {
       "runs": 30,
       "failureRate": 0.7333333333333333,
-      "medianFinalCash": -3090.8349999999996
+      "medianFinalCash": -3066.058499999999
     },
     "internationalTechnocrat": {
       "runs": 30,
@@ -1745,7 +1745,7 @@
     "insider": {
       "runs": 30,
       "failureRate": 0.8,
-      "medianFinalCash": -3334.5479999999993
+      "medianFinalCash": -3293.3539999999994
     },
     "coalitionBuilder": {
       "runs": 30,
@@ -1755,14 +1755,14 @@
     "disruptor": {
       "runs": 30,
       "failureRate": 0.8,
-      "medianFinalCash": -3237.6224999999995
+      "medianFinalCash": -3112.9815
     }
   },
   "byStrategy": {
     "conservative": {
       "runs": 30,
       "failureRate": 1,
-      "medianFinalCash": -3702.8779999999997
+      "medianFinalCash": -3925.3354999999992
     },
     "aggressive": {
       "runs": 30,
@@ -1772,17 +1772,17 @@
     "random": {
       "runs": 30,
       "failureRate": 0.7333333333333333,
-      "medianFinalCash": -2906.2720000000004
+      "medianFinalCash": -2800.3410000000003
     },
     "reactive": {
       "runs": 30,
       "failureRate": 1,
-      "medianFinalCash": -3417.3880000000004
+      "medianFinalCash": -3404.3880000000004
     },
     "balanced": {
       "runs": 30,
       "failureRate": 0,
-      "medianFinalCash": 2582.187499999999
+      "medianFinalCash": 564.4380000000003
     }
   }
 }
